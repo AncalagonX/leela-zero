@@ -38,6 +38,7 @@
 #include "Utils.h"
 
 using namespace Utils;
+using namespace boost::math;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 class OutputAnalysisData {

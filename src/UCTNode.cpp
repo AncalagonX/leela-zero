@@ -29,6 +29,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <boost/math/distributions/binomial.hpp>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -39,6 +40,7 @@
 #include "Utils.h"
 
 using namespace Utils;
+using namespace boost::math;
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
