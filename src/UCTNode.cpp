@@ -230,6 +230,14 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
+float UCTNode::get_lcb(int color) const {
+    return binomial_distribution<>::find_lower_bound_on_p( get_visits(), floor(get_eval(color) * get_visits()), CI_ALPHA);
+}
+
+float UCTNode::get_ucb(int color) const {
+    return binomial_distribution<>::find_upper_bound_on_p( get_visits(), floor(get_eval(color) * get_visits()), CI_ALPHA);
+}
+
 double UCTNode::get_blackevals() const {
     return m_blackevals;
 }
