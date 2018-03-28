@@ -8,5 +8,16 @@ training/tf/venv
 leelaz-model*
 *.orig
 leelaz_opencl_tuning
+Debug
+Release
+packages
+.orig
+x64
+.vs
+*.vs
+*.db
+*.opendb
+*.user
+msvc
 /build-autogtp-*
 /build-validation-*
