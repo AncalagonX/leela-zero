@@ -81,7 +81,7 @@ public:
         on 64-bits.
     */
     static constexpr auto MAX_TREE_SIZE =
-        (sizeof(void*) == 4 ? 25'000'000 : 100'000'000);
+        (sizeof(void*) == 4 ? 100'000'000 : 500'000'000);
 
     /*
         Value representing unlimited visits or playouts. Due to
@@ -101,8 +101,8 @@ public:
     SearchResult play_simulation(GameState& currstate, UCTNode* const node);
 
 private:
+    void dump_stats(FastState& state, UCTNode& parent, int list_min, int list_max, bool tree_stats_bool);
     float get_min_psa_ratio() const;
-    void dump_stats(FastState& state, UCTNode& parent);
     void tree_stats(const UCTNode& node);
     std::string get_pv(FastState& state, UCTNode& parent);
     void dump_analysis(int playouts);
