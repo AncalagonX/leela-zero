@@ -227,16 +227,22 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (UCB: %5.2f%%) (Old Value: %5.2f%%) PV: %s\n",
-            move.c_str(),
-            node->get_visits(),
-			node->get_lcb(color) * 100.0f, // I moved this here
-            //node->get_visits() ? node->get_eval(color)*100.0f : 0.0f,
-            node->get_score() * 100.0f,
-            //node->get_lcb(color) * 100.0f,
-			node->get_ucb(color) * 100.0f,
-			node->get_visits() ? node->get_eval(color)*100.0f : 0.0f, // I moved this here
-            pv.c_str());
+   //     myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (UCB: %5.2f%%) (Old Value: %5.2f%%) PV: %s\n",
+   //         move.c_str(),
+   //         node->get_visits(),
+			//node->get_lcb(color) * 100.0f, // I moved this here
+   //         //node->get_visits() ? node->get_eval(color)*100.0f : 0.0f,
+   //         node->get_score() * 100.0f,
+   //         //node->get_lcb(color) * 100.0f,
+			//node->get_ucb(color) * 100.0f,
+			//node->get_visits() ? node->get_eval(color)*100.0f : 0.0f, // I moved this here
+   //         pv.c_str());
+		myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+			move.c_str(),
+			node->get_visits(),
+			node->get_lcb(color) * 100.0f,
+			node->get_score() * 100.0f,
+			pv.c_str());
     }
     tree_stats(parent);
 }
