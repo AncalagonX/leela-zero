@@ -673,6 +673,8 @@ void UCTSearch::ponder() {
         tg.add_task(UCTWorker(m_rootstate, this, m_root.get()));
     }
     auto keeprunning = true;
+	Time start;                                                     // lizzie
+	int last_update = 0;                                            // lizzie    
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
         auto result = play_simulation(*currstate, m_root.get());
@@ -681,7 +683,16 @@ void UCTSearch::ponder() {
         }
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
-    } while (!Utils::input_pending() && keeprunning);
+		Time elapsed;                                               // lizzie
+		int elapsed_centis = Time::timediff_centis(start, elapsed); // lizzie
+		if (elapsed_centis - last_update > 16) {					// lizzie: output ponder data 6 times per second
+			last_update = elapsed_centis;                           // lizzie
+
+			myprintf("~begin\n");                                   // lizzie
+			dump_stats(m_rootstate, *m_root);                       // lizzie
+			myprintf("~end\n");                                     // lizzie
+		}                                                           // lizzie  
+    } while(!Utils::input_pending() && keeprunning);
 
     // stop the search
     m_run = false;
