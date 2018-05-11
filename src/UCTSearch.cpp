@@ -183,7 +183,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+		const auto movenum = m_rootstate.get_movenum();
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -232,7 +233,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent, int list_min, in
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 		if (list_counter < list_max) {
-			if (node->get_visits() >= 10 || list_counter < list_min) {
+			if (node->get_visits() >= 100 || list_counter < list_min) {
 				myprintf("%4s -> %6d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
 					move.c_str(),
 					node->get_visits(),
@@ -710,8 +711,8 @@ void UCTSearch::ponder() {
     tg.wait_all();
 
     // display search info
-    myprintf("\n");
-	dump_stats(m_rootstate, *m_root, 5, 20, false);
+    //myprintf("\n");
+	//dump_stats(m_rootstate, *m_root, 5, 20, false);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
 
