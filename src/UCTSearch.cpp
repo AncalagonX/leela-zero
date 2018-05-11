@@ -653,7 +653,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
     // display search info
     myprintf("\n");
 
-    dump_stats(m_rootstate, *m_root, 5, 100, true);
+	dump_stats(m_rootstate, *m_root, 5, 20, false);
     Training::record(m_rootstate, *m_root);
 
     Time elapsed;
@@ -700,7 +700,7 @@ void UCTSearch::ponder() {
 			last_update = elapsed_centis;                           // lizzie
 
 			myprintf("~begin\n");                                   // lizzie
-			dump_stats(m_rootstate, *m_root);                       // lizzie
+			dump_stats(m_rootstate, *m_root, 5, 20, false);                       // lizzie
 			myprintf("~end\n");                                     // lizzie
 		}                                                           // lizzie  
     } while(!Utils::input_pending() && keeprunning);
@@ -711,7 +711,7 @@ void UCTSearch::ponder() {
 
     // display search info
     myprintf("\n");
-    dump_stats(m_rootstate, *m_root, 5, 100, true);
+	dump_stats(m_rootstate, *m_root, 5, 20, false);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
 
