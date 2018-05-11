@@ -78,12 +78,13 @@ bool cfg_benchmark;
 void GTP::setup_default_parameters() {
     cfg_gtp_mode = false;
     cfg_allow_pondering = true;
-    cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
+    //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
+	cfg_max_threads = 32;
 #ifdef USE_OPENCL
     // If we will be GPU limited, using many threads won't help much.
-    cfg_num_threads = std::min(2, cfg_max_threads);
+    //cfg_num_threads = std::max(2, cfg_max_threads);
 #else
-    cfg_num_threads = cfg_max_threads;
+    //cfg_num_threads = cfg_max_threads;
 #endif
     cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
