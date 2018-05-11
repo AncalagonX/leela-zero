@@ -67,6 +67,8 @@ public:
     void set_score(float score);
     float get_eval(int tomove) const;
     float get_net_eval(int tomove) const;
+    float get_lcb(int color) const;
+    float get_ucb(int color) const;
     void virtual_loss(void);
     void virtual_loss_undo(void);
     void update(float eval);
