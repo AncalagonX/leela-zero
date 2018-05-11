@@ -249,7 +249,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     LOCK(get_mutex(), lock);
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -276,8 +276,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum) {
     auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
-	auto best_value = std::numeric_limits<double>::lowest();
-	auto best_antipolicy_value = std::numeric_limits<double>::lowest();
+    auto best_value = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -285,61 +284,21 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum) {
         }
 
         auto winrate = fpu_eval;
+		auto lcbrate = 0.0f;
+		auto ucbrate = 1.0f;
         if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
         }
         auto psa = child.get_score();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
-		auto antipolicy_value = winrate - ((std::sqrt(puct)) - ((movenum / 30) * (std::sqrt(puct))));
+        auto value = winrate + puct/2;
         assert(value > std::numeric_limits<double>::lowest());
 
-		//This is my failsafe to prevent bad loops... maybe:
-		best = &child;
-
-		if ((is_root == true) && (movenum <= 60) && (antipolicy_value >= best_antipolicy_value) && (child.get_visits() < 90)) {
-			best_antipolicy_value = antipolicy_value;
-			best_value = value;
-			best = &child;
-			best->inflate();
-			return best->get();
-		}
-
-		else if ((is_root == true) && (movenum <= 60) && (antipolicy_value >= 0.95 * best_antipolicy_value) && (child.get_visits() < 90)) {
-			//best_antipolicy_value = antipolicy_value;  // THIS IS WRONG TO DO! IT'LL RAPIDLY DECREASE THE "BEST_VALUE" BY 5% AT A TIME!
-			best_value = value;
-			best = &child;
-			best->inflate();
-			return best->get();
-		}
-
-		else if ((is_root == true) && (movenum <= 60) && (antipolicy_value >= best_antipolicy_value)) {
-			best_antipolicy_value = antipolicy_value;
-			best_value = value;
-			best = &child;
-			best->inflate();
-			return best->get();
-		}
-		
-		else if ((is_root == true) && (value >= best_value) && (child.get_visits() < 90)) {
-			best_value = value;
-			best = &child;
-			best->inflate();
-			return best->get();
-		}
-
-		else if ((is_root == true) && (value >= (0.95 * best_value)) && (child.get_visits() < 90)) {
-			//best_value = value;  // THIS IS WRONG TO DO! IT'LL RAPIDLY DECREASE THE "BEST_VALUE" BY 5% AT A TIME!
-			best = &child;
-			best->inflate();
-			return best->get();
-		}
-
-		else if (value >= best_value) {
-			best_value = value;
-			best = &child;
-		}
+        if (value >= (0.95 * best_value)) {
+            best_value = value;
+            best = &child;
+        }
     }
 
     assert(best != nullptr);
