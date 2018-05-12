@@ -81,7 +81,7 @@ public:
         on 64-bits.
     */
     static constexpr auto MAX_TREE_SIZE =
-        (sizeof(void*) == 4 ? 25'000'000 : 100'000'000);
+        (sizeof(void*) == 4 ? 50'000'000 : 200'000'000);
 
     /*
         Value representing unlimited visits or playouts. Due to
