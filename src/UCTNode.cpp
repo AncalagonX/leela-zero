@@ -276,7 +276,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto best_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -285,21 +286,47 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
         auto winrate = fpu_eval;
 		auto lcbrate = 0.0f;
+		auto ucbrate = 1.0f;
         if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
 			lcbrate = child.get_lcb(color);
+			ucbrate = child.get_ucb(color);
         }
-        auto psa = (0.5 * (child.get_score() * lcbrate));
+		
+		auto psa = child.get_score();
+
+		if (is_root) {
+			psa = (child.get_score() * (1 + (0.5 * (ucbrate - lcbrate)))) * (lcbrate * (2000 / (2000 + m_visits)));
+		}
+		else {
+			psa = (child.get_score() * (1 + (0.5 * (ucbrate - lcbrate))));
+		}
         auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
+        auto puct = cfg_puct * psa * (numerator / denom) + (lcbrate * (m_visits / 20000));
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
+
+
+
+		if (is_root && puct >= 0.01 && (m_visits % 10) && (winrate >= (0.8 * best_winrate))) {
+			best = &child;
+			if (winrate > best_winrate) {
+				best_winrate = winrate;
+			}
+			if (value > best_value) {
+				best_value = value;
+			}
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
 
         if (value > best_value) {
             best_value = value;
             best = &child;
         }
     }
+
 
     assert(best != nullptr);
     best->inflate();
