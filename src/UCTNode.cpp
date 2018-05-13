@@ -237,82 +237,504 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
-    LOCK(get_mutex(), lock);
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts) {
+	auto best_value = std::numeric_limits<double>::lowest();
+	auto fifty_percent_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
+	auto fifty_percent_winrate = std::numeric_limits<double>::lowest();
+	auto best_puct = std::numeric_limits<double>::lowest();
 
-    // Count parentvisits manually to avoid issues with transpositions.
-    auto total_visited_policy = 0.0f;
-    auto parentvisits = size_t{0};
-    for (const auto& child : m_children) {
-        if (child.valid()) {
-            parentvisits += child.get_visits();
-            if (child.get_visits() > 0) {
-                total_visited_policy += child.get_score();
-            }
-        }
-    }
+	LOCK(get_mutex(), lock);
 
-    auto numerator = std::sqrt(double(parentvisits));
-    auto fpu_reduction = 0.0f;
-    // Lower the expected eval for moves that are likely not the best.
-    // Do not do this if we have introduced noise at this node exactly
-    // to explore more.
-    if (!is_root || !cfg_noise) {
-        fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
-    }
-    // Estimated eval for unknown nodes = original parent NN eval - reduction
-    auto fpu_eval = get_net_eval(color) - fpu_reduction;
+	// Count parentvisits manually to avoid issues with transpositions.
+	auto total_visited_policy = 0.0f;
+	auto parentvisits = size_t{0};
+	for (const auto& child : m_children) {
+		if (child.valid()) {
+			parentvisits += child.get_visits();
+			if (child.get_visits() > 0) {
+				total_visited_policy += child.get_score();
+			}
+		}
+	}
 
-    auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto numerator = std::sqrt(double(parentvisits));
+	auto fpu_reduction = 0.0f;
+	// Lower the expected eval for moves that are likely not the best.
+	// Do not do this if we have introduced noise at this node exactly
+	// to explore more.
+	if (!is_root || !cfg_noise) {
+		fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
+	}
+	// Estimated eval for unknown nodes = original parent NN eval - reduction
+	auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+	auto best = static_cast<UCTNodePointer*>(nullptr);
+	auto best_value = std::numeric_limits<double>::lowest();
 
-        auto winrate = fpu_eval;
-        if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-        }
-        auto psa = child.get_score();
-        auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
-        assert(value > std::numeric_limits<double>::lowest());
+	for (auto& child : m_children) {
+		if (!child.active()) {
+			continue;
+		}
 
-        if (value > best_value) {
-            best_value = value;
-            best = &child;
-        }
-    }
+		auto winrate = fpu_eval;
+		if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
+		}
+		auto psa = child.get_score();
+		auto denom = 1.0 + child.get_visits();
+		auto puct = cfg_puct * psa * (numerator / denom);
+		//if (puct <= 0.000001) {
+		//	puct = 0.000001;
+		//}
+		//if (puct >= 0.01) {
+		//	puct = 0.01;
+		//}
+		//if (best_puct <= 0.000001) {
+		//	best_puct = 0.000001;
+		//}
 
-    assert(best != nullptr);
+		auto value = winrate + puct;
+
+
+		//if (movenum < 20) {
+		//	int flip_coin = rand() % 80;
+		//	if ((movenum / (1 + flip_coin)) <= 1) {
+		//		value = (winrate - (puct)) + (2 * puct * (movenum / 19));
+		//	}
+		//}
+
+
+
+
+		assert(value > std::numeric_limits<double>::lowest());
+		assert(winrate > std::numeric_limits<double>::lowest());
+		assert(puct > std::numeric_limits<double>::lowest());
+		//if (value >= (0.9 * best_value) && puct <= best_puct && movenum < -1) {
+		//	if (value > best_value) {
+		//		best_value = value;
+		//		best_puct = puct;
+		//		best_winrate = winrate;
+		//	}
+		//	best = &child;
+		//	assert(best != nullptr);
+		//	return best->get();
+		//}
+		//else if (winrate >= (0.9 * winrate) && movenum < -1) {
+		//	best_value = value;
+		//	best_winrate = winrate;
+		//	best_puct = puct;
+		//	best = &child;
+		//	assert(best != nullptr);
+		//	return best->get();
+		//}
+
+		//assert(value > -1000.0); // replaced with next line:
+
+		//if (child->get_visits() == 0) {	// Get at least more than 0 visits
+		//	//best_value = value;
+		//	best = &child;
+		//	assert(best != nullptr);
+		//	return best->get();
+		//}
+		//if (child->get_visits() >= 10 && child->get_visits() < 100) {	// Else if more than 10 visits, have at least 100 visits
+		//	//best_value = value;
+		//	best = &child;
+		//	assert(best != nullptr);
+		//	return best->get();
+		//}
+
+
+		//if (is_root && m_visits <= 3200 && m_visits > 400) {
+		//	if (is_root && child->get_visits() < 100 && parentvisits < 100) {
+		//		//if (winrate > best_winrate) {
+		//		//	best_winrate = winrate;
+		//		//	best = &child;
+		//		//}
+		//		if (value > best_value) {
+		//			best_value = value;
+		//			best = &child;
+		//		}
+		//		return best->get();
+		//	}
+		//}
+
+		const int max_playouts_til_regular_value = 3200;
+		const int mptrv = max_playouts_til_regular_value;
+		const int mptrv_1 = ((1 * mptrv) / 4);
+		const int mptrv_2 = ((2 * mptrv) / 4);
+		const int mptrv_3 = ((3 * mptrv) / 4);
+		const int mptrv_5 = ((5 * mptrv) / 4);
+		const int mptrv_6 = ((6 * mptrv) / 4);
+		const int mptrv_7 = ((7 * mptrv) / 4);
+		const int mptrv_8 = ((8 * mptrv) / 4);
+
+		const int mptrv_div4 = (mptrv / 4);
+		//const int mptrv_this_turn = (max_playouts_til_regular_value + parentvisits);
+		const int real_playouts_this_turn = (playouts - m_visits);
+
+		//mptrv				 = 1000
+		//parentvisits       = 1000 valid visits at start
+		//playout limit      = 1600 playouts left to perform
+		//REAL playout limit = 2600 "playouts" = stop thinking when playouts equals this number
+
+
+		if (is_root) {
+			if (child->get_visits() == 0) {
+				best = &child;
+				best->inflate();
+				return best->get();
+			}
+			else
+				if ((playouts >= 400)
+					&& (playouts < mptrv_2)
+					&& (child->get_visits() < 50)) {
+					if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
+						best = &child;
+						if (winrate > best_winrate) {
+							best_winrate = winrate;
+						}
+						if (value > best_value) {
+							best_value = value;
+						}
+						best->inflate();
+						return best->get();
+					}
+					else
+						if (value > best_value) {
+							best_value = value;
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+				}
+				else
+					if ((playouts >= mptrv_2)
+						&& (playouts <  mptrv_3)
+						&& (child->get_visits() < 100)) {
+						if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
+							best = &child;
+							if (winrate > best_winrate) {
+								best_winrate = winrate;
+							}
+							if (value > best_value) {
+								best_value = value;
+							}
+							best->inflate();
+							return best->get();
+						}
+						else
+							if (value > best_value) {
+								best_value = value;
+								best = &child;
+								best->inflate();
+								return best->get();
+							}
+					}
+					else
+						if ((playouts >= mptrv_3)
+							&& (playouts <  mptrv_6)
+							&& (child->get_visits() <= 500)) {
+							if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE 50% GATE
+								best = &child;
+								if (winrate > best_winrate) {
+									best_winrate = winrate;
+								}
+								if (value > best_value) {
+									best_value = value;
+								}
+								best->inflate();
+								return best->get();
+							}
+							else
+								if (value > best_value) {
+									best_value = value;
+									best = &child;
+									best->inflate();
+									return best->get();
+								}
+						}
+			//else
+			if ((playouts >= mptrv_6)
+				&& (winrate >= 0.45 && winrate <= 0.55)) { // WINRATE TIGHTER 50% GATE
+				best = &child;
+				if (winrate > best_winrate) {
+					best_winrate = winrate;
+				}
+				if (value > best_value) {
+					best_value = value;
+				}
+				best->inflate();
+				return best->get();
+			}
+			else
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+		}
+		else
+			if (!is_root) {
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+			}
+			else {
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+			}
+	}
+	assert(best != nullptr);
     best->inflate();
     return best->get();
 }
 
 class NodeComp : public std::binary_function<UCTNodePointer&,
-                                             UCTNodePointer&, bool> {
+	UCTNodePointer&, bool> {
 public:
-    NodeComp(int color) : m_color(color) {};
-    bool operator()(const UCTNodePointer& a,
-                    const UCTNodePointer& b) {
-        // if visits are not same, sort on visits
-        if (a.get_visits() != b.get_visits()) {
-            return a.get_visits() < b.get_visits();
-        }
+	NodeComp(int color) : m_color(color) {};
+	bool operator()(const UCTNodePointer& a,
+		const UCTNodePointer& b) {
 
-        // neither has visits, sort on prior score
-        if (a.get_visits() == 0) {
-            return a.get_score() < b.get_score();
-        }
+		////////////Next Line:  FORCE RETURN PRIOR SCORE ONLY
+		/////New next line:  If visits are greater than 100, then sort on SCORE
+		// EVEN NEWER LINE: First sort by pure visits. Then sort by score IF visits are more than 100.
 
-        // both have same non-zero number of visits
-        return a.get_eval(m_color) < b.get_eval(m_color);
-    }
+
+
+
+		// Below code is good, I think. It sorts everything greater than 1000 visits by eval result	
+
+
+
+
+
+		if (a->get_eval(m_color) >= 0.00 && a->get_eval(m_color) < 0.25 && b->get_eval(m_color) >= 0.00 && b->get_eval(m_color) < 0.25) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.25 && a->get_eval(m_color) < 0.35 && b->get_eval(m_color) >= 0.25 && b->get_eval(m_color) < 0.35) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.35 && a->get_eval(m_color) < 0.45 && b->get_eval(m_color) >= 0.35 && b->get_eval(m_color) < 0.45) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.90 && a->get_eval(m_color) < 2.00 && b->get_eval(m_color) >= 0.90 && b->get_eval(m_color) < 2.00) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) > b->get_eval(m_color); ///////////// REVERSED IF ABOVE 90% EVAL!
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.75 && a->get_eval(m_color) < 0.90 && b->get_eval(m_color) >= 0.75 && b->get_eval(m_color) < 0.90) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.65 && a->get_eval(m_color) < 0.75 && b->get_eval(m_color) >= 0.65 && b->get_eval(m_color) < 0.75) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.55 && a->get_eval(m_color) < 0.65 && b->get_eval(m_color) >= 0.55 && b->get_eval(m_color) < 0.65) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+		}
+
+		if (a->get_eval(m_color) >= 0.45 && a->get_eval(m_color) < 0.55 && b->get_eval(m_color) >= 0.45 && b->get_eval(m_color) < 0.55) {
+			if (a->get_visits() >= 100 && a->get_visits() < 200 && b->get_visits() >= 100 && b->get_visits() < 200) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+			if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+				return a->get_eval(m_color) < b->get_eval(m_color);
+			}
+
+			if (a->get_visits() >= 500 && b->get_visits() >= 500) {
+				if (a->get_eval(m_color) >= 0.50 && a->get_eval(m_color) < 0.65 && b->get_eval(m_color) >= 0.65) { // SAFETY CATCH TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+					return a->get_eval(m_color) > b->get_eval(m_color);
+				}
+				else if (b->get_eval(m_color) >= 0.50 && b->get_eval(m_color) < 0.65 && a->get_eval(m_color) >= 0.65) { // SAFETY CATCH (REVERSED A and B) TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+					return a->get_eval(m_color) > b->get_eval(m_color);
+				}
+				else if (a->get_eval(m_color) >= 0.65 && b->get_eval(m_color) >= 0.65) { // SAFETY CATCH TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+					return a->get_eval(m_color) > b->get_eval(m_color);
+				}
+				else {
+					return a->get_eval(m_color) < b->get_eval(m_color);
+				}
+			}
+		}
+
+
+
+		//if (a->get_eval() >= 0.45 && a->get_eval < 0.55 && a->get_eval() >= 0.45 && a->get_eval < 0.55)
+
+
+
+
+
+
+
+		//////////////////////////////////////
+		/*
+		if (a->get_visits() >= 200 && a->get_visits() < 300 && b->get_visits() >= 200 && b->get_visits() < 300) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+
+
+		if (a->get_visits() >= 300 && a->get_visits() < 400 && b->get_visits() >= 300 && b->get_visits() < 400) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 400 && a->get_visits() < 500 && b->get_visits() >= 400 && b->get_visits() < 500) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 500 && a->get_visits() < 600 && b->get_visits() >= 500 && b->get_visits() < 600) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 600 && a->get_visits() < 700 && b->get_visits() >= 600 && b->get_visits() < 700) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 700 && a->get_visits() < 800 && b->get_visits() >= 700 && b->get_visits() < 800) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 800 && a->get_visits() < 900 && b->get_visits() >= 800 && b->get_visits() < 900) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 900 && a->get_visits() < 1000 && b->get_visits() >= 900 && b->get_visits() < 1000) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+		if (a->get_visits() >= 1000 && b->get_visits() >= 1000) {
+		return a->get_eval(m_color) < b->get_eval(m_color);
+		}
+
+		*/
+
+		// test test2 test3 test4 test5
+		// if visits are not same, sort on visits
+		if (a->get_visits() != b->get_visits()) {
+			return a->get_visits() < b->get_visits();
+		}
+
+		// neither has visits, sort on prior score
+		if (a->get_visits() == 0) {
+			return a->get_score() < b->get_score();
+		}
+
+		// both have same non-zero number of visits
+		return a->get_eval(m_color) < b->get_eval(m_color);
+	}
 private:
-    int m_color;
+	int m_color;
 };
 
 void UCTNode::sort_children(int color) {
