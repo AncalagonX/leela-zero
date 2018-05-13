@@ -210,55 +210,50 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     return result;
 }
 
-void UCTSearch::dump_stats(FastState & state, UCTNode & parent, int list_min, int list_max, bool tree_stats_bool) {
-    if (cfg_quiet || !parent.has_children()) {
-        return;
-    }
+void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
+	if (cfg_quiet || !parent.has_children()) {
+		return;
+	}
 
-    const int color = state.get_to_move();
+	const int color = state.get_to_move();
 
-    // sort children, put best move on top
-    //parent.sort_children_reverse(color);
+	// sort children, put best move on top
+	//parent.sort_children_reverse(color);
 	parent.sort_children(color);
 
-    if (parent.get_first_child()->first_visit()) {
-        return;
-    }
-
-	if (list_min >= 4) {
-		myprintf("========================================================\n");
-		myprintf("==================== SEARCH RESULTS ====================\n");
+	if (parent.get_first_child()->first_visit()) {
+		return;
 	}
-    int movecount = 0;
-	int list_counter = 0;
-    for (const auto& node : parent.get_children()) {
-        // Always display at least two moves. In the case there is
-        // only one move searched the user could get an idea why.
-        //if (++movecount > 2 && !node->get_visits()) break;
 
-		/////////////////how to string pad:
-		//std::string move = "123";
-		//move.insert(move.begin(), paddedLength - move.size(), ' ');
+	int movecount = 0;
+	for (const auto& node : parent.get_children()) {
+		// Always display at least two moves. In the case there is
+		// only one move searched the user could get an idea why.
+		if (++movecount > 2 && !node->get_visits()) break;
 
-        std::string move = state.move_to_text(node->get_move());
-        FastState tmpstate = state;
-        tmpstate.play_move(node->get_move());
-        std::string pv = move + " " + get_pv(tmpstate, *node);
-		if (list_counter < list_max) {
-			if (node->get_visits() >= 20 || list_counter < list_min) {
-				myprintf("%4s -> %6d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
-					move.c_str(),
-					node->get_visits(),
-					node->get_visits() ? node->get_eval(color)*100.0f : 0.0f,
-					node->get_score() * 100.0f,
-					pv.c_str());
-			}
-		}
-		list_counter = (list_counter + 1);
-    }
-	if (tree_stats_bool == true) {
-		tree_stats(parent);
+		std::string move = state.move_to_text(node->get_move());
+		FastState tmpstate = state;
+		tmpstate.play_move(node->get_move());
+		std::string pv = move + " " + get_pv(tmpstate, *node);
+
+		//     myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (UCB: %5.2f%%) (Old Value: %5.2f%%) PV: %s\n",
+		//         move.c_str(),
+		//         node->get_visits(),
+		//node->get_lcb(color) * 100.0f, // I moved this here
+		//         //node->get_visits() ? node->get_eval(color)*100.0f : 0.0f,
+		//         node->get_score() * 100.0f,
+		//         //node->get_lcb(color) * 100.0f,
+		//node->get_ucb(color) * 100.0f,
+		//node->get_visits() ? node->get_eval(color)*100.0f : 0.0f, // I moved this here
+		//         pv.c_str());
+		myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+			move.c_str(),
+			node->get_visits(),
+			node->get_visits() ? node->get_eval(color)*100.0f : 0.0f,
+			node->get_score() * 100.0f,
+			pv.c_str());
 	}
+	tree_stats(parent);
 }
 
 void tree_stats_helper(const UCTNode& node, size_t depth,
@@ -954,7 +949,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
         if (elapsed_centis - last_update > 99) {
             last_update = elapsed_centis;
             //dump_analysis(static_cast<int>(m_playouts));
-			dump_stats(m_rootstate, *m_root, 2, 2, false);
+			dump_stats(m_rootstate, *m_root);
 			if (cfg_puct != 0.8 || cfg_fpu_reduction != 0.25) {
 				myprintf("\nThinking... cfg_PUCT: %.2f -> cfg_FPU_reduction: %.2f\n", cfg_puct, cfg_fpu_reduction);
 			}
@@ -996,7 +991,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
     // display search info
     myprintf("\n");
 
-    dump_stats(m_rootstate, *m_root, 10, 50, true);
+    dump_stats(m_rootstate, *m_root);
     Training::record(m_rootstate, *m_root);
 
     Time elapsed;
@@ -1046,7 +1041,7 @@ void UCTSearch::ponder() {
 		if (elapsed_centis - last_update > 99) {
 			last_update = elapsed_centis;
 			//dump_analysis(static_cast<int>(m_playouts));
-			dump_stats(m_rootstate, *m_root, 2, 2, false);
+			dump_stats(m_rootstate, *m_root);
 			if (cfg_puct != 0.8 || cfg_fpu_reduction != 0.25) {
 				myprintf("\nThinking... cfg_PUCT: %.2f -> cfg_FPU_reduction: %.2f\n", cfg_puct, cfg_fpu_reduction);
 			}
@@ -1066,7 +1061,7 @@ void UCTSearch::ponder() {
 	pondering_now = false;
     // display search info
     myprintf("\n");
-    dump_stats(m_rootstate, *m_root, 10, 50, true);
+    dump_stats(m_rootstate, *m_root);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
 }
