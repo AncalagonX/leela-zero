@@ -237,8 +237,10 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts_here) {
     LOCK(get_mutex(), lock);
+
+	int playouts = playouts_here;
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -265,32 +267,166 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
+	auto fifty_percent_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
+	auto fifty_percent_winrate = std::numeric_limits<double>::lowest();
+	auto best_puct = std::numeric_limits<double>::lowest();
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+	for (auto& child : m_children) {
+		if (!child.active()) {
+			continue;
+		}
 
-        auto winrate = fpu_eval;
-        if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-        }
-        auto psa = child.get_score();
-        auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
-        assert(value > std::numeric_limits<double>::lowest());
+		auto winrate = fpu_eval;
+		if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
+		}
+		auto psa = child.get_score();
+		auto denom = 1.0 + child.get_visits();
+		auto puct = cfg_puct * psa * (numerator / denom);
+		auto value = winrate + puct;
 
-        if (value > best_value) {
-            best_value = value;
-            best = &child;
-        }
-    }
+		assert(value > std::numeric_limits<double>::lowest());
 
-    assert(best != nullptr);
-    best->inflate();
-    return best->get();
+		playouts = playouts_here;
+
+		const int max_playouts_til_regular_value = 3200;
+		const int mptrv = max_playouts_til_regular_value;
+		const int mptrv_1 = ((1 * mptrv) / 4);
+		const int mptrv_2 = ((2 * mptrv) / 4);
+		const int mptrv_3 = ((3 * mptrv) / 4);
+		const int mptrv_5 = ((5 * mptrv) / 4);
+		const int mptrv_6 = ((6 * mptrv) / 4);
+		const int mptrv_7 = ((7 * mptrv) / 4);
+		const int mptrv_8 = ((8 * mptrv) / 4);
+
+		const int mptrv_div4 = (mptrv / 4);
+
+		const int real_playouts_this_turn = playouts;
+
+
+
+		if (is_root) {
+			if (child.get_visits() == 0) {
+				best = &child;
+				best->inflate();
+				return best->get();
+			}
+			else
+				if ((playouts >= 400)
+					&& (playouts < mptrv_2)
+					&& (child.get_visits() < 50)) {
+					if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
+						best = &child;
+						if (winrate > best_winrate) {
+							best_winrate = winrate;
+						}
+						if (value > best_value) {
+							best_value = value;
+						}
+						best->inflate();
+						return best->get();
+					}
+					else
+						if (value > best_value) {
+							best_value = value;
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+				}
+				else
+					if ((playouts >= mptrv_2)
+						&& (playouts < mptrv_3)
+						&& (child.get_visits() < 100)) {
+						if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
+							best = &child;
+							if (winrate > best_winrate) {
+								best_winrate = winrate;
+							}
+							if (value > best_value) {
+								best_value = value;
+							}
+							best->inflate();
+							return best->get();
+						}
+						else
+							if (value > best_value) {
+								best_value = value;
+								best = &child;
+								best->inflate();
+								return best->get();
+							}
+					}
+					else
+						if ((playouts >= mptrv_3)
+							&& (playouts < mptrv_6)
+							&& (child.get_visits() <= 500)) {
+							if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE 50% GATE
+								best = &child;
+								if (winrate > best_winrate) {
+									best_winrate = winrate;
+								}
+								if (value > best_value) {
+									best_value = value;
+								}
+								best->inflate();
+								return best->get();
+							}
+							else
+								if (value > best_value) {
+									best_value = value;
+									best = &child;
+									best->inflate();
+									return best->get();
+								}
+						}
+			//else
+			if ((playouts >= mptrv_6)
+				&& (winrate >= 0.45 && winrate <= 0.55)) { // WINRATE TIGHTER 50% GATE
+				best = &child;
+				if (winrate > best_winrate) {
+					best_winrate = winrate;
+				}
+				if (value > best_value) {
+					best_value = value;
+				}
+				best->inflate();
+				return best->get();
+			}
+			else
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+		}
+		else
+			if (!is_root) {
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+			}
+			else {
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+			}
+	}
+
+	assert(best != nullptr);
+	best->inflate();
+	return best->get();
 }
+
+
+
+
+
+
+
+
 
 class NodeComp : public std::binary_function<UCTNodePointer&,
                                              UCTNodePointer&, bool> {
@@ -298,6 +434,9 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+
+		/*
+
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();
@@ -314,6 +453,212 @@ public:
 private:
     int m_color;
 };
+
+*/
+
+
+
+
+
+if (a.get_eval(m_color) >= 0.00 && a.get_eval(m_color) < 0.25 && b.get_eval(m_color) >= 0.00 && b.get_eval(m_color) < 0.25) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.25 && a.get_eval(m_color) < 0.35 && b.get_eval(m_color) >= 0.25 && b.get_eval(m_color) < 0.35) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.35 && a.get_eval(m_color) < 0.45 && b.get_eval(m_color) >= 0.35 && b.get_eval(m_color) < 0.45) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.90 && a.get_eval(m_color) < 2.00 && b.get_eval(m_color) >= 0.90 && b.get_eval(m_color) < 2.00) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) > b.get_eval(m_color); ///////////// REVERSED IF ABOVE 90% EVAL!
+	}
+}
+
+if (a.get_eval(m_color) >= 0.75 && a.get_eval(m_color) < 0.90 && b.get_eval(m_color) >= 0.75 && b.get_eval(m_color) < 0.90) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.65 && a.get_eval(m_color) < 0.75 && b.get_eval(m_color) >= 0.65 && b.get_eval(m_color) < 0.75) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.55 && a.get_eval(m_color) < 0.65 && b.get_eval(m_color) >= 0.55 && b.get_eval(m_color) < 0.65) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+}
+
+if (a.get_eval(m_color) >= 0.45 && a.get_eval(m_color) < 0.55 && b.get_eval(m_color) >= 0.45 && b.get_eval(m_color) < 0.55) {
+	if (a.get_visits() >= 100 && a.get_visits() < 200 && b.get_visits() >= 100 && b.get_visits() < 200) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 200 && a.get_visits() < 300 && b.get_visits() >= 200 && b.get_visits() < 300) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 300 && a.get_visits() < 400 && b.get_visits() >= 300 && b.get_visits() < 400) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+	if (a.get_visits() >= 400 && a.get_visits() < 500 && b.get_visits() >= 400 && b.get_visits() < 500) {
+		return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+
+	if (a.get_visits() >= 500 && b.get_visits() >= 500) {
+		if (a.get_eval(m_color) >= 0.50 && a.get_eval(m_color) < 0.65 && b.get_eval(m_color) >= 0.65) { // SAFETY CATCH TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+			return a.get_eval(m_color) > b.get_eval(m_color);
+		}
+		else if (b.get_eval(m_color) >= 0.50 && b.get_eval(m_color) < 0.65 && a.get_eval(m_color) >= 0.65) { // SAFETY CATCH (REVERSED A and B) TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+			return a.get_eval(m_color) > b.get_eval(m_color);
+		}
+		else if (a.get_eval(m_color) >= 0.65 && b.get_eval(m_color) >= 0.65) { // SAFETY CATCH TO PREVENT HIGH WINRATES FROM SNEAKING THROUGH
+			return a.get_eval(m_color) > b.get_eval(m_color);
+		}
+		else {
+			return a.get_eval(m_color) < b.get_eval(m_color);
+		}
+	}
+}
+
+// if visits are not same, sort on visits
+if (a.get_visits() != b.get_visits()) {
+	return a.get_visits() < b.get_visits();
+}
+
+// neither has visits, sort on prior score
+if (a.get_visits() == 0) {
+	return a.get_score() < b.get_score();
+}
+
+// both have same non-zero number of visits
+return a.get_eval(m_color) < b.get_eval(m_color);
+	}
+private:
+	int m_color;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void UCTNode::sort_children(int color) {
     LOCK(get_mutex(), lock);
