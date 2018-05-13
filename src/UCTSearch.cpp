@@ -1012,58 +1012,48 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
 void UCTSearch::ponder() {
 	update_root();
-	cfg_fpu_reduction = 0.25;
-	cfg_puct = 0.8;
-	Time start;
-	pondering_now = true;
 
-    m_run = true;
-    int cpus = cfg_num_threads;
-    ThreadGroup tg(thread_pool);
-    for (int i = 1; i < cpus; i++) {
-        tg.add_task(UCTWorker(m_rootstate, this, m_root.get()));
-    }
-    auto keeprunning = true;
-	int last_update = 0;
-    do {
-        auto currstate = std::make_unique<GameState>(m_rootstate);
-        auto result = play_simulation(*currstate, m_root.get());
-        if (result.valid()) {
-            increment_playouts();
-        }
+	//m_root->prepare_root_node(m_rootstate.board.get_to_move(), m_nodes, m_rootstate);
 
-
-		Time elapsed;
-		int elapsed_centis = Time::timediff_centis(start, elapsed);
-
-		// output some stats every few seconds
-		// check if we should still search
-		if (elapsed_centis - last_update > 99) {
-			last_update = elapsed_centis;
-			//dump_analysis(static_cast<int>(m_playouts));
-			dump_stats(m_rootstate, *m_root);
-			if (cfg_puct != 0.8 || cfg_fpu_reduction != 0.25) {
-				myprintf("\nThinking... cfg_PUCT: %.2f -> cfg_FPU_reduction: %.2f\n", cfg_puct, cfg_fpu_reduction);
-			}
-			else {
-				myprintf("\nThinking...");
-			}
+	m_run = true;
+	ThreadGroup tg(thread_pool);
+	for (int i = 1; i < cfg_num_threads; i++) {
+		tg.add_task(UCTWorker(m_rootstate, this, m_root.get()));
+	}
+	auto keeprunning = true;
+	Time start;                                                     // lizzie
+	int last_update = 0;                                            // lizzie    
+	do {
+		auto currstate = std::make_unique<GameState>(m_rootstate);
+		auto result = play_simulation(*currstate, m_root.get());
+		if (result.valid()) {
+			increment_playouts();
 		}
+		keeprunning = is_running();
+		keeprunning &= !stop_thinking(0, 1);
+		Time elapsed;                                               // lizzie
+		int elapsed_centis = Time::timediff_centis(start, elapsed); // lizzie
+		if (elapsed_centis - last_update > 16) {					// lizzie: output ponder data 6 times per second
+			last_update = elapsed_centis;                           // lizzie
 
+			myprintf("~begin\n");                                   // lizzie
+			dump_stats(m_rootstate, *m_root);                       // lizzie
+			myprintf("~end\n");                                     // lizzie
+		}                                                           // lizzie  
+	} while (!Utils::input_pending() && keeprunning);
 
-        keeprunning  = is_running();
-        keeprunning &= !stop_thinking_pondering(0, 1, static_cast<int>(m_playouts));
-    } while(!Utils::input_pending() && keeprunning);
+	// stop the search
+	m_run = false;
+	tg.wait_all();
 
-    // stop the search
-    m_run = false;
-    tg.wait_all();
-	pondering_now = false;
-    // display search info
-    myprintf("\n");
-    dump_stats(m_rootstate, *m_root);
+	// display search info
+	myprintf("\n");
+	dump_stats(m_rootstate, *m_root);
 
-    myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
+	myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
+
+	// Copy the root state. Use to check for tree re-use in future calls.
+	m_last_rootstate = std::make_unique<GameState>(m_rootstate);
 }
 
 void UCTSearch::set_playout_limit(int playouts) {
