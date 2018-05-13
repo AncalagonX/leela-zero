@@ -180,9 +180,10 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
-	auto playouts_here = m_playouts.load();
+	
 
     if (node->has_children() && !result.valid()) {
+		auto playouts_here = m_playouts.load();
         auto next = node->uct_select_child(color, node == m_root.get(), playouts_here);
         auto move = next->get_move();
 

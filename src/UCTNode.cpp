@@ -240,8 +240,6 @@ void UCTNode::accumulate_eval(float eval) {
 UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts_here) {
     LOCK(get_mutex(), lock);
 
-	int playouts = playouts_here;
-
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
     auto parentvisits = size_t{0};
@@ -288,7 +286,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts_here) {
 
 		assert(value > std::numeric_limits<double>::lowest());
 
-		playouts = playouts_here;
+		int playouts = playouts_here;
 
 		const int max_playouts_til_regular_value = 3200;
 		const int mptrv = max_playouts_til_regular_value;
@@ -307,7 +305,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts_here) {
 
 
 		if (is_root) {
-			if (child.get_visits() == 0) {
+			if (child.get_visits() <= 1) {
 				best = &child;
 				best->inflate();
 				return best->get();
@@ -405,16 +403,23 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int playouts_here) {
 				if (value > best_value) {
 					best_value = value;
 					best = &child;
+					best->inflate();
+					return best->get();
 				}
 			}
 			else {
 				if (value > best_value) {
 					best_value = value;
 					best = &child;
+					best->inflate();
+					return best->get();
 				}
 			}
+		assert(best != nullptr);
+		best = &child; // SAFETY CATCH, I HOPE.
+		best->inflate();
+		return best->get();
 	}
-
 	assert(best != nullptr);
 	best->inflate();
 	return best->get();
@@ -639,24 +644,6 @@ return a.get_eval(m_color) < b.get_eval(m_color);
 private:
 	int m_color;
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
