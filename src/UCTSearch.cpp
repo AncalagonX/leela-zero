@@ -665,8 +665,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
 void UCTSearch::ponder() {
     update_root();
 
-    m_root->prepare_root_node(m_rootstate.board.get_to_move(),
-                              m_nodes, m_rootstate);
+    //m_root->prepare_root_node(m_rootstate.board.get_to_move(), m_nodes, m_rootstate);
 
     m_run = true;
     ThreadGroup tg(thread_pool);
