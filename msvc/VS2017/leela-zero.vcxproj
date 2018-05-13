@@ -136,7 +136,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>leelaz_custom59_fiftypercent</TargetName>
+    <TargetName>leelaz_custom59_fiftypercent_v3</TargetName>
     <IntDir>$(Platform)\$(Configuration)\leelaz\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
