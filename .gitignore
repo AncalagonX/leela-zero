@@ -17,5 +17,4 @@ x64
 *.db
 *.opendb
 *.user
-*.vcxproj
-*.vcxproj.filters
+msvc

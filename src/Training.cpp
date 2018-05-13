@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -63,16 +63,16 @@ std::ostream& operator <<(std::ostream& stream, const TimeStep& timestep) {
 
 std::istream& operator>> (std::istream& stream, TimeStep& timestep) {
     int planes_size;
-    int prob_size;
-    Network::BoardPlane nn;
-    float prob;
     stream >> planes_size;
     for (auto i = 0; i < planes_size; ++i) {
-        stream >> nn;
-        timestep.planes.push_back(nn);
+        TimeStep::BoardPlane plane;
+        stream >> plane;
+        timestep.planes.push_back(plane);
     }
+    int prob_size;
     stream >> prob_size;
     for (auto i = 0; i < prob_size; ++i) {
+        float prob;
         stream >> prob;
         timestep.probabilities.push_back(prob);
     }
@@ -82,7 +82,6 @@ std::istream& operator>> (std::istream& stream, TimeStep& timestep) {
     stream >> timestep.child_uct_winrate;
     stream >> timestep.bestmove_visits;
     return stream;
-    
 }
 
 std::string OutputChunker::gen_chunk_name(void) const {
@@ -140,15 +139,28 @@ void Training::clear_training() {
     Training::m_data.clear();
 }
 
+TimeStep::NNPlanes Training::get_planes(const GameState* const state) {
+    const auto input_data = Network::gather_features(state, 0);
+
+    auto planes = TimeStep::NNPlanes{};
+    planes.resize(Network::INPUT_CHANNELS);
+
+    for (auto c = size_t{0}; c < Network::INPUT_CHANNELS; c++) {
+        for (auto idx = 0; idx < BOARD_SQUARES; idx++) {
+            planes[c][idx] = bool(input_data[c * BOARD_SQUARES + idx]);
+        }
+    }
+    return planes;
+}
+
 void Training::record(GameState& state, UCTNode& root) {
     auto step = TimeStep{};
     step.to_move = state.board.get_to_move();
-    step.planes = Network::NNPlanes{};
-    Network::gather_features(&state, step.planes);
+    step.planes = get_planes(&state);
 
     auto result =
         Network::get_scored_moves(&state, Network::Ensemble::DIRECT, 0);
-    step.net_winrate = result.second;
+    step.net_winrate = result.winrate;
 
     const auto& best_node = root.get_best_root_child(step.to_move);
     step.root_uct_winrate = root.get_eval(step.to_move);
@@ -234,7 +246,8 @@ void Training::dump_training(int winner_color, OutputChunker& outchunk) {
                               | plane[bit + 3] << 0;
                 out << std::hex << hexbyte;
             }
-            // BOARD_SQUARES % 4 = 1 so the last bit goes by itself for odd sizes
+            // BOARD_SQUARES % 4 = 1 so the last bit goes by itself
+            // for odd sizes
             assert(plane.size() % 4 == 1);
             out << plane[plane.size() - 1];
             out << std::dec << std::endl;
@@ -301,7 +314,8 @@ void Training::process_game(GameState& state, size_t& train_pos, int who_won,
 
         // Detect if this SGF seems to be corrupted
         if (!state.is_move_legal(to_move, move_vertex)) {
-            std::cout << "Mainline move not found: " << move_vertex << std::endl;
+            std::cout << "Mainline move not found: " << move_vertex
+                      << std::endl;
             return;
         }
 
@@ -315,8 +329,7 @@ void Training::process_game(GameState& state, size_t& train_pos, int who_won,
 
         auto step = TimeStep{};
         step.to_move = to_move;
-        step.planes = Network::NNPlanes{};
-        Network::gather_features(&state, step.planes);
+        step.planes = get_planes(&state);
 
         step.probabilities.resize(BOARD_SQUARES + 1);
         step.probabilities[move_idx] = 1.0f;
@@ -355,8 +368,9 @@ void Training::dump_supervised(const std::string& sgf_name,
         if (gamecount > 0 && gamecount % 1000 == 0) {
             Time elapsed;
             auto elapsed_s = Time::timediff_seconds(start, elapsed);
-            Utils::myprintf("Game %5d, %5d positions in %5.2f seconds -> %d pos/s\n",
-                gamecount, train_pos, elapsed_s, (int)(train_pos / elapsed_s));
+            Utils::myprintf(
+                "Game %5d, %5d positions in %5.2f seconds -> %d pos/s\n",
+                gamecount, train_pos, elapsed_s, int(train_pos / elapsed_s));
         }
 
         auto tree_moves = sgftree->get_mainline();

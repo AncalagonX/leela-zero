@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ Random::Random(std::uint64_t seed) {
     if (seed == 0) {
         size_t thread_id =
             std::hash<std::thread::id>()(std::this_thread::get_id());
-        seedrandom(cfg_rng_seed ^ (std::uint64_t)thread_id);
+        seedrandom(cfg_rng_seed ^ std::uint64_t(thread_id));
     } else {
         seedrandom(seed);
     }

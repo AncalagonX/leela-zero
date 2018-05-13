@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ namespace Utils {
 
     template<typename T>
     T rotl(const T x, const int k) {
-	    return (x << k) | (x >> (std::numeric_limits<T>::digits - k));
+        return (x << k) | (x >> (std::numeric_limits<T>::digits - k));
     }
 
     inline bool is7bit(int c) {

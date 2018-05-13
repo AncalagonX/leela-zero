@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ int cfg_lagbuffer_cs;
 int cfg_resignpct;
 int cfg_noise;
 int cfg_random_cnt;
+int cfg_random_min_visits;
+float cfg_random_temp;
 std::uint64_t cfg_rng_seed;
 bool cfg_dumbpass;
 #ifdef USE_OPENCL
@@ -83,8 +85,8 @@ void GTP::setup_default_parameters() {
 #else
     cfg_num_threads = cfg_max_threads;
 #endif
-    cfg_max_playouts = std::numeric_limits<decltype(cfg_max_playouts)>::max();
-    cfg_max_visits = std::numeric_limits<decltype(cfg_max_visits)>::max();
+    cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
+    cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
 #ifdef USE_OPENCL
@@ -99,6 +101,8 @@ void GTP::setup_default_parameters() {
     cfg_resignpct = -1;
     cfg_noise = false;
     cfg_random_cnt = 0;
+    cfg_random_min_visits = 1;
+    cfg_random_temp = 1.0f;
     cfg_dumbpass = false;
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
@@ -123,7 +127,6 @@ const std::string GTP::s_commands[] = {
     "quit",
     "known_command",
     "list_commands",
-    "quit",
     "boardsize",
     "clear_board",
     "komi",
@@ -429,7 +432,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         float ftmp = game.final_score();
         /* white wins */
         if (ftmp < -0.1) {
-            gtp_printf(id, "W+%3.1f", (float)fabs(ftmp));
+            gtp_printf(id, "W+%3.1f", float(fabs(ftmp)));
         } else if (ftmp > 0.1) {
             gtp_printf(id, "B+%3.1f", ftmp);
         } else {
@@ -522,20 +525,34 @@ bool GTP::execute(GameState & game, std::string xinput) {
     } else if (command.find("heatmap") == 0) {
         std::istringstream cmdstream(command);
         std::string tmp;
-        int rotation;
+        std::string symmetry;
 
         cmdstream >> tmp;   // eat heatmap
-        cmdstream >> rotation;
+        cmdstream >> symmetry;
 
-        if (!cmdstream.fail()) {
-            auto vec = Network::get_scored_moves(
-                &game, Network::Ensemble::DIRECT, rotation, true);
-            Network::show_heatmap(&game, vec, false);
-        } else {
-            auto vec = Network::get_scored_moves(
+        Network::Netresult vec;
+        if (cmdstream.fail()) {
+            // Default = DIRECT with no rotation
+            vec = Network::get_scored_moves(
                 &game, Network::Ensemble::DIRECT, 0, true);
+        } else if (symmetry == "all") {
+            for (auto r = 0; r < 8; r++) {
+                vec = Network::get_scored_moves(
+                    &game, Network::Ensemble::DIRECT, r, true);
+                Network::show_heatmap(&game, vec, false);
+            }
+        } else if (symmetry == "average" || symmetry == "avg") {
+            vec = Network::get_scored_moves(
+                &game, Network::Ensemble::AVERAGE, 8, true);
+        } else {
+            vec = Network::get_scored_moves(
+                &game, Network::Ensemble::DIRECT, std::stoi(symmetry), true);
+        }
+
+        if (symmetry != "all") {
             Network::show_heatmap(&game, vec, false);
         }
+
         gtp_printf(id, "");
 		if (cfg_allow_pondering) {
 			// now start pondering

@@ -1,5 +1,6 @@
 /*
     This file is part of Leela Zero.
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,10 +31,11 @@
 #endif
 
 /*
- * BOARD_SIZE: Define size of the board to compile Leela with, must be an odd number due to winograd tiles
+ * BOARD_SIZE: Define size of the board to compile Leela with, must be an odd
+   number due to winograd tiles
  */
 #define BOARD_SIZE 19
-#define BOARD_SQUARES BOARD_SIZE*BOARD_SIZE
+#define BOARD_SQUARES (BOARD_SIZE*BOARD_SIZE)
 
 #if (BOARD_SIZE % 2 == 0)
 #error Code assumes odd board size, remove at your own risk!
@@ -69,7 +71,7 @@
  * faster if you have a recent GPU. Don't use it on CPUs even if they have
  * OpenCL drivers - the BLAS version is much faster for those.
  */
-#ifndef FEATURE_USE_CPU_ONLY
+#ifndef USE_CPU_ONLY
 #define USE_OPENCL
 #endif
 /*
@@ -91,7 +93,12 @@
 #define MAX_CPUS 128
 #endif
 
+#ifdef USE_HALF
+#include "half/half.hpp"
+using net_t = half_float::half;
+#else
 using net_t = float;
+#endif
 
 #if defined(USE_BLAS) && defined(USE_OPENCL) && !defined(USE_HALF)
 // If both BLAS and OpenCL are fully usable, then check the OpenCL

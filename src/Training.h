@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include "config.h"
 
+#include <bitset>
 #include <cstddef>
 #include <string>
 #include <utility>
@@ -32,7 +33,9 @@
 
 class TimeStep {
 public:
-    Network::NNPlanes planes;
+    using BoardPlane = std::bitset<BOARD_SQUARES>;
+    using NNPlanes = std::vector<BoardPlane>;
+    NNPlanes planes;
     std::vector<float> probabilities;
     int to_move;
     float net_winrate;
@@ -74,8 +77,9 @@ public:
                                 const std::string& out_filename);
     static void save_training(const std::string& filename);
     static void load_training(const std::string& filename);
-private:
 
+private:
+    static TimeStep::NNPlanes get_planes(const GameState* const state);
     static void process_game(GameState& state, size_t& train_pos, int who_won,
                              const std::vector<int>& tree_moves,
                              OutputChunker& outchunker);

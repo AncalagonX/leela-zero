@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Marco Calignano
+    Copyright (C) 2017-2018 Marco Calignano
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -34,13 +34,14 @@
 constexpr int RETRY_DELAY_MIN_SEC = 30;
 constexpr int RETRY_DELAY_MAX_SEC = 60 * 60;  // 1 hour
 constexpr int MAX_RETRIES = 3;           // Stop retrying after 3 times
-const QString Leelaz_min_version = "0.11";
+const QString Leelaz_min_version = "0.12";
 
 Management::Management(const int gpus,
                        const int games,
                        const QStringList& gpuslist,
                        const int ver,
                        const int maxGames,
+                       const bool delNetworks,
                        const QString& keep,
                        const QString& debug)
 
@@ -56,8 +57,10 @@ Management::Management(const int gpus,
     m_debugPath(debug),
     m_version(ver),
     m_fallBack(Order::Error),
+    m_lastMatch(Order::Error),
     m_gamesLeft(maxGames),
     m_threadsLeft(gpus * games),
+    m_delNetworks(delNetworks),
     m_lockFile(nullptr) {
 }
 
@@ -66,7 +69,7 @@ void Management::runTuningProcess(const QString &tuneCmdLine) {
     QProcess tuneProcess;
     tuneProcess.start(tuneCmdLine);
     tuneProcess.waitForStarted(-1);
-    while(tuneProcess.state() == QProcess::Running) {
+    while (tuneProcess.state() == QProcess::Running) {
         tuneProcess.waitForReadyRead(1000);
         QTextStream(stdout) << tuneProcess.readAllStandardError();
     }
@@ -91,7 +94,7 @@ void Management::giveAssignments() {
     QTextStream(stdout) << "Starting tuning process, please wait..." << endl;
 
     Order tuneOrder = getWork(true);
-    QString tuneCmdLine("./leelaz --tune-only -w ");
+    QString tuneCmdLine("./leelaz --tune-only -w networks/");
     tuneCmdLine.append(tuneOrder.parameters()["network"]);
     if (m_gpusList.isEmpty()) {
         runTuningProcess(tuneCmdLine);
@@ -121,11 +124,11 @@ void Management::giveAssignments() {
                     &Management::getResult,
                     Qt::DirectConnection);
             QFileInfo finfo = getNextStored();
-            if(!finfo.fileName().isEmpty()) {
+            if (!finfo.fileName().isEmpty()) {
                 m_gamesThreads[thread_index]->order(getWork(finfo));
             } else {
                 m_gamesThreads[thread_index]->order(getWork());
-            }            
+            }
             m_gamesThreads[thread_index]->start();
         }
     }
@@ -152,7 +155,7 @@ void Management::getResult(Order ord, Result res, int index, int duration) {
     }
     m_syncMutex.lock();
     m_gamesPlayed++;
-    switch(res.type()) {
+    switch (res.type()) {
     case Result::File:
         m_selfGames++,
         uploadData(res.parameters(), ord.parameters());
@@ -166,15 +169,15 @@ void Management::getResult(Order ord, Result res, int index, int duration) {
         break;
     }
     sendAllGames();
-    if(m_gamesLeft == 0) {
+    if (m_gamesLeft == 0) {
         m_gamesThreads[index]->doFinish();
-        if(m_threadsLeft > 1) {
+        if (m_threadsLeft > 1) {
             --m_threadsLeft;
         } else {
             sendQuit();
         }
     } else {
-        if(m_gamesLeft > 0) --m_gamesLeft;
+        if (m_gamesLeft > 0) --m_gamesLeft;
         QFileInfo finfo = getNextStored();
         if (!finfo.fileName().isEmpty()) {
             m_gamesThreads[index]->order(getWork(finfo));
@@ -191,7 +194,7 @@ QFileInfo Management::getNextStored() {
     while (!m_storedFiles.isEmpty()) {
         fi = m_storedFiles.takeFirst();
         m_lockFile = new QLockFile(fi.fileName()+".lock");
-        if(m_lockFile->tryLock(10) &&
+        if (m_lockFile->tryLock(10) &&
            fi.exists()) {
                 break;
         }
@@ -216,7 +219,7 @@ void  Management::printTimingInfo(float duration) {
         << total_time_min.count() << " minutes = "
         << total_time_s.count() / m_gamesPlayed << " seconds/game, "
         << total_time_millis.count() / m_movesMade.load()  << " ms/move"
-        << ", last game took " << (int) duration << " seconds." << endl;
+        << ", last game took " << int(duration) << " seconds." << endl;
 }
 
 QString Management::getOption(const QJsonObject &ob, const QString &key, const QString &opt, const QString &defValue) {
@@ -238,7 +241,7 @@ QString Management::getBoolOption(const QJsonObject &ob, const QString &key, con
             res.append(opt + " ");
         }
     } else {
-        if(defValue) {
+        if (defValue) {
             res.append(opt + " ");
         }
     }
@@ -337,23 +340,28 @@ Order Management::getWorkInternal(bool tuning) {
     QMap<QString,QString> parameters;
     QJsonObject ob = doc.object();
     //checking client version
+    int required_version = 0;
     if (ob.contains("required_client_version")) {
-        if (ob.value("required_client_version").toString().toInt() > m_version) {
-            QTextStream(stdout) << "Required client version: " << ob.value("required_client_version").toString() << endl;
-            QTextStream(stdout) << ' ' <<  endl;
-            QTextStream(stdout)
-                << "Server requires client version " << ob.value("required_client_version").toString()
-                << " but we are version " << m_version << endl;
-            QTextStream(stdout)
-                << "Check https://github.com/gcp/leela-zero for updates." << endl;
-            exit(EXIT_FAILURE);
-        }
+        required_version = ob.value("required_client_version").toString().toInt();
+    } else if (ob.contains("minimum_autogtp_version")) {
+        required_version = ob.value("minimum_autogtp_version").toString().toInt();
     }
-
+    if (required_version > m_version) {
+        QTextStream(stdout) << "Required client version: " << required_version << endl;
+        QTextStream(stdout) << ' ' <<  endl;
+        QTextStream(stdout)
+            << "Server requires client version " << required_version
+            << " but we are version " << m_version << endl;
+        QTextStream(stdout)
+            << "Check https://github.com/gcp/leela-zero for updates." << endl;
+        exit(EXIT_FAILURE);
+    }
     //passing leela version
     QString leelazVersion = Leelaz_min_version;
     if (ob.contains("leelaz_version")) {
         leelazVersion = ob.value("leelaz_version").toString();
+    } else if (ob.contains("minimum_leelaz_version")) {
+        leelazVersion = ob.value("minimum_leelaz_version").toString();
     }
     parameters["leelazVer"] = leelazVersion;
 
@@ -383,6 +391,11 @@ Order Management::getWorkInternal(bool tuning) {
         o.type(Order::Production);
         parameters["network"] = net;
         o.parameters(parameters);
+        if (m_delNetworks &&
+            m_fallBack.parameters()["network"] != net) {
+            QTextStream(stdout) << "Deleting network " << "networks/" + m_fallBack.parameters()["network"] << endl;
+            QFile::remove("networks/" + m_fallBack.parameters()["network"]);
+        }
         m_fallBack = o;
         QTextStream(stdout) << "net: " << net << "." << endl;
     }
@@ -395,6 +408,19 @@ Order Management::getWorkInternal(bool tuning) {
         parameters["firstNet"] = net1;
         parameters["secondNet"] = net2;
         o.parameters(parameters);
+        if (m_delNetworks) {
+            if (m_lastMatch.parameters()["firstNet"] != net1 &&
+                m_lastMatch.parameters()["firstNet"] != net2) {
+                QTextStream(stdout) << "Deleting network " << "networks/" + m_lastMatch.parameters()["firstNet"] << endl;
+                QFile::remove("networks/" + m_lastMatch.parameters()["firstNet"]);
+            }
+            if (m_lastMatch.parameters()["secondNet"] != net1 &&
+                m_lastMatch.parameters()["secondNet"] != net2) {
+                QTextStream(stdout) << "Deleting network " << "networks/" + m_lastMatch.parameters()["secondNet"] << endl;
+                QFile::remove("networks/" + m_lastMatch.parameters()["secondNet"]);
+            }
+        }
+        m_lastMatch = o;
         QTextStream(stdout) << "first network: " << net1 << "." << endl;
         QTextStream(stdout) << "second network " << net2 << "." << endl;
     }
@@ -444,6 +470,8 @@ Order Management::getWork(bool tuning) {
 
 
 bool Management::networkExists(const QString &name) {
+    QString realHash = name;
+    realHash.remove(0,9);
     if (QFileInfo::exists(name)) {
         QFile f(name);
         if (f.open(QFile::ReadOnly)) {
@@ -452,7 +480,7 @@ bool Management::networkExists(const QString &name) {
                 throw NetworkException("Reading network file failed.");
             }
             QString result = hash.result().toHex();
-            if (result == name) {
+            if (result == realHash) {
                 return true;
             }
         } else {
@@ -470,7 +498,8 @@ bool Management::networkExists(const QString &name) {
     return false;
 }
 
-void Management::fetchNetwork(const QString &name) {
+void Management::fetchNetwork(const QString &net) {
+    QString name = "networks/" + net;
     if (networkExists(name)) {
         return;
     }
@@ -487,9 +516,9 @@ void Management::fetchNetwork(const QString &name) {
 #endif
     // Be quiet, but output the real file name we saved.
     // Use the filename from the server.
-    prog_cmdline.append(" -s -O -J");
+    prog_cmdline.append(" -s -J -o " + name + ".gz ");
     prog_cmdline.append(" -w %{filename_effective}");
-    prog_cmdline.append(" http://zero.sjeng.org/networks/" + name + ".gz");
+    prog_cmdline.append(" http://zero.sjeng.org/" + name + ".gz");
 
     QProcess curl;
     curl.start(prog_cmdline);
@@ -530,11 +559,11 @@ void Management::archiveFiles(const QString &fileName) {
     }
     if (!m_debugPath.isEmpty()) {
         QFile d(fileName + ".txt.0.gz");
-        if(d.exists()) {
+        if (d.exists()) {
             d.copy(m_debugPath + '/' + fileName + ".txt.0.gz");
         }
         QFile db(fileName + ".debug.txt.0.gz");
-        if(db.exists()) {
+        if (db.exists()) {
             db.copy(m_debugPath + '/' + fileName + ".debug.txt.0.gz");
         }
     }
@@ -591,8 +620,8 @@ void Management::sendAllGames() {
         QLockFile lf(fileInfo.fileName()+".lock");
         if (!lf.tryLock(10)) {
             continue;
-        }        
-        QFile file (fileInfo.fileName());        
+        }
+        QFile file(fileInfo.fileName());
         if (!file.open(QFile::ReadOnly)) {
             continue;
         }
@@ -730,7 +759,7 @@ void Management::uploadResult(const QMap<QString,QString> &r, const QMap<QString
 http://zero.sjeng.org/submit
 */
 
-void Management::uploadData(const QMap<QString,QString> &r, const QMap<QString,QString> &l) { 
+void Management::uploadData(const QMap<QString,QString> &r, const QMap<QString,QString> &l) {
     QTextStream(stdout) << "Uploading game: " << r["file"] << ".sgf for network " << l["network"] << endl;
     archiveFiles(r["file"]);
     gzipFile(r["file"] + ".sgf");

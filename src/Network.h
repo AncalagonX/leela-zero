@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 #include "config.h"
 
 #include <array>
-#include <bitset>
 #include <memory>
 #include <string>
 #include <utility>
@@ -35,19 +34,28 @@
 class Network {
 public:
     enum Ensemble {
-        DIRECT, RANDOM_ROTATION
+        DIRECT, RANDOM_SYMMETRY, AVERAGE
     };
-    using BoardPlane = std::bitset<BOARD_SQUARES>;
-    using NNPlanes = std::vector<BoardPlane>;
-    using scored_node = std::pair<float, int>;
-    using Netresult = std::pair<std::vector<scored_node>, float>;
+    using ScoreVertexPair = std::pair<float,int>;
 
-    static Netresult get_scored_moves(const GameState* state,
-                                      Ensemble ensemble,
-                                      int rotation = -1,
-                                      bool skip_cache = false);
-    // File format version
-    static constexpr auto FORMAT_VERSION = 1;
+    struct Netresult {
+        // 19x19 board positions
+        std::vector<float> policy;
+
+        // pass
+        float policy_pass;
+
+        // winrate
+        float winrate;
+
+        Netresult() : policy(BOARD_SQUARES), policy_pass(0.0f), winrate(0.0f) {}
+    };
+
+    static Netresult get_scored_moves(const GameState* const state,
+                                      const Ensemble ensemble,
+                                      const int symmetry = -1,
+                                      const bool skip_cache = false);
+
     static constexpr auto INPUT_MOVES = 8;
     static constexpr auto INPUT_CHANNELS = 2 * INPUT_MOVES + 2;
     static constexpr auto OUTPUTS_POLICY = 2;
@@ -58,19 +66,18 @@ public:
     static constexpr auto WINOGRAD_TILE = WINOGRAD_ALPHA * WINOGRAD_ALPHA;
 
     static void initialize();
-    static void benchmark(const GameState * state, int iterations = 1600);
-    static void show_heatmap(const FastState * state, Netresult & netres,
-                             bool topmoves);
-    static void softmax(const std::vector<float>& input,
-                        std::vector<float>& output,
-                        float temperature = 1.0f);
+    static void benchmark(const GameState * const state,
+                          const int iterations = 1600);
+    static void show_heatmap(const FastState * const state,
+                             const Netresult & netres, const bool topmoves);
 
-    static void gather_features(const GameState* state, NNPlanes& planes);
+    static std::vector<net_t> gather_features(const GameState* const state,
+                                              const int symmetry);
 private:
-    static std::pair<int, int> load_v1_network(std::ifstream& wtfile);
-    static std::pair<int, int> load_network_file(std::string filename);
+    static std::pair<int, int> load_v1_network(std::istream& wtfile);
+    static std::pair<int, int> load_network_file(const std::string& filename);
     static void process_bn_var(std::vector<float>& weights,
-                               const float epsilon=1e-5f);
+                               const float epsilon = 1e-5f);
 
     static std::vector<float> winograd_transform_f(const std::vector<float>& f,
         const int outputs, const int channels);
@@ -90,15 +97,17 @@ private:
                                    std::vector<float>& M,
                                    std::vector<float>& output);
     static void winograd_sgemm(const std::vector<float>& U,
-                               std::vector<float>& V,
+                               const std::vector<float>& V,
                                std::vector<float>& M, const int C, const int K);
-    static int rotate_nn_idx(const int vertex, int symmetry);
-    static void fill_input_plane_pair(
-      const FullBoard& board, BoardPlane& black, BoardPlane& white);
-    static Netresult get_scored_moves_internal(
-      const GameState* state, NNPlanes & planes, int rotation);
+    static int get_nn_idx_symmetry(const int vertex, int symmetry);
+    static void fill_input_plane_pair(const FullBoard& board,
+                                      std::vector<net_t>::iterator black,
+                                      std::vector<net_t>::iterator white,
+                                      const int symmetry);
+    static Netresult get_scored_moves_internal(const GameState* const state,
+                                               const int symmetry);
 #if defined(USE_BLAS)
-    static void forward_cpu(std::vector<float>& input,
+    static void forward_cpu(const std::vector<float>& input,
                             std::vector<float>& output_pol,
                             std::vector<float>& output_val);
 

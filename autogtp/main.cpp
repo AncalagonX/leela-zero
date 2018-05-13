@@ -1,7 +1,7 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
-    Copyright (C) 2017 Marco Calignano
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Marco Calignano
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -74,6 +74,10 @@ int main(int argc, char *argv[]) {
         { "m", "maxgames" }, "Exit after the given number of games is completed.",
                           "max number of games");
 
+    QCommandLineOption eraseOption(
+        { "e", "erase" }, "Erase old networks when new ones are available.",
+                          "");
+
     parser.addOption(gamesNumOption);
     parser.addOption(gpusOption);
     parser.addOption(keepSgfOption);
@@ -81,6 +85,7 @@ int main(int argc, char *argv[]) {
     parser.addOption(timeoutOption);
     parser.addOption(singleOption);
     parser.addOption(maxOption);
+    parser.addOption(eraseOption);
 
     // Process the actual command line arguments given by the user
     parser.process(app);
@@ -91,7 +96,7 @@ int main(int argc, char *argv[]) {
         gpusNum = 1;
     }
     int maxNum = -1;
-    if(parser.isSet(maxOption)) {
+    if (parser.isSet(maxOption)) {
         maxNum = parser.value(maxOption).toInt();
         if (maxNum == 0) {
             maxNum = 1;
@@ -105,10 +110,10 @@ int main(int argc, char *argv[]) {
         }
         maxNum -= (gpusNum * gamesNum);
     }
-    if(parser.isSet(singleOption)) {
+    if (parser.isSet(singleOption)) {
         gamesNum = 1;
         gpusNum = 1;
-        maxNum = 0;      
+        maxNum = 0;
     }
 
     // Map streams
@@ -130,12 +135,18 @@ int main(int argc, char *argv[]) {
         }
     }
     Console *cons = nullptr;
+    if (!QDir().mkpath("networks")) {
+        cerr << "Couldn't create the directory for the networks files!"
+             << endl;
+        return EXIT_FAILURE;
+    }
     Management *boss = new Management(gpusNum, gamesNum, gpusList, AUTOGTP_VERSION, maxNum,
-                                      parser.value(keepSgfOption), parser.value(keepDebugOption));
+                                      parser.isSet(eraseOption), parser.value(keepSgfOption),
+                                      parser.value(keepDebugOption));
     QObject::connect(&app, &QCoreApplication::aboutToQuit, boss, &Management::storeGames);
     QTimer *timer = new QTimer();
     boss->giveAssignments();
-    if(parser.isSet(timeoutOption)) {
+    if (parser.isSet(timeoutOption)) {
         QObject::connect(timer, &QTimer::timeout, &app, &QCoreApplication::quit);
         timer->start(parser.value(timeoutOption).toInt() * 60000);
     } else {

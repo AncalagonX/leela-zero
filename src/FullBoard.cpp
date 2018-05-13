@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -115,7 +115,7 @@ int FullBoard::update_board(const int color, const int i) {
     m_hash ^= Zobrist::zobrist[m_square[i]][i];
     m_ko_hash ^= Zobrist::zobrist[m_square[i]][i];
 
-    m_square[i] = (square_t)color;
+    m_square[i] = square_t(color);
     m_next[i] = i;
     m_parent[i] = i;
     m_libs[i] = count_pliberties(i);
@@ -173,7 +173,7 @@ int FullBoard::update_board(const int color, const int i) {
 
     /* check for possible simple ko */
     if (captured_stones == 1 && eyeplay) {
-        assert (get_square(captured_sq) == FastBoard::EMPTY
+        assert(get_square(captured_sq) == FastBoard::EMPTY
                 && !is_suicide(captured_sq, !color));
         return captured_sq;
     }

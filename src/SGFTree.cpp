@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017 Gian-Carlo Pascutto
+    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -174,7 +174,7 @@ void SGFTree::populate_states(void) {
         float handicap;
         strm >> handicap;
         has_handicap = (handicap > 0.0f);
-        m_state.set_handicap((int)handicap);
+        m_state.set_handicap(int(handicap));
     }
 
     // result
@@ -401,7 +401,13 @@ std::string SGFTree::state_to_string(GameState& pstate, int compcolor) {
     auto leela_name = std::string{PROGRAM_NAME};
     leela_name.append(" " + std::string(PROGRAM_VERSION));
     if (!cfg_weightsfile.empty()) {
-        leela_name.append(" " + cfg_weightsfile.substr(0, 8));
+        auto pos = cfg_weightsfile.find_last_of("\\/");
+        if (std::string::npos == pos) {
+            pos = 0;
+        } else {
+            ++pos;
+        }
+        leela_name.append(" " + cfg_weightsfile.substr(pos, 8));
     }
 
     if (compcolor == FastBoard::WHITE) {
