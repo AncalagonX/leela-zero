@@ -32,7 +32,7 @@
 #include "GameState.h"
 
 class Network {
-public:
+private:
     enum Ensemble {
         DIRECT, RANDOM_SYMMETRY, AVERAGE
     };

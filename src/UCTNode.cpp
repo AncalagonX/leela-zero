@@ -77,11 +77,13 @@ bool UCTNode::create_children(std::atomic<int>& nodecount,
     m_is_expanding = true;
     lock.unlock();
 
-    const auto raw_netlist = Network::get_scored_moves(
-        &state, Network::Ensemble::RANDOM_SYMMETRY);
+	const auto raw_netlist_15b = net_15b.get_scored_moves(
+		&state, Network::Ensemble::RANDOM_SYMMETRY);
+	const auto raw_netlist_elf = net_elf.get_scored_moves(
+		&state, Network::Ensemble::RANDOM_SYMMETRY);
 
     // DCNN returns winrate as side to move
-    m_net_eval = raw_netlist.winrate;
+    m_net_eval = raw_netlist_elf.winrate;
     const auto to_move = state.board.get_to_move();
     // our search functions evaluate from black's point of view
     if (state.board.white_to_move()) {
@@ -93,16 +95,18 @@ bool UCTNode::create_children(std::atomic<int>& nodecount,
 
     auto legal_sum = 0.0f;
     for (auto i = 0; i < BOARD_SQUARES; i++) {
-        const auto x = i % BOARD_SIZE;
-        const auto y = i / BOARD_SIZE;
-        const auto vertex = state.board.get_vertex(x, y);
+		Network::ScoreVertexPair node = raw_netlist_elf.first[i];
+		// mix 6b
+		node.first = (node.first + raw_netlist_15b.first[i].first) / 2;
+		auto vertex = node.second;
+		auto xy = state.board.get_xy(vertex);
         if (state.is_move_legal(to_move, vertex)) {
-            nodelist.emplace_back(raw_netlist.policy[i], vertex);
-            legal_sum += raw_netlist.policy[i];
+            nodelist.emplace_back(node);
+            legal_sum += node.first;
         }
     }
-    nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
-    legal_sum += raw_netlist.policy_pass;
+    nodelist.emplace_back(raw_netlist_15b.policy_pass, FastBoard::PASS);
+    legal_sum += raw_netlist_15b.policy_pass;
 
     if (legal_sum > std::numeric_limits<float>::min()) {
         // re-normalize after removing illegal moves.

@@ -40,6 +40,9 @@
 
 using namespace Utils;
 
+Network net_6b;
+Network net_20b;
+
 static void license_blurb() {
     printf(
         "Leela Zero %s  Copyright (C) 2017-2018  Gian-Carlo Pascutto and contributors\n"
@@ -352,8 +355,9 @@ void init_global_objects() {
     auto playouts = std::min(cfg_max_playouts, cfg_max_visits);
     NNCache::get_NNCache().set_size_from_playouts(playouts);
 
-    // Initialize network
-    Network::initialize();
+	// Initialize network
+	Network::net_15b.initialize("weights_15b", nullptr);
+	net_elf.initialize("weights_elf", nullptr);
 }
 
 void benchmark(GameState& game) {
