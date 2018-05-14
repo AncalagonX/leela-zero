@@ -240,7 +240,8 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
 		myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
 			move.c_str(),
 			node->get_visits(),
-			node->get_lcb(color) * 100.0f,
+			//node->get_lcb(color) * 100.0f,
+			node->get_visits() ? node->get_pure_eval(color)*100.0f : 0.0f,
 			node->get_score() * 100.0f,
 			pv.c_str());
     }
@@ -477,7 +478,7 @@ void UCTSearch::dump_analysis(int playouts) {
     int color = tempstate.board.get_to_move();
 
     std::string pvstring = get_pv(tempstate, *m_root);
-    float winrate = 100.0f * m_root->get_eval(color);
+    float winrate = 100.0f * m_root->get_pure_eval(color);
     myprintf("Playouts: %d, Win: %5.2f%%, PV: %s\n",
              playouts, winrate, pvstring.c_str());
 }
