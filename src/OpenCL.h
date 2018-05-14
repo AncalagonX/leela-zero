@@ -200,7 +200,7 @@ private:
     bool m_init_ok{false};
 };
 
-extern thread_local ThreadData opencl_thread_data;
+//extern thread_local ThreadData opencl_thread_data;
 extern const std::string sourceCode_sgemm;
 
 #endif

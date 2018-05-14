@@ -42,6 +42,8 @@ public:
     static constexpr auto TUNER_VERSION = 0;
     Tuner(OpenCL & opencl, cl::Context context, cl::Device device) :
         m_opencl(opencl), m_context(context), m_device(device) {}
+
+	//std::string TUNER_FILE_LOCAL;
 private:
     void store_sgemm_tuners(const int m, const int n, const int k,
                             const int batch_size, std::string tuners);

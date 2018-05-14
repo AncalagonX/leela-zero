@@ -513,13 +513,13 @@ bool GTP::execute(GameState & game, std::string xinput) {
         cmdstream >> rotation;
 
         if (!cmdstream.fail()) {
-            auto vec = Network::get_scored_moves(
+            auto vec = net_20b.get_scored_moves(
                 &game, Network::Ensemble::DIRECT, rotation, true);
-            Network::show_heatmap(&game, vec, false);
+			net_20b.show_heatmap(&game, vec, false);
         } else {
-            auto vec = Network::get_scored_moves(
+            auto vec = net_20b.get_scored_moves(
                 &game, Network::Ensemble::DIRECT, 0, true);
-            Network::show_heatmap(&game, vec, false);
+			net_20b.show_heatmap(&game, vec, false);
         }
         gtp_printf(id, "");
         return true;
@@ -669,9 +669,9 @@ bool GTP::execute(GameState & game, std::string xinput) {
         cmdstream >> iterations;
 
         if (!cmdstream.fail()) {
-            Network::benchmark(&game, iterations);
+			net_20b.benchmark(&game, iterations);
         } else {
-            Network::benchmark(&game);
+			net_20b.benchmark(&game);
         }
         gtp_printf(id, "");
         return true;

@@ -29,8 +29,10 @@
 
 class NNCache {
 public:
+	NNCache(int size = 50000);  // ~ 250MB
+
     // return the global NNCache
-    static NNCache& get_NNCache(void);
+    //static NNCache& get_NNCache(void);
 
     // Set a reasonable size gives max number of playouts
     void set_size_from_playouts(int max_playouts);
@@ -53,7 +55,6 @@ public:
     void dump_stats();
 
 private:
-    NNCache(int size = 50000);  // ~ 250MB
 
     std::mutex m_mutex;
 
