@@ -292,7 +292,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         auto psa = child.get_score();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = (0.5 * (winrate + lcbrate)) + puct;
+        auto value = sqrt(winrate + lcbrate) + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
         if (value > best_value) {
