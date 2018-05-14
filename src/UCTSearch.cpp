@@ -16,6 +16,7 @@
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#define NOMINMAX
 #include "config.h"
 #include "UCTSearch.h"
 
@@ -24,6 +25,7 @@
 #include <limits>
 #include <memory>
 #include <type_traits>
+#include <Windows.h>
 
 #include "FastBoard.h"
 #include "FullBoard.h"
@@ -182,18 +184,34 @@ void UCTSearch::dump_stats(KoState & state, UCTNode & parent) {
     }
 
     int movecount = 0;
+	int skipcount = 0;
     for (const auto& node : parent.get_children()) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
         if (++movecount > 2 && !node->get_visits()) break;
+		if (movecount > 15) {
+			skipcount++;
+			continue;
+		}
 
         std::string tmp = state.move_to_text(node->get_move());
         std::string pvstring(tmp);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: ",
+		double min_winrate = 5.0;
+		for (const auto &child_node : node->get_children()) {
+			if (!child_node->get_visits()) continue;
+			double cur_score = child_node->get_eval(color);
+			if (cur_score < min_winrate) min_winrate = cur_score;
+		}
+
+		char mv[20] = "N/A";
+		if(min_winrate < 2.0) std::sprintf(mv, "%5.2f%%", min_winrate * 100.0f);
+
+        myprintf("%4s -> %7d (V: %5.2f%% / MV: %s) (N: %5.2f%%) PV: ",
             tmp.c_str(),
             node->get_visits(),
             node->get_eval(color)*100.0f,
+			mv,
             node->get_score() * 100.0f);
 
         KoState tmpstate = state;
@@ -203,6 +221,7 @@ void UCTSearch::dump_stats(KoState & state, UCTNode & parent) {
 
         myprintf("%s\n", pvstring.c_str());
     }
+	if (skipcount) myprintf("Skipped: %d\n", skipcount);
 }
 
 bool UCTSearch::should_resign(passflag_t passflag, float bestscore) {
@@ -508,6 +527,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
     }
 
     bool keeprunning = true;
+	bool stopkey_hit = false;
     int last_update = 0;
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
@@ -522,12 +542,19 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
         // output some stats every few seconds
         // check if we should still search
-        if (elapsed_centis - last_update > 250) {
-            last_update = elapsed_centis;
-            dump_analysis(static_cast<int>(m_playouts));
-        }
+		if (elapsed_centis - last_update > 70) {
+			last_update = elapsed_centis;
+			myprintf("\n\n\n\n\n\n");
+			dump_analysis(static_cast<int>(m_playouts));
+			myprintf("\n");
+			dump_stats(m_rootstate, *m_root);
+			myprintf("\n");
+
+			stopkey_hit = bool(GetAsyncKeyState(VK_NUMPAD5) & 0x8000);
+		}
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(elapsed_centis, time_for_move);
+		keeprunning &= !stopkey_hit;
     } while(keeprunning);
 
     // stop the search

@@ -34,6 +34,7 @@
 #include <memory>
 #include <sstream>
 #include <string>
+#include <mutex>
 
 #include "Network.h"
 #include "GTP.h"
@@ -41,6 +42,8 @@
 #include "Tuner.h"
 
 using namespace Utils;
+
+std::mutex mtx;           // mutex for critical section
 
 static std::string cl_args =
     "-cl-mad-enable -cl-fast-relaxed-math -cl-no-signed-zeros -cl-denorms-are-zero";
@@ -393,9 +396,31 @@ const std::string sourceCode_sgemm =
     #include "clblast_level3/xgemm_batched.opencl"
 ;
 
-thread_local ThreadData opencl_thread_data;
+//thread_local int num = -1;
+//static int newnum = 0;
+// = opencl_thread_datas[num];
+
+thread_local std::map<OpenCL*, ThreadData> local_data;
 
 void OpenCL::ensure_thread_initialized() {
+	
+	/*if (num < 0) {
+		mtx.lock();
+		num = newnum++;
+		mtx.unlock();
+	}
+
+	if (opencl_thread_datas.size() <= num)
+	{
+		mtx.lock();
+		if (opencl_thread_datas.size() <= num)
+		{
+			opencl_thread_datas.resize(num + 1);
+		}
+		mtx.unlock();
+	}*/
+
+	ThreadData &opencl_thread_data = local_data[this];
     if (!opencl_thread_data.m_is_initialized) {
         // Make kernels
         opencl_thread_data.m_convolve1_kernel =
@@ -445,6 +470,7 @@ void OpenCL_Network::forward(const std::vector<net_t>& input,
     constexpr auto one_plane = width * height * sizeof(net_t);
     const auto finalSize_pol = m_layers[m_layers.size()-2].outputs * one_plane;
     const auto finalSize_val = m_layers.back().outputs * one_plane;
+	ThreadData &opencl_thread_data = local_data[&m_opencl];
 
     m_opencl.ensure_thread_initialized();
 
@@ -614,7 +640,7 @@ void OpenCL_Network::convolve3(int channels, int outputs,
                               bool skip_in_transform,
                               bool fuse_in_transform,
                               bool store_inout) {
-
+	ThreadData &opencl_thread_data = local_data[&m_opencl];
     cl::Kernel & in_transform_kernel = opencl_thread_data.m_in_transform_kernel;
     cl::Kernel & sgemm_kernel = opencl_thread_data.m_sgemm_kernel;
     cl::Kernel & out_transform_bn_kernel =
@@ -761,7 +787,7 @@ void OpenCL_Network::convolve1(int channels, int outputs,
     constexpr int channelShift = 3;
     constexpr int rowGroup = 1;
     size_t outputGroup = std::min(outputs, 32);
-
+	ThreadData &opencl_thread_data = local_data[&m_opencl];
     auto m_convolve_kernel = &opencl_thread_data.m_convolve1_kernel;
 
 #ifndef NDEBUG
@@ -1079,7 +1105,7 @@ void OpenCL::initialize(const int channels, const std::vector<int> & gpus,
     process_tuners(sgemm_tuners);
 
     m_wavefront_size =
-        opencl_thread_data.m_sgemm_kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
+        local_data[this].m_sgemm_kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(
             best_device);
     myprintf("Wavefront/Warp size: %d\n", m_wavefront_size);
 

@@ -144,10 +144,10 @@ void Training::record(GameState& state, UCTNode& root) {
     auto step = TimeStep{};
     step.to_move = state.board.get_to_move();
     step.planes = Network::NNPlanes{};
-    Network::gather_features(&state, step.planes);
+	net_20b.gather_features(&state, step.planes);
 
     auto result =
-        Network::get_scored_moves(&state, Network::Ensemble::DIRECT, 0);
+		net_20b.get_scored_moves(&state, Network::Ensemble::DIRECT, 0);
     step.net_winrate = result.second;
 
     const auto& best_node = root.get_best_root_child(step.to_move);
@@ -316,7 +316,7 @@ void Training::process_game(GameState& state, size_t& train_pos, int who_won,
         auto step = TimeStep{};
         step.to_move = to_move;
         step.planes = Network::NNPlanes{};
-        Network::gather_features(&state, step.planes);
+		net_20b.gather_features(&state, step.planes);
 
         step.probabilities.resize((19 * 19) + 1);
         step.probabilities[move_idx] = 1.0f;

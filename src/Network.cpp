@@ -61,36 +61,6 @@
 namespace x3 = boost::spirit::x3;
 using namespace Utils;
 
-// Input + residual block tower
-static std::vector<std::vector<float>> conv_weights;
-static std::vector<std::vector<float>> conv_biases;
-static std::vector<std::vector<float>> batchnorm_means;
-static std::vector<std::vector<float>> batchnorm_stddivs;
-
-// Policy head
-static std::vector<float> conv_pol_w;
-static std::vector<float> conv_pol_b;
-static std::array<float, 2> bn_pol_w1;
-static std::array<float, 2> bn_pol_w2;
-
-static std::array<float, 261364> ip_pol_w;
-static std::array<float, 362> ip_pol_b;
-
-// Value head
-static std::vector<float> conv_val_w;
-static std::vector<float> conv_val_b;
-static std::array<float, 1> bn_val_w1;
-static std::array<float, 1> bn_val_w2;
-
-static std::array<float, 92416> ip1_val_w;
-static std::array<float, 256> ip1_val_b;
-
-static std::array<float, 256> ip2_val_w;
-static std::array<float, 1> ip2_val_b;
-
-// Rotation helper
-static std::array<std::array<int, 361>, 8> rotate_nn_idx_table;
-
 void Network::benchmark(const GameState * state, int iterations) {
     int cpus = cfg_num_threads;
     int iters_per_thread = (iterations + (cpus - 1)) / cpus;
@@ -99,9 +69,9 @@ void Network::benchmark(const GameState * state, int iterations) {
 
     ThreadGroup tg(thread_pool);
     for (int i = 0; i < cpus; i++) {
-        tg.add_task([iters_per_thread, state]() {
+        tg.add_task([iters_per_thread, state, this]() {
             for (int loop = 0; loop < iters_per_thread; loop++) {
-                auto vec = get_scored_moves(state, Ensemble::RANDOM_ROTATION, -1, true);
+                auto vec = this->get_scored_moves(state, Ensemble::RANDOM_ROTATION, -1, true);
             }
         });
     };
@@ -318,7 +288,10 @@ std::pair<int, int> Network::load_network_file(std::string filename) {
     return {0, 0};
 }
 
-void Network::initialize(void) {
+void Network::initialize(char* weights_file, char* tuning_file) {
+	nncache = new NNCache();
+	nncache->set_size_from_playouts(cfg_max_playouts);
+
     // Prepare rotation table
     for(auto s = 0; s < 8; s++) {
         for(auto v = 0; v < 19 * 19; v++) {
@@ -328,7 +301,7 @@ void Network::initialize(void) {
 
     // Load network from file
     size_t channels, residual_blocks;
-    std::tie(channels, residual_blocks) = load_network_file(cfg_weightsfile);
+    std::tie(channels, residual_blocks) = load_network_file(weights_file);
     if (channels == 0) {
         exit(EXIT_FAILURE);
     }
@@ -372,6 +345,9 @@ void Network::initialize(void) {
 
 #ifdef USE_OPENCL
     myprintf("Initializing OpenCL.\n");
+
+	extern std::string TUNER_FILE_LOCAL;
+	TUNER_FILE_LOCAL = std::string("leelaz_opencl_tuning_") + std::to_string(residual_blocks) + std::string("b");
     opencl.initialize(channels);
 
     for(auto & opencl_net : opencl.get_networks()) {
@@ -808,7 +784,7 @@ void compare_net_outputs(std::vector<float>& data,
                          std::vector<float>& ref) {
     // We accept an error up to 5%, but output values
     // smaller than 1/1000th are "rounded up" for the comparison.
-    constexpr float relative_error = 5e-2f;
+    /*constexpr float relative_error = 5e-2f;
     for (auto idx = size_t{0}; idx < data.size(); ++idx) {
         auto err = relative_difference(data[idx], ref[idx]);
         if (err > relative_error) {
@@ -818,7 +794,7 @@ void compare_net_outputs(std::vector<float>& data,
                    "played simultaneously.\n");
             throw std::runtime_error("OpenCL self-check mismatch.");
         }
-    }
+    }*/
 }
 #endif
 
@@ -852,7 +828,7 @@ Network::Netresult Network::get_scored_moves(
 
     // See if we already have this in the cache.
     if (!skip_cache) {
-      if (NNCache::get_NNCache().lookup(state->board.get_hash(), result)) {
+      if (nncache->lookup(state->board.get_hash(), result)) {
         return result;
       }
     }
@@ -871,7 +847,7 @@ Network::Netresult Network::get_scored_moves(
     }
 
     // Insert result into cache.
-    NNCache::get_NNCache().insert(state->board.get_hash(), result);
+	nncache->insert(state->board.get_hash(), result);
 
     return result;
 }
@@ -905,17 +881,6 @@ Network::Netresult Network::get_scored_moves_internal(
     opencl.forward(input_data, policy_data, value_data);
 #elif defined(USE_BLAS) && !defined(USE_OPENCL)
     forward_cpu(input_data, policy_data, value_data);
-#endif
-#ifdef USE_OPENCL_SELFCHECK
-    // Both implementations are available, self-check the OpenCL driver by
-    // running both with a probability of 1/2000.
-    if (Random::get_Rng().randfix<SELFCHECK_PROBABILITY>() == 0) {
-        auto cpu_policy_data = std::vector<float>(policy_data.size());
-        auto cpu_value_data = std::vector<float>(value_data.size());
-        forward_cpu(input_data, cpu_policy_data, cpu_value_data);
-        compare_net_outputs(policy_data, cpu_policy_data);
-        compare_net_outputs(value_data, cpu_value_data);
-    }
 #endif
 
     // Get the moves

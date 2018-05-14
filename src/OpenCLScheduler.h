@@ -52,6 +52,6 @@ private:
     Utils::ThreadPool m_threadpool;
 };
 
-extern OpenCLScheduler opencl;
+//extern OpenCLScheduler opencl;
 
 #endif

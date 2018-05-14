@@ -38,7 +38,12 @@
 #include "Utils.h"
 #include "Zobrist.h"
 
+
+
 using namespace Utils;
+
+Network net_6b;
+Network net_20b;
 
 static void license_blurb() {
     printf(
@@ -281,13 +286,15 @@ void init_global_objects() {
     // improves reproducibility across platforms.
     Random::get_Rng().seedrandom(cfg_rng_seed);
 
-    NNCache::get_NNCache().set_size_from_playouts(cfg_max_playouts);
+    //NNCache::get_NNCache()
 
     // Initialize network
-    Network::initialize();
+	net_6b.initialize("weights_6b", nullptr);
+	net_20b.initialize("weights_20b", nullptr);
 }
 
 int main (int argc, char *argv[]) {
+	SetBoardSize(19);
     auto input = std::string{};
 
     // Set up engine parameters

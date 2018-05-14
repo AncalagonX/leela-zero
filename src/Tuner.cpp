@@ -45,7 +45,7 @@
 #include <cblas.h>
 #endif
 
-const auto TUNER_FILE_LOCAL = std::string("leelaz_opencl_tuning");
+std::string TUNER_FILE_LOCAL = std::string("leelaz_opencl_tuning");
 constexpr auto MAX_ERROR = 1e-4f;
 
 using namespace Utils;

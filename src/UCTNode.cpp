@@ -42,6 +42,9 @@
 #include "Random.h"
 #include "Utils.h"
 
+#include "Ray/GoBoard.h"
+#include "Ray/Ladder.h"
+
 using namespace Utils;
 
 UCTNode::UCTNode(int vertex, float score, float init_eval)
@@ -81,11 +84,30 @@ bool UCTNode::create_children(std::atomic<int> & nodecount,
     m_is_expanding = true;
     lock.unlock();
 
-    const auto raw_netlist = Network::get_scored_moves(
-        &state, Network::Ensemble::RANDOM_ROTATION);
+	game_info_t *game = AllocateGame();
+	InitializeBoard(game);
+	for (int row = 0; row < 19; ++row) {
+		for (int col = 0; col < 19; ++col) {
+			auto vertex = state.board.get_vertex(col, row);
+			auto stone = state.board.get_square(vertex);
+			if (stone < 2)
+			{
+				PutStone(game, POS(col + BOARD_START, row + BOARD_START), stone ? S_WHITE : S_BLACK);
+			}
+		}
+	}
+	bool ladder[BOARD_MAX] = { false };
+	LadderExtension(game, state.board.black_to_move() ? S_BLACK : S_WHITE, ladder);
+
+	FreeGame(game);
+
+	const auto raw_netlist_6b = net_6b.get_scored_moves(
+		&state, Network::Ensemble::DIRECT, 0);
+    const auto raw_netlist_20b = net_20b.get_scored_moves(
+        &state, Network::Ensemble::DIRECT, 0);
 
     // DCNN returns winrate as side to move
-    auto net_eval = raw_netlist.second;
+    auto net_eval = raw_netlist_20b.second;
     const auto to_move = state.board.get_to_move();
     // our search functions evaluate from black's point of view
     if (state.board.white_to_move()) {
@@ -96,9 +118,14 @@ bool UCTNode::create_children(std::atomic<int> & nodecount,
     std::vector<Network::scored_node> nodelist;
 
     auto legal_sum = 0.0f;
-    for (const auto& node : raw_netlist.first) {
+	const auto size = raw_netlist_20b.first.size();
+	for (int i = 0; i < size; ++i) {
+		Network::scored_node node = raw_netlist_20b.first[i];
+		// mix 6b
+		node.first = (node.first + raw_netlist_6b.first[i].first) / 2;
         auto vertex = node.second;
-        if (state.is_move_legal(to_move, vertex)) {
+		auto xy = state.board.get_xy(vertex);
+        if (state.is_move_legal(to_move, vertex) && !ladder[POS(xy.first + BOARD_START, xy.second + BOARD_START)]) {
             nodelist.emplace_back(node);
             legal_sum += node.first;
         }
@@ -162,7 +189,7 @@ void UCTNode::kill_superkos(const KoState& state) {
 }
 
 float UCTNode::eval_state(GameState& state) {
-    auto raw_netlist = Network::get_scored_moves(
+    auto raw_netlist = net_20b.get_scored_moves(
         &state, Network::Ensemble::RANDOM_ROTATION, -1, true);
 
     // DCNN returns winrate as side to move
@@ -335,10 +362,25 @@ UCTNode* UCTNode::uct_select_child(int color) {
             // First play urgency
             winrate -= fpu_reduction;
         }
+
+		// calculate opportunity and risk
+		double opportunity = -1.0, risk = 2.0;
+		for (const auto& child2 : child->m_children)
+		{
+			if (child2->valid())
+			{
+				auto child_winrate = child2->get_eval(color);
+				if (child_winrate > opportunity) opportunity = child_winrate;
+				if (child_winrate < risk) risk = child_winrate;
+			}
+		}
+		if (opportunity < -0.5) // use plain winrate if no info
+			opportunity = risk = winrate;
+
         auto psa = child->get_score();
         auto denom = 1.0f + child->get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
+        auto value = winrate * 0.7 + risk * 0.29 + opportunity * 0.01 + puct;
         assert(value > -1000.0f);
 
         if (value > best_value) {
