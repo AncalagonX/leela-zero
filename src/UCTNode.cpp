@@ -297,10 +297,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		}
 
 		auto winrate = fpu_eval;
-		auto lcbrate = 0.0f;
+		auto lcbrate = 0.0001f;
 		if (child.get_visits() > 0) {
-			winrate = child.get_eval(color);
-			lcbrate = child.get_eval(color);
+			winrate = child.get_pure_eval(color);
+			lcbrate = child.get_lcb(color);
 		}
 		//if (child.get_visits() >= (1000)) {
 		//	winrate = child.get_eval(color);
@@ -309,7 +309,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		auto psa = child.get_score();
 		auto denom = 1.0 + child.get_visits();
 		auto puct = cfg_puct * psa * (numerator / denom);
-		auto value = (0.5 * (winrate + lcbrate)) + puct;
+		auto lcbrate_calc = sqrt(((child.get_visits()) / m_visits) * lcbrate);
+		auto value = (0.5 * (winrate + lcbrate_calc)) + puct;
 		assert(value > std::numeric_limits<double>::lowest());
 
 		if (value > best_value) {
@@ -320,7 +321,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 			}
 		}
 		
-		if (is_root && get_visits() <= 1000 && get_visits() <= (0.9 * m_visits)) {
+		if (is_root && get_visits() <= (0.1 * m_visits)) {
 			if (winrate >= (0.9 * best_winrate)) {
 				best = &child;
 			}
@@ -329,7 +330,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 			}
 		}
 
-		if (is_root && get_visits() <= 100 && get_visits() <= (0.99 * m_visits) && m_visits > 10000) {
+
+		/*
+
+		if (is_root && child.get_visits() <= 100 && child.get_visits() <= (0.99 * m_visits) && m_visits > 10000) {
 			//if (winrate >= (0.8 * best_winrate)) {
 				best = &child;
 			//}
@@ -337,6 +341,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 				best_winrate = winrate;
 			//}
 		}
+
+		*/
 
 
 		//if (is_root && get_visits() <= (0.9 * m_visits) && get_visits() <= 1000) { //&& value >= (0.9 * best_value)) {
