@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include <boost/math/distributions/binomial.hpp>
+#include <boost/math/distributions/normal.hpp>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -241,17 +242,35 @@ float UCTNode::get_net_eval(int tomove) const {
 }
 
 // Use CI_ALPHA / 2 if calculating double sided bounds.
-float UCTNode::get_lcb(int color) const {
-    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
+float UCTNode::get_lcb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
 }
 
 // Use CI_ALPHA / 2 if calculating double sided bounds.
-float UCTNode::get_ucb(int color) const {
-    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
+float UCTNode::get_ucb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
 }
 
-double UCTNode::get_variance() const {
-    return m_variance;
+float UCTNode::get_lcb_normal(int color) {
+    if (get_visits() > 1) {
+        return get_pure_eval(color) - 4.0f * sqrt(get_variance());
+    } else {
+        return 0.0f;
+    }
+}
+
+float UCTNode::get_ucb_normal(int color) {
+    if (get_visits() > 1) {
+        return get_pure_eval(color) + 4.0f * sqrt(get_variance());
+    } else {
+        return 1.0f;
+    }
+}
+
+double UCTNode::get_variance() {
+    LOCK(get_mutex(), lock);
+
+    return get_visits() > 1 ? m_variance / (get_visits() - 1) : 0;
 }
 
 double UCTNode::get_blackevals() const {
