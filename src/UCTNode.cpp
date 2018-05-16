@@ -276,32 +276,62 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto best_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+	for (auto& child : m_children) {
+		if (!child.active()) {
+			continue;
+		}
 
-        auto winrate = fpu_eval;
+		auto winrate = fpu_eval;
 		auto lcbrate = 0.0f;
 		if (child.get_visits() > 0) {
 			winrate = child.get_eval(color);
 			lcbrate = child.get_eval(color);
 		}
-		if (child.get_visits() >= 100) {
-			lcbrate = child.get_lcb(color);
-        }
+		//if (child.get_visits() >= (1000)) {
+		//	winrate = child.get_eval(color);
+		//	lcbrate = child.get_lcb(color);
+		//}
 		auto psa = child.get_score();
-        auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = (0.5 * (winrate + lcbrate)) + puct;
-        assert(value > std::numeric_limits<double>::lowest());
+		auto denom = 1.0 + child.get_visits();
+		auto puct = cfg_puct * psa * (numerator / denom);
+		auto value = (0.5 * (winrate + lcbrate)) + puct;
+		assert(value > std::numeric_limits<double>::lowest());
 
-        if (value > best_value) {
-            best_value = value;
-            best = &child;
+		if (value > best_value) {
+			best_value = value;
+			best = &child;
+			if (winrate > best_winrate) {
+				best_winrate = winrate;
+			}
 		}
+		
+		if (is_root && get_visits() <= 1000 && get_visits() <= (0.9 * m_visits)) {
+			if (winrate >= (0.9 * best_winrate)) {
+				best = &child;
+			}
+			if (winrate > best_winrate) {
+				best_winrate = winrate;
+			}
+		}
+
+		if (is_root && get_visits() <= 100 && get_visits() <= (0.99 * m_visits) && m_visits > 10000) {
+			//if (winrate >= (0.8 * best_winrate)) {
+				best = &child;
+			//}
+			//if (winrate > best_winrate) {
+				best_winrate = winrate;
+			//}
+		}
+
+
+		//if (is_root && get_visits() <= (0.9 * m_visits) && get_visits() <= 1000) { //&& value >= (0.9 * best_value)) {
+		//	if (value >= (0.9 * best_value)) {
+		//		best = &child;
+		//	}
+		//}
     }
 
     assert(best != nullptr);
