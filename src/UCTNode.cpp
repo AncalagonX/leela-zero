@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 #include <boost/math/distributions/binomial.hpp>
+#include <cmath>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -245,12 +246,12 @@ float UCTNode::get_net_eval(int tomove) const {
 
 // Use CI_ALPHA / 2 if calculating double sided bounds.
 float UCTNode::get_lcb(int color) const {
-    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
+    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
 }
 
 // Use CI_ALPHA / 2 if calculating double sided bounds.
 float UCTNode::get_ucb(int color) const {
-    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
+    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
 }
 
 double UCTNode::get_blackevals() const {
@@ -276,7 +277,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
     }
 
-    auto numerator = std::sqrt(double(parentvisits));
+	auto numerator = std::sqrt(double(parentvisits));
+	auto numerator2 = parentvisits;
+	//auto numerator = std::pow((double(1.1)), double(parentvisits));
     auto fpu_reduction = 0.0f;
     // Lower the expected eval for moves that are likely not the best.
     // Do not do this if we have introduced noise at this node exactly
@@ -297,20 +300,24 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		}
 
 		auto winrate = fpu_eval;
-		auto lcbrate = 0.0001f;
+		auto lcbrate = 0.0f;
+		auto ucbrate = 1.0f;
 		if (child.get_visits() > 0) {
-			winrate = child.get_pure_eval(color);
-			lcbrate = child.get_lcb(color);
+			winrate = child.get_eval(color);
+			//lcbrate = child.get_lcb(color);
+			//ucbrate = child.get_ucb(color);
 		}
 		//if (child.get_visits() >= (1000)) {
 		//	winrate = child.get_eval(color);
 		//	lcbrate = child.get_lcb(color);
 		//}
+
 		auto psa = child.get_score();
-		auto denom = 1.0 + child.get_visits();
+		auto denom = 1.0 + (child.get_visits());
 		auto puct = cfg_puct * psa * (numerator / denom);
-		auto lcbrate_calc = sqrt(((child.get_visits()) / m_visits) * lcbrate);
-		auto value = (0.5 * (winrate + lcbrate_calc)) + puct;
+		//auto lcbrate_calc = sqrt(((child.get_visits()) / (1 + m_visits)) * lcbrate);
+		auto value = winrate + puct; // - (1.0 * (lcbrate / (ucbrate - lcbrate))) + (1.0 * (ucbrate / (ucbrate - lcbrate)));
+		//auto value_with_lcbrate = winrate + puct + lcbrate_calc;
 		assert(value > std::numeric_limits<double>::lowest());
 
 		if (value > best_value) {
@@ -322,14 +329,16 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		}
 		
 		if (is_root && get_visits() <= (0.1 * m_visits)) {
-			if (winrate >= (0.9 * best_winrate)) {
+			if (winrate >= (0.90 * best_winrate)) {
 				best = &child;
-			}
-			if (winrate > best_winrate) {
-				best_winrate = winrate;
 			}
 		}
 
+		if (is_root && get_visits() <= (0.002 * m_visits)) {
+			if (winrate >= (0.5 * best_winrate)) {
+				best = &child;
+			}
+		}
 
 		/*
 
