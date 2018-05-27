@@ -293,7 +293,7 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
 
     if (!parent.has_children()) {
         return;
-    }node->get_lcb_binomial(color) * 100.0f
+    }
 
     const int color = state.get_to_move();
 
