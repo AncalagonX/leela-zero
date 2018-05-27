@@ -60,10 +60,10 @@ public:
     }
 
     friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
-        if (a.m_visits == b.m_visits) {
-            return a.m_winrate < b.m_winrate;
+        if (a.m_winrate == b.m_winrate) {
+            return a.m_visits < b.m_visits;
         }
-        return a.m_visits < b.m_visits;
+        return a.m_winrate < b.m_winrate;
     }
 
 private:
