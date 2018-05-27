@@ -301,7 +301,7 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
 
     for (const auto& node : parent.get_children()) {
 		// Only send variations with visits
-		if ((node->get_visits()) < 10) continue;
+		if (!node->get_visits()) continue;
 
         std::string move = state.move_to_text(node->get_move());
         FastState tmpstate = state;
