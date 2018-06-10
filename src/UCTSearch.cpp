@@ -228,7 +228,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (LCB-N: %5.2f%%) (UCB-N: %5.2f%%) (LCB-Bi: %5.2f%%) (UCB-Bi: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (LCB-N: %5.2f%%) (UCB-N: %5.2f%%) (LCB-Bi: %5.2f%%) (UCB-Bi: %5.2f%%) (Var: %5.2f%%) PV: %s\n",
             move.c_str(),
             node->get_visits(),
             node->get_visits() ? node->get_pure_eval(color)*100.0f : 0.0f,
