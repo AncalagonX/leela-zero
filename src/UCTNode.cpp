@@ -287,17 +287,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		if (child.get_visits() > 0) {
 			winrate = child.get_eval(color);
 		}
-		if (child.get_visits() > 100) {
-			winrate = child.get_eval(color);
-			winrate = (0.5 - abs(0.5 - winrate));
-		}
-		if (child.get_visits() > 100 && child.get_visits() % 2) {
-			winrate = child.get_eval(color);
-		}
         auto psa = child.get_score();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
+		if (child.get_visits() > 0 && (child.get_visits() % 2) == 0) {
+			value = (0.5 - abs(0.45 - winrate)) + puct;
+		}
         assert(value > std::numeric_limits<double>::lowest());
 
         if (value > best_value) {
@@ -318,8 +314,8 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
 		if (a.get_visits() > 100 && b.get_visits() > 100) {
-			if ((0.5 - abs(0.5 - a.get_eval(m_color))) != (0.5 - abs(0.5 - b.get_eval(m_color)))) {
-				return (0.5 - abs(0.5 - a.get_eval(m_color))) < (0.5 - abs(0.5 - b.get_eval(m_color)));
+			if ((0.5 - abs(0.45 - a.get_eval(m_color))) != (0.5 - abs(0.45 - b.get_eval(m_color)))) {
+				return (0.5 - abs(0.45 - a.get_eval(m_color))) < (0.5 - abs(0.45 - b.get_eval(m_color)));
 			}
 		}
 
