@@ -276,10 +276,17 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
 
         auto winrate = fpu_eval;
-        if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-        }
-        auto psa = child.get_policy();
+		if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
+		}
+		if (child.get_visits() > 100) {
+			winrate = child.get_eval(color);
+			winrate = (0.5 - abs(0.5 - winrate));
+		}
+		if (child.get_visits() > 100 && child.get_visits() % 2) {
+			winrate = child.get_eval(color);
+		}
+		auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
@@ -302,6 +309,12 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+		if (a.get_visits() > 100 && b.get_visits() > 100) {
+			if ((0.5 - abs(0.5 - a.get_eval(m_color))) != (0.5 - abs(0.5 - b.get_eval(m_color)))) {
+				return (0.5 - abs(0.5 - a.get_eval(m_color))) < (0.5 - abs(0.5 - b.get_eval(m_color)));
+			}
+		}
+
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();
