@@ -279,9 +279,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto best_value = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+		if (!child.active()) {
+			continue;
+		}
+		if (child.get_visits() <= (0.2 * parentvisits)) {
+			continue;
+		}
 
         auto winrate = fpu_eval;
         if (child.get_visits() > 0) {
