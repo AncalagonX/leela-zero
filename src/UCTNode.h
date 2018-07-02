@@ -68,6 +68,11 @@ public:
     float get_eval(int tomove) const;
     float get_pure_eval(int tomove) const;
     float get_net_eval(int tomove) const;
+    float get_lcb_binomial(int color) const;
+    float get_ucb_binomial(int color) const;
+    float get_lcb_normal(int color);
+    float get_ucb_normal(int color);
+    double get_variance();
     void virtual_loss(void);
     void virtual_loss_undo(void);
     void update(float eval);
@@ -119,6 +124,9 @@ private:
     // Tree data
     std::atomic<float> m_min_psa_ratio_children{2.0f};
     std::vector<UCTNodePointer> m_children;
+
+    // For Normal distribution confidence intervals
+    std::atomic<double> m_variance{0.0};
 };
 
 #endif

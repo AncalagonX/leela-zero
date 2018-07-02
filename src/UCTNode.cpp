@@ -29,6 +29,8 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <boost/math/distributions/binomial.hpp>
+#include <boost/math/distributions/normal.hpp>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -39,6 +41,7 @@
 #include "Utils.h"
 
 using namespace Utils;
+using namespace boost::math;
 
 UCTNode::UCTNode(int vertex, float score) : m_move(vertex), m_score(score) {
 }
@@ -87,6 +90,7 @@ bool UCTNode::create_children(std::atomic<int>& nodecount,
     if (state.board.white_to_move()) {
         m_net_eval = 1.0f - m_net_eval;
     }
+    update(m_net_eval);
     eval = m_net_eval;
 
     std::vector<Network::ScoreVertexPair> nodelist;
@@ -180,8 +184,18 @@ void UCTNode::virtual_loss_undo() {
 }
 
 void UCTNode::update(float eval) {
-    m_visits++;
-    accumulate_eval(eval);
+    LOCK(get_mutex(), lock);
+
+    if (get_visits()) {
+        const auto delta = eval - get_blackevals() / get_visits();
+        m_visits++;
+        accumulate_eval(eval);
+        const auto delta2 = eval - get_blackevals() / get_visits();
+        atomic_add(m_variance, delta * delta2);
+    } else {
+        m_visits++;
+        accumulate_eval(eval);
+    }
 }
 
 bool UCTNode::has_children() const {
@@ -241,6 +255,38 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
+// Use CI_ALPHA / 2 if calculating double sided bounds.
+float UCTNode::get_lcb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
+}
+
+// Use CI_ALPHA / 2 if calculating double sided bounds.
+float UCTNode::get_ucb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_pure_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
+}
+
+float UCTNode::get_lcb_normal(int color) {
+    if (get_visits() > 1) {
+        return get_pure_eval(color) - 4.0f * sqrt(get_variance());
+    } else {
+        return 0.0f;
+    }
+}
+
+float UCTNode::get_ucb_normal(int color) {
+    if (get_visits() > 1) {
+        return get_pure_eval(color) + 4.0f * sqrt(get_variance());
+    } else {
+        return 1.0f;
+    }
+}
+
+double UCTNode::get_variance() {
+    LOCK(get_mutex(), lock);
+
+    return get_visits() > 1 ? m_variance / (get_visits() - 1) : 0;
+}
+
 double UCTNode::get_blackevals() const {
     return m_blackevals;
 }
@@ -269,11 +315,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     // Lower the expected eval for moves that are likely not the best.
     // Do not do this if we have introduced noise at this node exactly
     // to explore more.
+    
+    auto pure_eval = get_pure_eval(color); 	
     if (!is_root || !cfg_noise) {
         fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
     }
-    // Estimated eval for unknown nodes = original parent NN eval - reduction
-    auto fpu_eval = get_net_eval(color) - fpu_reduction;
+    // Estimated eval for unknown nodes = current parent winrate - reduction
+    auto fpu_eval = pure_eval - fpu_reduction;
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
@@ -313,6 +361,16 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+        // Calculate the lower confidence bound for each node.
+        if (a.get_visits() && b.get_visits()) {
+            float a_lb = a.get_lcb_binomial(m_color);
+            float b_lb = b.get_lcb_binomial(m_color);
+
+            // Sort on lower confidence bounds
+            if (a_lb != b_lb) {
+                return a_lb < b_lb;
+            }
+        }
 
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
