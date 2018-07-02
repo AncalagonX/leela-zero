@@ -282,7 +282,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		if (!child.active()) {
 			continue;
 		}
-		if (child.get_visits() <= (0.2 * parentvisits)) {
+		if ((child.get_visits()) > (0.2 * static_cast<int>(parentvisits))) {
 			continue;
 		}
 
@@ -313,6 +313,7 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();
