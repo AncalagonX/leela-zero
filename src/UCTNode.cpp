@@ -353,7 +353,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		if (is_root && static_cast<int>(m_visits) >= 40000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(m_visits))) {
 			continue;
 		}
-		if (is_root && static_cast<int>(m_visits) >= 5000 && static_cast<int>(m_visits) < 20000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.025 * static_cast<int>(m_visits))) {
+		if (is_root && static_cast<int>(m_visits) >= 5000 && static_cast<int>(m_visits) < 40000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.025 * static_cast<int>(m_visits))) {
 			continue;
 		}
 
