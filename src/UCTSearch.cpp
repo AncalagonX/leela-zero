@@ -323,8 +323,8 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
 			//"pv", pv.c_str());
 // ==================================================
 // ==================================================
-                         //static_cast<int>(node->get_pure_eval(color) * 10000) : 0; // Default lined before I changed it below.
-						 static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Adds LCB display instead of winrate to Lizzie output.
+                         static_cast<int>(node->get_pure_eval(color) * 10000) : 0; // Default lined before I changed it below.
+						 //static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Adds LCB display instead of winrate to Lizzie output.
         // Store data in array
         sortable_data.emplace_back(move, node->get_visits(), move_eval, pv);
 
