@@ -332,10 +332,28 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		if (!child.active()) {
 			continue;
 		}
-		if (is_root && static_cast<int>(parentvisits) > 5000 && (child.get_visits()) > static_cast<int>(0.2 * static_cast<int>(parentvisits))) {
+		//if (is_root && static_cast<int>(parentvisits) > 10000 && (child.get_visits()) > static_cast<int>(0.25 * static_cast<int>(parentvisits))) {
+		//	continue;
+		//}
+		//if (is_root && static_cast<int>(parentvisits) > 8000 && (movenum_now2 >= 30) && (movenum_now2 < 80) && (child.get_visits()) > static_cast<int>(0.125 * static_cast<int>(parentvisits))) {
+		//	continue;
+		//}
+		//if (is_root && static_cast<int>(parentvisits) > 5000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(parentvisits))) {
+		//	continue;
+		//}
+		if (is_root && static_cast<int>(m_visits) > 10000 && (child.get_visits()) > static_cast<int>(0.25 * static_cast<int>(m_visits))) {
 			continue;
 		}
-		if (is_root && static_cast<int>(parentvisits) > 5000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(parentvisits))) {
+		if (is_root && static_cast<int>(m_visits) > 10000 && (movenum_now2 < 80) && (child.get_visits()) > static_cast<int>(0.125 * static_cast<int>(m_visits))) {
+			continue;
+		}
+		if (is_root && static_cast<int>(m_visits) > 5000 && (movenum_now2 < 80) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(m_visits))) {
+			continue;
+		}
+		if (is_root && static_cast<int>(m_visits) > 10000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(m_visits))) {
+			continue;
+		}
+		if (is_root && static_cast<int>(m_visits) > 5000 && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.02 * static_cast<int>(m_visits))) {
 			continue;
 		}
 
