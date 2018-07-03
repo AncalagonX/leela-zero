@@ -295,7 +295,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     LOCK(get_mutex(), lock);
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -310,7 +310,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
     }
 
-    auto numerator = std::sqrt(double(parentvisits));
+	int const movenum_now2 = movenum_now;
+	
+	auto numerator = std::sqrt(double(parentvisits));
     auto fpu_reduction = 0.0f;
     // Lower the expected eval for moves that are likely not the best.
     // Do not do this if we have introduced noise at this node exactly
@@ -330,7 +332,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		if (!child.active()) {
 			continue;
 		}
-		if ((child.get_visits()) > (0.2 * static_cast<int>(parentvisits))) {
+		if (is_root && (child.get_visits()) > static_cast<int>(0.2 * static_cast<int>(parentvisits))) {
+			continue;
+		}
+		if (is_root && (movenum_now2 < 30) && (child.get_visits()) > static_cast<int>(0.05 * static_cast<int>(parentvisits))) {
 			continue;
 		}
 
