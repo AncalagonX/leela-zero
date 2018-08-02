@@ -74,6 +74,26 @@ int UCTNodePointer::get_visits() const {
     return 0;
 }
 
+float UCTNodePointer::get_lcb_binomial(int color) const {
+    assert(is_inflated());
+    return read_ptr()->get_lcb_binomial(color);
+}
+
+float UCTNodePointer::get_ucb_binomial(int color) const {
+    assert(is_inflated());
+    return read_ptr()->get_ucb_binomial(color);
+}
+
+float UCTNodePointer::get_lcb_normal(int color) const {
+    assert(is_inflated());
+    return read_ptr()->get_lcb_normal(color);
+}
+
+float UCTNodePointer::get_ucb_normal(int color) const {
+    assert(is_inflated());
+    return read_ptr()->get_ucb_normal(color);
+}
+
 float UCTNodePointer::get_policy() const {
     if (is_inflated()) return read_ptr()->get_policy();
     return read_policy();
