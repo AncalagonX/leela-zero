@@ -51,7 +51,7 @@ public:
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color);
     UCTNode& get_best_root_child(int color);
-    UCTNode* uct_select_child(int color, bool is_root);
+    UCTNode* uct_select_child(int color, bool is_root, int movenum_now);
 
     size_t count_nodes() const;
     SMP::Mutex& get_mutex();
@@ -69,6 +69,11 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
+    float get_lcb_binomial(int color) const;
+    float get_ucb_binomial(int color) const;
+    float get_lcb_normal(int color);
+    float get_ucb_normal(int color);
+    double get_variance();
     void virtual_loss(void);
     void virtual_loss_undo(void);
     void update(float eval);
@@ -120,6 +125,9 @@ private:
     // Tree data
     std::atomic<float> m_min_psa_ratio_children{2.0f};
     std::vector<UCTNodePointer> m_children;
+
+    // For Normal distribution confidence intervals
+    std::atomic<double> m_variance{0.0};
 };
 
 #endif
