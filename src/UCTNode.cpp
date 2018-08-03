@@ -338,7 +338,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		}
 
 		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = child.get_visits();
+		int int_child_visits = static_cast<int>(child.get_visits());
 
 		if (is_root) {   // Is it a root node?
 
@@ -346,15 +346,21 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 				if (int_m_visits >= 3000) {   // Have this many regular LZ search visits been made yet on this turn?
 
-					if (movenum_now2 < 30) {   // If the current move number in game is LESS than 30
-
-						if (int_child_visits > (0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
+					if (movenum_now >= 30) {   // If the current move number in game is MORE than 30
+						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
 							continue;
 						}
 					}
 
-					if (movenum_now2 >= 30) {   // If the current move number in game is MORE than 30
-						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
+					if ((movenum_now < 30) && (movenum_now > 8)) {   // If the current move number in game is LESS than 30
+
+						if (int_child_visits >(0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
+							continue;
+						}
+					}
+
+					if (movenum_now <= 8) {   // If the current move number in game is LESS than 8
+						if (int_child_visits > 300) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
 							continue;
 						}
 					}
@@ -372,7 +378,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
+        auto value = (2 * winrate) + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
 		int randomX = dis8(gen);
