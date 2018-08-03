@@ -339,21 +339,31 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = child.get_visits();
-		if (is_root && int_m_visits >= 5000 && (int_child_visits) > (0.25 * int_m_visits)) {
-			continue;
+
+		if (is_root) {   // Is it a root node?
+
+			if (rand() % 4 != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
+
+				if (int_m_visits >= 3000) {   // Have this many regular LZ search visits been made yet on this turn?
+
+					if (movenum_now2 < 30) {   // If the current move number in game is LESS than 30
+
+						if (int_child_visits > (0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
+							continue;
+						}
+					}
+
+					if (movenum_now2 >= 30) {   // If the current move number in game is MORE than 30
+						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
+							continue;
+						}
+					}
+				}
+			}
 		}
-		if (is_root && int_m_visits >= 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.10 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 5000 && int_m_visits < 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.05 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.05 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 2000 && int_m_visits < 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.025 * int_m_visits)) {
-			continue;
-		}
+
+
+
 
         auto winrate = fpu_eval;
         if (child.get_visits() > 0) {
