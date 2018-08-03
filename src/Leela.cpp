@@ -430,6 +430,7 @@ static void parse_commandline(int argc, char *argv[]) {
         }
     }
 
+
     auto out = std::stringstream{};
     for (auto i = 1; i < argc; i++) {
         out << " " << argv[i];
