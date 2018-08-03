@@ -207,95 +207,105 @@ int UCTNode::get_visits() const {
 
 float UCTNode::get_raw_eval(int tomove, int virtual_loss) const {
     auto visits = get_visits() + virtual_loss;
-    assert(visits > 0);
-    auto blackeval = get_blackevals();
-    if (tomove == FastBoard::WHITE) {
-        blackeval += static_cast<double>(virtual_loss);
-    }
-    auto eval = static_cast<float>(blackeval / double(visits));
-    if (tomove == FastBoard::WHITE) {
-        eval = 1.0f - eval;
-    }
-    return eval;
+assert(visits > 0);
+auto blackeval = get_blackevals();
+if (tomove == FastBoard::WHITE) {
+	blackeval += static_cast<double>(virtual_loss);
+}
+auto eval = static_cast<float>(blackeval / double(visits));
+if (tomove == FastBoard::WHITE) {
+	eval = 1.0f - eval;
+}
+return eval;
 }
 
 float UCTNode::get_eval(int tomove) const {
-    // Due to the use of atomic updates and virtual losses, it is
-    // possible for the visit count to change underneath us. Make sure
-    // to return a consistent result to the caller by caching the values.
-    return get_raw_eval(tomove, m_virtual_loss);
+	// Due to the use of atomic updates and virtual losses, it is
+	// possible for the visit count to change underneath us. Make sure
+	// to return a consistent result to the caller by caching the values.
+	return get_raw_eval(tomove, m_virtual_loss);
 }
 
 float UCTNode::get_net_eval(int tomove) const {
-    if (tomove == FastBoard::WHITE) {
-        return 1.0f - m_net_eval;
-    }
-    return m_net_eval;
+	if (tomove == FastBoard::WHITE) {
+		return 1.0f - m_net_eval;
+	}
+	return m_net_eval;
 }
 
 double UCTNode::get_blackevals() const {
-    return m_blackevals;
+	return m_blackevals;
 }
 
 void UCTNode::accumulate_eval(float eval) {
-    atomic_add(m_blackevals, double(eval));
+	atomic_add(m_blackevals, double(eval));
 }
 
 UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
-    LOCK(get_mutex(), lock);
+	LOCK(get_mutex(), lock);
 
-    // Count parentvisits manually to avoid issues with transpositions.
-    auto total_visited_policy = 0.0f;
-    auto parentvisits = size_t{0};
-    for (const auto& child : m_children) {
-        if (child.valid()) {
-            parentvisits += child.get_visits();
-            if (child.get_visits() > 0) {
-                total_visited_policy += child.get_policy();
-            }
-        }
-    }
+	// Count parentvisits manually to avoid issues with transpositions.
+	auto total_visited_policy = 0.0f;
+	auto parentvisits = size_t{ 0 };
+	for (const auto& child : m_children) {
+		if (child.valid()) {
+			parentvisits += child.get_visits();
+			if (child.get_visits() > 0) {
+				total_visited_policy += child.get_policy();
+			}
+		}
+	}
 
 	int const movenum_now2 = movenum_now;
 
-    auto numerator = std::sqrt(double(parentvisits));
-    auto fpu_reduction = 0.0f;
-    // Lower the expected eval for moves that are likely not the best.
-    // Do not do this if we have introduced noise at this node exactly
-    // to explore more.
+	auto numerator = std::sqrt(double(parentvisits));
+	auto fpu_reduction = 0.0f;
+	// Lower the expected eval for moves that are likely not the best.
+	// Do not do this if we have introduced noise at this node exactly
+	// to explore more.
 
 	auto pure_eval = get_raw_eval(color);
-    if (!is_root || !cfg_noise) {
-        fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
-    }
-    // Estimated eval for unknown nodes = original parent NN eval - reduction
-    auto fpu_eval = get_net_eval(color) - fpu_reduction;
+	if (!is_root || !cfg_noise) {
+		fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
+	}
+	// Estimated eval for unknown nodes = original parent NN eval - reduction
+	auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
-    auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto best = static_cast<UCTNodePointer*>(nullptr);
+	auto best_value = std::numeric_limits<double>::lowest();
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+	for (auto& child : m_children) {
+		if (!child.active()) {
+			continue;
+		}
 
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = child.get_visits();
-		if (is_root && int_m_visits >= 5000 && (int_child_visits) > (0.25 * int_m_visits)) {
-			continue;
+
+		if (is_root) {   // Is it a root node?
+
+			if (rand() % 4 != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
+
+				if (int_m_visits >= 3000) {   // Have this many regular LZ search visits been made yet on this turn?
+
+					if (movenum_now2 < 30) {   // If the current move number in game is LESS than 30
+
+						if (int_child_visits > (0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
+							continue;
+						}
+					}
+
+					if (movenum_now2 >= 30) {   // If the current move number in game is MORE than 30
+						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
+							continue;
+						}
+					}
+				}
+			}
 		}
-		if (is_root && int_m_visits >= 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.10 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 5000 && int_m_visits < 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.05 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.05 * int_m_visits)) {
-			continue;
-		}
-		if (is_root && int_m_visits >= 2000 && int_m_visits < 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.025 * int_m_visits)) {
-			continue;
-		}
+
+
+
 
         auto winrate = fpu_eval;
         if (child.get_visits() > 0) {
