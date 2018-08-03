@@ -281,8 +281,10 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
-    wait_expanded();
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
+    LOCK(get_mutex(), lock);
+//UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+    //wait_expanded(); // TODO UPDATE - Should LOCK(get_mutex(), lock); be changed to this commented-out line instead?
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -296,11 +298,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
     }
 
+	int const movenum_now2 = movenum_now;
+
     auto numerator = std::sqrt(double(parentvisits));
     auto fpu_reduction = 0.0f;
     // Lower the expected eval for moves that are likely not the best.
     // Do not do this if we have introduced noise at this node exactly
     // to explore more.
+
+	auto pure_eval = get_raw_eval(color);
     if (!is_root || !cfg_noise) {
         fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
     }
@@ -314,6 +320,24 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         if (!child.active()) {
             continue;
         }
+
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = child.get_visits();
+		if (is_root && int_m_visits >= 5000 && (int_child_visits) > (0.25 * int_m_visits)) {
+			continue;
+		}
+		if (is_root && int_m_visits >= 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.10 * int_m_visits)) {
+			continue;
+		}
+		if (is_root && int_m_visits >= 5000 && int_m_visits < 20000 && (movenum_now2 < 80) && (int_child_visits) > (0.05 * int_m_visits)) {
+			continue;
+		}
+		if (is_root && int_m_visits >= 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.05 * int_m_visits)) {
+			continue;
+		}
+		if (is_root && int_m_visits >= 2000 && int_m_visits < 40000 && (movenum_now2 < 30) && (int_child_visits) > (0.025 * int_m_visits)) {
+			continue;
+		}
 
         auto winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
