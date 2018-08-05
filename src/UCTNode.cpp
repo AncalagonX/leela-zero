@@ -328,7 +328,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 			if (rand() % 4 != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
 
-				if (int_m_visits >= 3000) {   // Have this many regular LZ search visits been made yet on this turn?
+				if (int_m_visits >= 800) {   // Have this many regular LZ search visits been made yet on this turn?
 
 					if (movenum_now >= 30) {   // If the current move number in game is MORE than 30
 						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
