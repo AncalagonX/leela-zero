@@ -826,7 +826,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         }
 
         return true;
-    } else if (command.find("dump_training") == 0) {
+    } /***************** else if (command.find("dump_training") == 0) {
         std::istringstream cmdstream(command);
         std::string tmp, winner_color, filename;
         int who_won;
@@ -884,7 +884,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         }
 
         return true;
-    }
+    } *************************************/
 
     gtp_fail_printf(id, "unknown command");
     return true;
