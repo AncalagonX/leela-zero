@@ -30,6 +30,9 @@
 #include <string>
 #include <vector>
 
+#include <ctime>
+#include <random>
+
 #include "GTP.h"
 #include "GameState.h"
 #include "Network.h"
