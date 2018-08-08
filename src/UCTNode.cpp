@@ -358,6 +358,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 						}
 					}
 
+					if (movenum_now2 <= 1) {   // If the current move number in game is LESS than 8
+						if (int_child_visits <= 1000 && (randomX % 4) != 0) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
+							int randomX = dis(gen);
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+					}
+
 					if (movenum_now2 <= 8) {   // If the current move number in game is LESS than 8
 						if (int_child_visits <= 200 && (randomX % 4) != 0) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
 							int randomX = dis(gen);
