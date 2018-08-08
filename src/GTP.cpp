@@ -1038,7 +1038,7 @@ bool GTP::execute_setoption(int id, const std::string &command) {
         }
         gtp_printf(id, options_out_tmp.c_str());
         return true;
-    }
+    } *************************************/
 
     if (name_token.find("name") != 0) {
         gtp_fail_printf(id, "incorrect syntax for lz-setoption");
