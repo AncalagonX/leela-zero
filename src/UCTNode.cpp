@@ -332,44 +332,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 
 
+
+
 	for (auto& child : m_children) {
 		if (!child.active()) {
 			continue;
 		}
-
-		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = static_cast<int>(child.get_visits());
-
-		if (is_root) {   // Is it a root node?
-
-			if (rand() % 4 != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
-
-				if (int_m_visits >= 800) {   // Have this many regular LZ search visits been made yet on this turn?
-
-					if (movenum_now >= 30) {   // If the current move number in game is MORE than 30
-						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
-							continue;
-						}
-					}
-
-					if ((movenum_now < 30) && (movenum_now > 8)) {   // If the current move number in game is LESS than 30
-
-						if (int_child_visits >(0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
-							continue;
-						}
-					}
-
-					if (movenum_now <= 8) {   // If the current move number in game is LESS than 8
-						if (int_child_visits > 300) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
-							continue;
-						}
-					}
-				}
-			}
-		}
-
-
-
 
         auto winrate = fpu_eval;
         if (child.get_visits() > 0) {
@@ -380,6 +348,54 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = (2 * winrate) + puct;
         assert(value > std::numeric_limits<double>::lowest());
+
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+
+		if (is_root) {   // Is it a root node?
+
+			int randomX = dis(gen);
+
+			//if (rand() % 4 != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
+			if ((randomX % 4) != 0) {   // Allow the if statement cascade to happen 75% of the time (in other words, 25% of the time simple vanilla search takes place)
+
+				if (int_m_visits >= 800) {   // Have this many regular LZ search visits been made yet on this turn?
+
+					if (movenum_now2 >= 30) {   // If the current move number in game is MORE than 30
+						if (int_child_visits > (0.25 * int_m_visits)) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
+							int randomX = dis(gen);
+							continue;
+						}
+					}
+
+					if (movenum_now2 <= 8) {   // If the current move number in game is LESS than 8
+						if (int_child_visits <= 200 && (randomX % 4) != 0) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
+							int randomX = dis(gen);
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+					}
+
+					if (movenum_now2 <= 30) {   // If the current move number in game is LESS than 8
+						if ((int_m_visits <= 5000) && (int_child_visits <= 200)) {   // Roughly forces LZ to search the 100 best moves on a sliding basis
+							int randomX = dis(gen);
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+					}
+
+					if (movenum_now2 < 30) {   // If the current move number in game is LESS than 30
+
+						if (int_child_visits > (0.05 * int_m_visits)) {   // Roughly forces LZ to search the 20 best moves on a sliding basis
+							int randomX = dis(gen);
+							continue;
+						}
+					}
+				}
+			}
+		}
 
 		int randomX = dis8(gen);
 		int int_m_visits = static_cast<int>(m_visits);
@@ -453,6 +469,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
             best_value = value;
             best = &child;
         }
+		
+		//if (rand() % 4 == 0) {
+		//	if (winrate > best_winrate) {
+		//		best_winrate = winrate;
+		//		best = &child;
+		//	}
+		//}
     }
 
     assert(best != nullptr);
