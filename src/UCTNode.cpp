@@ -359,7 +359,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			if (movenum_now <= 8) {   // If the current move number in game is LESS than 8
 				int randomX24 = dis24(gen);
 				if (int_child_visits > (0.025 * int_m_visits)) {
-					if (randomX24 != 24) {   // Roughly forces LZ to search the 24 best moves on a sliding basis, and the above line means that no more than 2.5% of total visits will typically go to any individual candidate move
+					if (randomX24 != 24) {   // Roughly forces LZ to search the 20-30 best moves on a sliding basis, and the above line means that no more than 2.5% of total visits will typically go to any individual candidate move
 						int randomX = dis32(gen);
 						continue;
 						}
