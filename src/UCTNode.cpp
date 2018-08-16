@@ -390,7 +390,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 							int randomX = dis8(gen);
 							continue;
 						}
-						if (int_child_visits > (0.05 * int_m_visits) && (randomX == 2 || randomX == 3)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+						if (int_child_visits > (0.05 * int_m_visits) && (randomX == 1 || randomX == 2 || randomX == 3)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
 							int randomX = dis8(gen);
 							continue;
 						}
