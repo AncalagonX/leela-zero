@@ -270,46 +270,36 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
 
-	for (auto& child : m_children) {
-		if (!child.active()) {
-			continue;
+    for (auto& child : m_children) {
+        if (!child.active()) {
+            continue;
+        }
+
+        auto winrate = fpu_eval;
+		if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
 		}
-
-		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = static_cast<int>(child.get_visits());
-
-		if (rand() % 2 != 0) {
-			if (is_root && (int_child_visits > (0.25 * int_m_visits))) {   // Roughly forces LZ to search the 4 best moves on a sliding basis
-				continue;
-			}
-			auto winrate = fpu_eval;
-			if (is_root) {
-				if (child.get_visits() > 0) {
-					winrate = child.get_eval(color);
-				}
-				if (child.get_visits() > 100) {
-					winrate = child.get_eval(color);
-					winrate = (0.5 - abs(0.5 - winrate));
-				}
-				if (child.get_visits() > 100 && child.get_visits() % 2) {
-					winrate = child.get_eval(color);
-				}
-			}
-			auto psa = child.get_policy();
-			auto denom = 1.0 + child.get_visits();
-			auto puct = cfg_puct * psa * (numerator / denom);
-			auto value = winrate + puct;
-			if (child.get_visits() > 0 && (child.get_visits() % 2) == 0) {
-				value = ((0.5 - abs(0.45 - winrate)) + puct) * (1+(psa/100));
-			}
-			assert(value > std::numeric_limits<double>::lowest());
-
-			if (value > best_value) {
-				best_value = value;
-				best = &child;
-			}
+		if (child.get_visits() > 100) {
+			winrate = child.get_eval(color);
+			winrate = (0.5 - abs(0.5 - winrate));
 		}
-	}
+		if (child.get_visits() > 100 && child.get_visits() % 2) {
+			winrate = child.get_eval(color);
+		}
+		auto psa = child.get_policy();
+        auto denom = 1.0 + child.get_visits();
+        auto puct = cfg_puct * psa * (numerator / denom);
+        auto value = winrate + puct;
+		if (child.get_visits() > 0 && (child.get_visits() % 2) == 0) {
+			value = (0.5 - abs(0.45 - winrate)) + puct;
+		}
+        assert(value > std::numeric_limits<double>::lowest());
+
+        if (value > best_value) {
+            best_value = value;
+            best = &child;
+        }
+    }
 
     assert(best != nullptr);
     best->inflate();
