@@ -293,9 +293,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 		if (child.get_visits() > 0 && (child.get_visits() % 2) == 0) {
 			value = (0.5 - abs(0.45 - winrate)) + puct;
 		}
-		if (is_opponent_move) {
-			value = 1 - (winrate + puct);
-		}
+		//if (is_opponent_move) {
+		//	value = 1 - (winrate + puct);
+		//}
         assert(value > std::numeric_limits<double>::lowest());
 
 		if (is_root && (value > best_value)) {
