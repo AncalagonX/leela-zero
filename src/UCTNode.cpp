@@ -283,9 +283,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
-		if (is_opponent_move) {
-			value = 1 - (winrate + puct);
-		}
+		//if (is_opponent_move) {
+		//	value = 1 - (winrate + puct);
+		//}
         assert(value > std::numeric_limits<double>::lowest());
 
 		if (is_root && (value > best_value)) {
