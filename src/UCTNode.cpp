@@ -315,7 +315,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 		}
 
 		if (is_depth_1) {
-			if (int_child_visits > (0.25 * int_m_visits)) {
+			if (int_child_visits > (0.2 * int_m_visits)) {
 				continue;
 			}
 		}
