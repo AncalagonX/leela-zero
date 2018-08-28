@@ -279,11 +279,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 		if (child.get_visits() > 0) {
 			winrate = child.get_eval(color);
 		}
-		if (child.get_visits() > 100) {
+		if (child.get_visits() > 200) {
 			winrate = child.get_eval(color);
 			winrate = (0.5 - abs(0.5 - winrate));
 		}
-		if (child.get_visits() > 100 && child.get_visits() % 2) {
+		if (child.get_visits() > 200 && child.get_visits() % 2) {
 			winrate = child.get_eval(color);
 		}
 		auto psa = child.get_policy();
@@ -292,6 +292,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
         auto value = winrate + puct;
 		if (child.get_visits() > 0 && (child.get_visits() % 2) == 0) {
 			value = (0.5 - abs(0.45 - winrate)) + puct;
+		}
+		if (child.get_visits() > 0 && is_depth_1) {
+			auto value = winrate + puct;
 		}
 		//if (is_opponent_move) {
 		//	value = 1 - (winrate + puct);
@@ -309,7 +312,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 		assert(value > std::numeric_limits<double>::lowest());
 
 		if (is_root) {
-			if (int_child_visits > (0.1 * int_m_visits)) {
+			if (int_child_visits > (0.2 * int_m_visits)) {
 				continue;
 			}
 		}
@@ -325,7 +328,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 			best = &child;
 		}
 
-		if (!is_root && is_depth_1 && (value > (0.8 * best_value))) {
+		//if (!is_root && is_depth_1 && (value <= (0.40 * best_value))) {
+		//	if (value > best_value) {
+		//		best_value = value;
+		//	}
+		//	continue;
+		//}
+
+		if (!is_root && is_depth_1 && (value > best_value)) {
 			if (value > best_value) {
 				best_value = value;
 			}
@@ -349,7 +359,7 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-		if (a.get_visits() > 100 && b.get_visits() > 100) {
+		if (a.get_visits() > 500 && b.get_visits() > 500) {
 			if ((0.5 - abs(0.45 - a.get_eval(m_color))) != (0.5 - abs(0.45 - b.get_eval(m_color)))) {
 				return (0.5 - abs(0.45 - a.get_eval(m_color))) < (0.5 - abs(0.45 - b.get_eval(m_color)));
 			}
