@@ -212,10 +212,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
-	int movenum = m_rootstate.get_movenum();
-
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get(), movenum);
+        auto next = node->uct_select_child(color, node == m_root.get());
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -241,10 +239,8 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
 
     const int color = state.get_to_move();
 
-	auto movenum2 = int(m_rootstate.get_movenum());
-
     // sort children, put best move on top
-    parent.sort_children(color, movenum2);
+    parent.sort_children(color);
 
     if (parent.get_first_child()->first_visit()) {
         return;
@@ -405,11 +401,11 @@ int UCTSearch::get_best_move(passflag_t passflag) {
     int color = m_rootstate.board.get_to_move();
 
     // Make sure best is first
-	auto movenum = int(m_rootstate.get_movenum());
-    m_root->sort_children(color, movenum);
+    m_root->sort_children(color);
 
     // Check whether to randomize the best move proportional
     // to the playout counts, early game only.
+    auto movenum = int(m_rootstate.get_movenum());
     if (movenum < cfg_random_cnt) {
         m_root->randomize_first_proportionally();
     }
@@ -531,9 +527,7 @@ std::string UCTSearch::get_pv(FastState & state, UCTNode& parent) {
         return std::string();
     }
 
-	int movenum = m_rootstate.get_movenum();
-
-    auto& best_child = parent.get_best_root_child(state.get_to_move(), movenum);
+    auto& best_child = parent.get_best_root_child(state.get_to_move());
     if (best_child.first_visit()) {
         return std::string();
     }

@@ -49,10 +49,9 @@ public:
                          float min_psa_ratio = 0.0f);
 
     const std::vector<UCTNodePointer>& get_children() const;
-    void sort_children(int color, int movenum);
-	UCTNode& get_best_root_child(int color, int movenum);
-	UCTNode& get_best_root_child2(int color);
-    UCTNode* uct_select_child(int color, bool is_root, int movenum);
+    void sort_children(int color);
+    UCTNode& get_best_root_child(int color);
+    UCTNode* uct_select_child(int color, bool is_root);
 
     size_t count_nodes() const;
     SMP::Mutex& get_mutex();
