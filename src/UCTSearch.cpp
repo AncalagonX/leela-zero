@@ -215,8 +215,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     if (node->has_children() && !result.valid()) {
 		auto depth =
 			int(currstate.get_movenum()- m_rootstate.get_movenum());
-		auto playouts2 = m_playouts.load();
-        auto next = node->uct_select_child(color, playouts2, node == m_root.get(), (depth == 1), ((depth % 2) != 0));
+        auto next = node->uct_select_child(color, m_playouts, node == m_root.get(), (depth == 1), ((depth % 2) != 0));
         auto move = next->get_move();
 
         currstate.play_move(move);

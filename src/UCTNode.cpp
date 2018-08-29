@@ -321,7 +321,7 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 
 		const int mptrv_div4 = (mptrv / 4);
 		//const int mptrv_this_turn = (max_playouts_til_regular_value + parentvisits);
-		const int real_playouts_this_turn = (playouts - int_m_visits);
+		const int real_playouts_this_turn = (playouts - m_visits);
 
 		//mptrv				 = 1000
 		//parentvisits       = 1000 valid visits at start
@@ -330,7 +330,7 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 
 
 		if (is_root) {
-			if (int_child_visits == 0) {
+			if (child.get_visits() == 0) {
 				best = &child;
 				best->inflate();
 				return best->get();
@@ -338,8 +338,8 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 			else
 				if ((playouts >= 400)
 					&& (playouts < mptrv_2)
-					&& (int_child_visits < 50)) {
-					if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
+					&& (child.get_visits() < 50)) {
+					if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE 50% GATE
 						best = &child;
 						if (winrate > best_winrate) {
 							best_winrate = winrate;
@@ -361,7 +361,7 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 				else
 					if ((playouts >= mptrv_2)
 						&& (playouts < mptrv_3)
-						&& (int_child_visits < 100)) {
+						&& (child.get_visits() < 100)) {
 						if (winrate >= 0.45 && winrate <= 0.60) { // WINRATE 50% GATE
 							best = &child;
 							if (winrate > best_winrate) {
@@ -384,7 +384,7 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 					else
 						if ((playouts >= mptrv_3)
 							&& (playouts < mptrv_6)
-							&& (int_child_visits <= 500)) {
+							&& (child.get_visits() <= 500)) {
 							if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE 50% GATE
 								best = &child;
 								if (winrate > best_winrate) {
@@ -429,23 +429,18 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
 					best_value = value;
 					best = &child;
 				}
-				else {
-					if (value > best_value) {
-						best_value = value;
-						best = &child;
-					}
+			}
+			else {
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
 				}
 			}
-		else {
-			if  (value > best_value) {
-				best_value = value;
-				best = &child;
-				}
-			}
-
 		assert(best != nullptr);
 		best->inflate();
 		return best->get();
+	}
+}
 
 
 
@@ -489,11 +484,9 @@ UCTNode* UCTNode::uct_select_child(int color, int playouts, bool is_root, bool i
   //      }
   //  }
 
-		assert(best != nullptr);
-		best->inflate();
-		return best->get();
-	}
-}
+  //  assert(best != nullptr);
+  //  best->inflate();
+  //  return best->get();
 
 class NodeComp : public std::binary_function<UCTNodePointer&,
                                              UCTNodePointer&, bool> {
