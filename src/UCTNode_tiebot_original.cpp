@@ -379,6 +379,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum, bool po
 							return best;
 						}
 				}
+			///////////////////////////////////////// DONE UP TO HERE
 				else
 					if ((playouts >= mptrv_2)
 						&& (playouts < mptrv_3)
@@ -400,11 +401,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum, bool po
 								return best;
 							}
 					}
+			///////////////////////////////////////// DONE UP TO HERE
 					else
 						if ((playouts >= mptrv_3)
 							&& (playouts < mptrv_6)
 							&& (child->get_visits() <= 500)) {
-							if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE 50% GATE
+							if (winrate >= 0.40 && winrate <= 0.60) { // WINRATE LOOSER 50% GATE
 								best = child.get();
 								if (winrate > best_winrate) {
 									best_winrate = winrate;
@@ -421,6 +423,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum, bool po
 									return best;
 								}
 						}
+			///////////////////////////////////////// DONE UP TO HERE
 			//else
 			if ((playouts >= mptrv_6)
 				&& (winrate >= 0.45 && winrate <= 0.55)) { // WINRATE TIGHTER 50% GATE
@@ -462,6 +465,14 @@ class NodeComp : public std::binary_function<UCTNode::node_ptr_t&,
 public:
 	NodeComp(int color) : m_color(color) {};
 	bool operator()(const UCTNode::node_ptr_t& a,
+		////////////////////////////
+		////////////////////////////
+		////////////////////////////
+		////////////////////////////
+		////////////////////////////
+		// EXPAND THE BELOW [+] FOR THE NODECOMP TIEBOT CODE
+		////////////////////////////
+		////////////////////////////
 		const UCTNode::node_ptr_t& b) {
 
 		////////////Next Line:  FORCE RETURN PRIOR SCORE ONLY
