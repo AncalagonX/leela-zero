@@ -51,7 +51,7 @@ public:
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color);
     UCTNode& get_best_root_child(int color);
-    UCTNode* uct_select_child(int color, bool is_root, bool is_depth_1, bool is_opponent_move);
+    UCTNode* uct_select_child(int color, bool is_root, bool is_depth_1, bool is_opponent_move, bool is_lz_move);
 
     size_t count_nodes() const;
     SMP::Mutex& get_mutex();

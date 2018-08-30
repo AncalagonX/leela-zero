@@ -241,7 +241,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, bool is_opponent_move) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, bool is_opponent_move, bool is_lz_move) {
     LOCK(get_mutex(), lock);
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -302,6 +302,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 			if (int_child_visits > (0.1 * int_m_visits)) {
 				continue;
 			}
+			if (winrate > 0.6) {
+				continue;
+			}
+		}
+
+		if (is_lz_move) {
+			if (winrate > 0.55) {
+				continue;
+			}
 		}
 
 		if (is_depth_1) {
@@ -315,12 +324,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, boo
 			best = &child;
 		}
 
-		if (!is_root && is_depth_1 && (value > (0.8 * best_value))) {
-			if (value > best_value) {
-				best_value = value;
-			}
-			best = &child;
-		}
+		//if (!is_root && is_depth_1 && (value > (0.8 * best_value))) {
+		//	if (value > best_value) {
+		//		best_value = value;
+		//	}
+		//	best = &child;
+		//}
 
         if (!is_root && !is_depth_1 && (value > best_value)) {
             best_value = value;
@@ -340,6 +349,10 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
         // if visits are not same, sort on visits
+		if (a.get_visits() != 0 && b.get_visits() != 0 && a.get_eval(m_color) >= 0.40 && a.get_eval(m_color) <= 0.60 && b.get_eval(m_color) >= 0.40 && b.get_eval(m_color) <= 0.60) {
+			return a.get_eval(m_color) < b.get_eval(m_color);
+		}
+
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();
         }
