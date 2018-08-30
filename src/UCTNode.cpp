@@ -373,7 +373,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 				if (int_m_visits >= 800) {   // Have this many regular LZ search visits been made yet on this turn? This allows us to instantly see what LZ would have picked normally (and at 800 visits, this is already a high degree of accuracy)
 
 					if (movenum_now <= 1) {   // Allow to run if it's the first or second move in the game
-						if (int_child_visits <= 1000) {   // Forces LZ to spend exactly 1000 visits exploring every single 19x19 = 361 intersections on the board (plus 1000 visits examining "pass" as well)
+						if (int_child_visits <= 3000) {   // Forces LZ to spend exactly 3000 visits exploring every single 19x19 = 361 intersections on the board (plus 1000 visits examining "pass" as well)
 							int randomX = dis8(gen);
 							best = &child;
 							best->inflate();
@@ -485,7 +485,14 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-        // if visits are not same, sort on visits
+		
+		
+		// if visits are > 0 and evals not the same, sort on evals
+		if (a.get_visits() != 0 && b.get_visits() != 0) {
+			return a.get_eval(m_color) < b.get_eval(m_color);
+		}
+		
+		// if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();
         }
