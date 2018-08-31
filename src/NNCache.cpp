@@ -79,7 +79,7 @@ void NNCache::set_size_from_playouts(int max_playouts) {
         std::min(max_playouts,
                  UCTSearch::UNLIMITED_PLAYOUTS / num_cache_moves);
     auto max_size = num_cache_moves * max_playouts_per_move;
-    max_size = std::min(500'000, std::max(20'000, max_size));
+    max_size = std::min(300'000, std::max(12'000, max_size));
     resize(max_size);
 }
 

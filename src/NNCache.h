@@ -45,7 +45,8 @@ public:
     };
 
   //NNCache(int size = 150000);  // ~ 208MiB
-	NNCache(int size = 500000);  // ~ 700MiB
+	NNCache(int size = 300000);  // ~ 416MiB
+  //NNCache(int size = 500000);  // ~ 700MiB
   //NNCache(int size = 1000000);  // ~ 1400MiB
 
     // Set a reasonable size gives max number of playouts
