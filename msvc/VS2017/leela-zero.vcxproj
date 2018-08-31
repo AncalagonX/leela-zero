@@ -74,7 +74,9 @@
     <ClCompile Include="..\..\src\UCTNode.cpp" />
     <ClCompile Include="..\..\src\UCTNodePointer.cpp" />
     <ClCompile Include="..\..\src\UCTNodeRoot.cpp" />
+    <ClCompile Include="..\..\src\UCTNode_tiebot_original.cpp" />
     <ClCompile Include="..\..\src\UCTSearch.cpp" />
+    <ClCompile Include="..\..\src\UCTSearch_tiebot_original.cpp" />
     <ClCompile Include="..\..\src\Utils.cpp" />
     <ClCompile Include="..\..\src\Zobrist.cpp" />
   </ItemGroup>
