@@ -377,8 +377,19 @@ public:
                     const UCTNodePointer& b) {
 		
 		
-		// if visits are > 0 and evals not the same, sort on evals
-		if (a.get_visits() != 0 && b.get_visits() != 0) {
+		
+		//if (a.get_visits() != 0 && b.get_visits() != 0)
+		if (a.get_visits() >= 800 && b.get_visits() >= 800) {
+			return a.get_eval(m_color) < b.get_eval(m_color);
+		}
+
+
+		// if visits are > 200 and evals not the same, sort on evals
+		if (a.get_visits() >= 400 && b.get_visits() >= 400 && a.get_visits() < 800 && b.get_visits() < 800) {
+			return a.get_eval(m_color) < b.get_eval(m_color);
+		}
+
+		if (a.get_visits() >= 200 && b.get_visits() >= 200 && a.get_visits() < 400 && b.get_visits() < 400) {
 			return a.get_eval(m_color) < b.get_eval(m_color);
 		}
 		
