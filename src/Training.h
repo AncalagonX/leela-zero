@@ -38,6 +38,7 @@ public:
     NNPlanes planes;
     std::vector<float> probabilities;
     int to_move;
+    float stm_komi;
     float net_winrate;
     float root_uct_winrate;
     float child_uct_winrate;
@@ -80,6 +81,7 @@ public:
 
 private:
     static TimeStep::NNPlanes get_planes(const GameState* const state);
+    static float get_stm_komi(const GameState* const state);
     static void process_game(GameState& state, size_t& train_pos, int who_won,
                              const std::vector<int>& tree_moves,
                              OutputChunker& outchunker);
