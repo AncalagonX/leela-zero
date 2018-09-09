@@ -57,7 +57,8 @@ std::ostream& operator <<(std::ostream& stream, const TimeStep& timestep) {
     stream << timestep.net_winrate << ' ';
     stream << timestep.root_uct_winrate << ' ';
     stream << timestep.child_uct_winrate << ' ';
-    stream << timestep.bestmove_visits << std::endl;
+    stream << timestep.bestmove_visits << ' ';
+    stream << timestep.stm_komi << std::endl;
     return stream;
 }
 
@@ -81,6 +82,7 @@ std::istream& operator>> (std::istream& stream, TimeStep& timestep) {
     stream >> timestep.root_uct_winrate;
     stream >> timestep.child_uct_winrate;
     stream >> timestep.bestmove_visits;
+    stream >> timestep.stm_komi;
     return stream;
 }
 
@@ -153,9 +155,17 @@ TimeStep::NNPlanes Training::get_planes(const GameState* const state) {
     return planes;
 }
 
-void Training::record(Network & network, GameState& state, UCTNode& root) {
+float Training::get_stm_komi(const GameState* const state) {
+    const auto komi = Network::get_normalised_komi(state);
+    const auto stm_komi =
+        (FastBoard::BLACK == state->board.get_to_move() ? 1.0f - komi : komi);
+    return stm_komi;
+}
+
+void Training::record(Network& network, GameState& state, UCTNode& root) {
     auto step = TimeStep{};
     step.to_move = state.board.get_to_move();
+    step.stm_komi = get_stm_komi(&state);
     step.planes = get_planes(&state);
 
     auto result =
@@ -252,9 +262,8 @@ void Training::dump_training(int winner_color, OutputChunker& outchunk) {
             out << plane[plane.size() - 1];
             out << std::dec << std::endl;
         }
-        // The side to move planes can be compactly encoded into a single
-        // bit, 0 = black to move.
-        out << (step.to_move == FastBoard::BLACK ? "0" : "1") << std::endl;
+        // The side to move planes are used to encode the komi
+        out << step.stm_komi << std::endl;
         // Then a POTENTIAL_MOVES long array of float probabilities
         for (auto it = begin(step.probabilities);
             it != end(step.probabilities); ++it) {
@@ -329,6 +338,7 @@ void Training::process_game(GameState& state, size_t& train_pos, int who_won,
 
         auto step = TimeStep{};
         step.to_move = to_move;
+        step.stm_komi = get_stm_komi(&state);
         step.planes = get_planes(&state);
 
         step.probabilities.resize(POTENTIAL_MOVES);
