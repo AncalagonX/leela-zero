@@ -28,6 +28,7 @@
     <ClInclude Include="..\..\src\GTP.h" />
     <ClInclude Include="..\..\src\Im2Col.h" />
     <ClInclude Include="..\..\src\KoState.h" />
+    <ClInclude Include="..\..\src\Ladder.h" />
     <ClInclude Include="..\..\src\Network.h" />
     <ClInclude Include="..\..\src\NNCache.h" />
     <ClInclude Include="..\..\src\ForwardPipe.h" />
@@ -50,6 +51,7 @@
     <ClInclude Include="..\..\src\Zobrist.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\src\Makefile" />
     <None Include="packages.config" />
     <ClCompile Include="..\..\src\FastBoard.cpp" />
     <ClCompile Include="..\..\src\FastState.cpp" />
@@ -57,6 +59,7 @@
     <ClCompile Include="..\..\src\GameState.cpp" />
     <ClCompile Include="..\..\src\GTP.cpp" />
     <ClCompile Include="..\..\src\KoState.cpp" />
+    <ClCompile Include="..\..\src\Ladder.cpp" />
     <ClCompile Include="..\..\src\Leela.cpp" />
     <ClCompile Include="..\..\src\Network.cpp" />
     <ClCompile Include="..\..\src\NNCache.cpp" />
