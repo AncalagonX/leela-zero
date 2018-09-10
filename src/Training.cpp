@@ -110,7 +110,7 @@ void OutputChunker::append(const std::string& str) {
 void OutputChunker::flush_chunks() {
     if (m_compress) {
         auto chunk_name = gen_chunk_name();
-        auto out = gzopen(chunk_name.c_str(), "wb1");
+        auto out = gzopen(chunk_name.c_str(), "wb6");
 
         auto in_buff_size = m_buffer.size();
         auto in_buff = std::make_unique<char[]>(in_buff_size);
