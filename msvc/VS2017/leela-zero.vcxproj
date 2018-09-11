@@ -201,6 +201,8 @@
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <BufferSecurityCheck>false</BufferSecurityCheck>
+      <DiagnosticsFormat>Caret</DiagnosticsFormat>
+      <ControlFlowGuard>false</ControlFlowGuard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
