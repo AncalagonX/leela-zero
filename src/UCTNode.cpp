@@ -185,18 +185,8 @@ void UCTNode::virtual_loss_undo() {
 }
 
 void UCTNode::update(float eval) {
-    LOCK(m_nodemutex, lock);
-
-    if (get_visits()) {
-        const auto delta = eval - get_blackevals() / get_visits();
-        m_visits++;
-        accumulate_eval(eval);
-        const auto delta2 = eval - get_blackevals() / get_visits();
-        atomic_add(m_variance, delta * delta2);
-    } else {
-        m_visits++;
-        accumulate_eval(eval);
-    }
+    m_visits++;
+    accumulate_eval(eval);
 }
 
 bool UCTNode::has_children() const {
@@ -262,28 +252,6 @@ float UCTNode::get_lcb_binomial(int color) const {
 // Use CI_ALPHA / 2 if calculating double sided bounds.
 float UCTNode::get_ucb_binomial(int color) const {
     return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
-}
-
-float UCTNode::get_lcb_normal(int color) {
-    if (get_visits() > 1) {
-        return get_raw_eval(color) - 4.0f * sqrt(get_variance());
-    } else {
-        return 0.0f;
-    }
-}
-
-float UCTNode::get_ucb_normal(int color) {
-    if (get_visits() > 1) {
-        return get_raw_eval(color) + 4.0f * sqrt(get_variance());
-    } else {
-        return 1.0f;
-    }
-}
-
-double UCTNode::get_variance() {
-    LOCK(m_nodemutex, lock);
-
-    return get_visits() > 1 ? m_variance / (get_visits() - 1) : 0;
 }
 
 double UCTNode::get_blackevals() const {
