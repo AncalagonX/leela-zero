@@ -457,9 +457,12 @@ class TFProcess:
                 if self.swa_enabled:
                     self.save_swa_network(steps, path, leela_path, train_data)
 
-                save_path = self.saver.save(self.session, path,
-                                            global_step=steps)
-                print("Model saved in file: {}".format(save_path))
+                # Why is the model saved twice? Should this be indented with the
+                # "if self.swa_enabled:" block above, or should it be deleted?
+
+                # save_path = self.saver.save(self.session, path,
+                #                             global_step=steps)
+                # print("Model saved in file: {}".format(save_path))
 
     def save_leelaz_weights(self, filename):
         with open(filename, "w") as file:
