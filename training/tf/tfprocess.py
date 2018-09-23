@@ -399,6 +399,8 @@ class TFProcess:
         test_steps=8000 # Record Tensorboard logs for the test dataset every 1000 steps
         save_steps=8000 # Save the network weights to disk every 8000 steps
         stats = Stats()
+        batch = next(train_data)
+        test_batch = next(test_data)
         timer = Timer()
         while True:
             batch = next(train_data)
