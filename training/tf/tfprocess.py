@@ -395,7 +395,9 @@ class TFProcess:
                 'accuracy': r[3], 'total': r[0]+r[1]+r[2] }
 
     def process(self, train_data, test_data):
-        info_steps=1000
+        info_steps=1000 # Record Tensorboard logs and output basic training info every 1000 steps
+        test_steps=8000 # Record Tensorboard logs for the test dataset every 1000 steps
+        save_steps=8000 # Save the network weights to disk every 8000 steps
         stats = Stats()
         timer = Timer()
         while True:
@@ -422,9 +424,11 @@ class TFProcess:
                     tf.Summary(value=summaries), steps)
                 stats.clear()
 
-            if steps % 8000 == 0:
+            if steps % test_steps == 0:
                 test_stats = Stats()
-                test_batches = 800 # reduce sample mean variance by ~28x
+                # Measure accuracy, mse_loss, and policy_loss on test dataset using
+                # Number of batches to test is equal to 10% of batches since last test
+                test_batches = (0.1 * test_steps) # 800 batches by default (reduces sample mean variance by ~28x)
                 for _ in range(0, test_batches):
                     test_batch = next(test_data)
                     losses = self.measure_loss(test_batch, training=False)
@@ -438,6 +442,7 @@ class TFProcess:
                         test_stats.mean('accuracy')*100.0,
                         test_stats.mean('mse')))
 
+            if steps % save_steps == 0:
                 # Write out current model and checkpoint
                 path = os.path.join(os.getcwd(), "leelaz-model")
                 save_path = self.saver.save(self.session, path,
