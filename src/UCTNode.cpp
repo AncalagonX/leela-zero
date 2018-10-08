@@ -29,6 +29,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <random>
 #include <boost/math/distributions/binomial.hpp>
 
 #include "UCTNode.h"
@@ -41,6 +42,20 @@
 
 using namespace Utils;
 using namespace boost::math;
+
+std::random_device rd;
+
+std::mt19937 gen(rd());
+
+std::uniform_int_distribution<> dis4(1, 4);
+std::uniform_int_distribution<> dis6(1, 6);
+std::uniform_int_distribution<> dis8(1, 8);
+std::uniform_int_distribution<> dis10(1, 10);
+std::uniform_int_distribution<> dis12(1, 12);
+std::uniform_int_distribution<> dis14(1, 14);
+std::uniform_int_distribution<> dis16(1, 16);
+std::uniform_int_distribution<> dis24(1, 24);
+std::uniform_int_distribution<> dis32(1, 32);
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -241,8 +256,8 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
-    wait_expanded();
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
+	LOCK(get_mutex(), lock);
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -256,19 +271,24 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
     }
 
-    auto numerator = std::sqrt(double(parentvisits));
-    auto fpu_reduction = 0.0f;
-    // Lower the expected eval for moves that are likely not the best.
-    // Do not do this if we have introduced noise at this node exactly
-    // to explore more.
-    if (!is_root || !cfg_noise) {
-        fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
-    }
-    // Estimated eval for unknown nodes = original parent NN eval - reduction
-    auto fpu_eval = get_net_eval(color) - fpu_reduction;
+	int movenum_now2 = movenum_now;
 
-    auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto numerator = std::sqrt(double(parentvisits));
+	auto fpu_reduction = 0.0f;
+	// Lower the expected eval for moves that are likely not the best.
+	// Do not do this if we have introduced noise at this node exactly
+	// to explore more.
+
+	auto pure_eval = get_raw_eval(color);
+	if (!is_root || !cfg_noise) {
+		fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
+	}
+	// Estimated eval for unknown nodes = original parent NN eval - reduction
+	auto fpu_eval = get_net_eval(color) - fpu_reduction;
+
+	auto best = static_cast<UCTNodePointer*>(nullptr);
+	auto best_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -289,13 +309,84 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
+		int randomX = dis8(gen);
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+		int int_parent_visits = static_cast<int>(parentvisits);
+
+		if (is_root) {   // We only want to perform the following "if tree" code on root nodes (i.e. our list of candidates for the next move to play)
+
+			int randomX = dis8(gen);
+			
+			if (movenum_now <= 8 && int_m_visits >= 1600) {   // If the current move number in game is LESS than 8
+				if (int_child_visits > (0.025 * int_m_visits)) {   // Roughly forces LZ to search the 20-30 best moves on a sliding basis, and the above line means that no more than 2.5% of total visits will typically go to any individual candidate move
+					if (randomX != 8) {   // Allow the widened search to happen _approximately_ 7 out of 8 visits (in other words, 1 out of every 8 visits is given to the regular, unmodified LZ search)
+						int randomX = dis8(gen);
+						continue;
+						}
+					}
+				}
+
+			if (randomX != 8) {   // Allow the widened search to happen _approximately_ 7 out of 8 visits (in other words, 1 out of every 8 visits is given to the regular, unmodified LZ search)
+
+				if (int_m_visits >= 1600) {   // Have this many regular LZ search visits been made yet on this turn? This allows us to instantly see what LZ would have picked normally (and at 800 visits, this is already a high degree of accuracy)
+
+					if (movenum_now <= 1) {   // Allow to run if it's the first or second move in the game
+						if (int_child_visits <= 500) {   // Forces LZ to spend exactly 500 visits exploring every single 19x19 = 361 intersections on the board (plus 500 visits examining "pass" as well)
+							int randomX = dis8(gen);
+							best = &child;
+							best->inflate();
+							return best->get();
+						}
+					}
+
+					if ((movenum_now > 8) && (movenum_now <= 30)) {   // If the current move number in game is BETWEEN 8 and 30
+
+						if (int_child_visits > (0.10 * int_m_visits) && randomX == 1) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+							int randomX = dis8(gen);
+							continue;
+						}
+						if (int_child_visits > (0.05 * int_m_visits) && (randomX == 1 || randomX == 2 || randomX == 3)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+							int randomX = dis8(gen);
+							continue;
+						}
+						if (int_child_visits > (0.025 * int_m_visits)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+							int randomX = dis8(gen);
+							continue;
+						}
+					}
+
+					if (movenum_now > 30) {   // If the current move number in game is MORE than 30
+							if (int_child_visits > (0.20 * int_m_visits) && (randomX == 1 || randomX == 2)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+								int randomX = dis8(gen);
+								continue;
+							}
+							if (int_child_visits > (0.10 * int_m_visits) && (randomX == 1 || randomX == 2 || randomX == 3 || randomX == 4)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+								int randomX = dis8(gen);
+								continue;
+							}
+							if (int_child_visits > (0.05 * int_m_visits)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+								int randomX = dis8(gen);
+								continue;
+						}
+					}
+				}
+			}
+		}
+
         if (value > best_value) {
-            best_value = value;
+			int randomX = dis8(gen);
+			best_value = value;
             best = &child;
         }
+		if (winrate > best_winrate) {
+			int randomX = dis8(gen);
+			best_winrate = winrate;
+		}
     }
 
     assert(best != nullptr);
+	int randomX = dis8(gen);
     best->inflate();
     return best->get();
 }

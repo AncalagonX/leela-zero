@@ -59,10 +59,10 @@ public:
     }
 
     friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
-        if (a.m_visits == b.m_visits) {
-            return a.m_winrate < b.m_winrate;
+        if (a.m_winrate == b.m_winrate) {
+            return a.m_visits < b.m_visits;
         }
-        return a.m_visits < b.m_visits;
+        return a.m_winrate < b.m_winrate;
     }
 
 private:
@@ -194,6 +194,7 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
+	const auto movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -215,7 +216,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now);
         auto move = next->get_move();
 
         currstate.play_move(move);

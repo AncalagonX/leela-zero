@@ -852,7 +852,7 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
         }
 
         return true;
-    } else if (command.find("dump_training") == 0) {
+    } /***************** else if (command.find("dump_training") == 0) {
         std::istringstream cmdstream(command);
         std::string tmp, winner_color, filename;
         int who_won;
@@ -1021,7 +1021,7 @@ bool GTP::execute_setoption(int id, const std::string &command) {
     if (name_token.find("name") != 0) {
         gtp_fail_printf(id, "incorrect syntax for lz-setoption");
         return true;
-    }
+    } *************************************/
 
     std::string name, value;
     std::tie(name, value) = parse_option(cmdstream);
