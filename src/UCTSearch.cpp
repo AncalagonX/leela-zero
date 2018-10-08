@@ -291,7 +291,11 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
         auto move_eval = node->get_visits() ?
-                         static_cast<int>(node->get_raw_eval(color) * 10000) : 0;
+                         //static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
+						 static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+						 //node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
+						 //node->get_policy() * 100.0f,
+						 //node->get_lcb_binomial(color) * 100.0f,
         // Store data in array
         sortable_data.emplace_back(move, node->get_visits(), move_eval, pv);
 
