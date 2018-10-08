@@ -330,7 +330,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 			int randomX = dis8(gen);
 			
-			if (movenum_now <= 8 && int_m_visits >= 1600) {   // If the current move number in game is LESS than 8
+			if (movenum_now <= 8 && int_m_visits >= 400) {   // If the current move number in game is LESS than 8
 				if (int_child_visits > (0.025 * int_m_visits)) {   // Roughly forces LZ to search the 20-30 best moves on a sliding basis, and the above line means that no more than 2.5% of total visits will typically go to any individual candidate move
 					if (randomX != 8) {   // Allow the widened search to happen _approximately_ 7 out of 8 visits (in other words, 1 out of every 8 visits is given to the regular, unmodified LZ search)
 						int randomX = dis8(gen);
@@ -341,10 +341,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 			if (randomX != 8) {   // Allow the widened search to happen _approximately_ 7 out of 8 visits (in other words, 1 out of every 8 visits is given to the regular, unmodified LZ search)
 
-				if (int_m_visits >= 1600) {   // Have this many regular LZ search visits been made yet on this turn? This allows us to instantly see what LZ would have picked normally (and at 800 visits, this is already a high degree of accuracy)
+				if (int_m_visits >= 400) {   // Have this many regular LZ search visits been made yet on this turn? This allows us to instantly see what LZ would have picked normally (and at 800 visits, this is already a high degree of accuracy)
 
 					if (movenum_now <= 1) {   // Allow to run if it's the first or second move in the game
-						if (int_child_visits <= 500) {   // Forces LZ to spend exactly 500 visits exploring every single 19x19 = 361 intersections on the board (plus 500 visits examining "pass" as well)
+						if (int_child_visits <= 3000) {   // Forces LZ to spend exactly 500 visits exploring every single 19x19 = 361 intersections on the board (plus 500 visits examining "pass" as well)
 							int randomX = dis8(gen);
 							best = &child;
 							best->inflate();
