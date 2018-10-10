@@ -124,6 +124,6 @@ static constexpr auto SELFCHECK_PROBABILITY = 2000;
     #pragma warning(disable : 4996)
 #endif /* VC8+ */
 
-#define CI_ALPHA .001
+#define CI_ALPHA .01
 
 #endif
