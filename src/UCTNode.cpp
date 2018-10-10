@@ -262,7 +262,7 @@ void UCTNode::accumulate_eval(float eval) {
 	atomic_add(m_blackevals, double(eval));
 }
 
-float UCTNode::get_search_width() const {
+float UCTNode::get_search_width() {
 	return m_search_width;
 }
 
@@ -327,6 +327,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         } else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
         }
+		float search_width = get_search_width();
+
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
@@ -365,13 +367,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 					if ((movenum_now > 8) && (movenum_now <= 30)) {   // If the current move number in game is BETWEEN 8 and 30
 						int randomX = dis8(gen);
-						if (int_child_visits > ((4 * m_search_width) * int_m_visits) && randomX == 1) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+						if (int_child_visits > ((4 * search_width) * int_m_visits) && randomX == 1) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
 							continue;
 						}
-						if (int_child_visits > ((2 * m_search_width) * int_m_visits) && (randomX <= 3)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+						if (int_child_visits > ((2 * search_width) * int_m_visits) && (randomX <= 3)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
 							continue;
 						}
-						if (int_child_visits > ((m_search_width) * int_m_visits)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
+						if (int_child_visits > ((search_width) * int_m_visits)) {   // Roughly forces LZ to search the 10-20 best moves on a sliding basis
 							continue;
 						}
 					}

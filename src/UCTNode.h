@@ -68,9 +68,11 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
-	float get_search_width() const; // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
-	void widen_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
-	void narrow_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
+	//static float m_search_width;
+	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
+	static void widen_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
+	static void narrow_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
+
     void virtual_loss();
     void virtual_loss_undo();
     void update(float eval);
@@ -114,7 +116,6 @@ private:
     float m_policy;
     // Original net eval for this node (not children).
     float m_net_eval{0.0f};
-	float m_search_width{ 0.025f};
     std::atomic<double> m_blackevals{0.0};
     std::atomic<Status> m_status{ACTIVE};
 

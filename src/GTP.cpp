@@ -436,10 +436,12 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
         }		
 		**/
 
-		m_search_width = (0.9 * m_search_width);
+		//m_search_width = (0.9 * m_search_width);
+		UCTNode::widen_search();
         return true;
     } else if (command.find("narrow_search") == 0) {
-		m_search_width = (1.11 * m_search_width);
+		//m_search_width = (1.11 * m_search_width);
+		UCTNode::narrow_search();
         return true;
 
 
