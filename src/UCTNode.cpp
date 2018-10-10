@@ -337,7 +337,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
-		if (int_child_visits > ((search_width) * int_m_visits)) {   // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--it's simply forced to spend visits on a wider selection of its top move choices.
+		if (is_root && (int_child_visits > ((search_width) * int_m_visits))) {   // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--it's simply forced to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
