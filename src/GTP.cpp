@@ -391,6 +391,66 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
             gtp_fail_printf(id, "syntax not understood");
         }
         return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    } else if (command.find("narrow_search") == 0) {
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        std::string color, vertex;
+
+        cmdstream >> tmp;   //eat play
+        cmdstream >> color;
+        cmdstream >> vertex;
+
+        if (!cmdstream.fail()) {
+            if (!game.play_textmove(color, vertex)) {
+                gtp_fail_printf(id, "illegal move");
+            } else {
+                gtp_printf(id, "");
+            }
+        } else {
+            gtp_fail_printf(id, "syntax not understood");
+        }
+        return true;
+    } else if (command.find("widen_search") == 0) {
+
+        return true;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
