@@ -41,6 +41,7 @@
 #include "SMP.h"
 #include "Training.h"
 #include "UCTSearch.h"
+#include "UCTNode.h"
 #include "Utils.h"
 
 using namespace Utils;
@@ -56,6 +57,7 @@ size_t cfg_max_tree_size;
 int cfg_max_cache_ratio_percent;
 TimeManagement::enabled_t cfg_timemanage;
 int cfg_lagbuffer_cs;
+float m_search_width;
 int cfg_resignpct;
 int cfg_noise;
 int cfg_random_cnt;
@@ -118,6 +120,7 @@ void GTP::setup_default_parameters() {
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
+	m_search_width = 0.025;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -174,6 +177,8 @@ const std::string GTP::s_commands[] = {
     "clear_board",
     "komi",
     "play",
+	"widen_search",
+	"narrow_search",
     "genmove",
     "showboard",
     "undo",
@@ -409,8 +414,10 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
 
 
 
-    } else if (command.find("narrow_search") == 0) {
-        std::istringstream cmdstream(command);
+    } else if (command.find("widen_search") == 0) {
+        /**
+		/////////////////////////////// TAKEN FROM "PLAY B C4" COMMAND:
+		std::istringstream cmdstream(command);
         std::string tmp;
         std::string color, vertex;
 
@@ -426,10 +433,13 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
             }
         } else {
             gtp_fail_printf(id, "syntax not understood");
-        }
-        return true;
-    } else if (command.find("widen_search") == 0) {
+        }		
+		**/
 
+		m_search_width = (0.9 * m_search_width);
+        return true;
+    } else if (command.find("narrow_search") == 0) {
+		m_search_width = (1.11 * m_search_width);
         return true;
 
 

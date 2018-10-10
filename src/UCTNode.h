@@ -68,8 +68,9 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
-	void widen_search();
-	void narrow_search();
+	float get_search_width() const; // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
+	void widen_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
+	void narrow_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
     void virtual_loss();
     void virtual_loss_undo();
     void update(float eval);

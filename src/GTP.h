@@ -28,6 +28,7 @@
 #include "Network.h"
 #include "GameState.h"
 #include "UCTSearch.h"
+#include "UCTNode.h"
 
 extern bool cfg_gtp_mode;
 extern bool cfg_allow_pondering;
@@ -39,6 +40,9 @@ extern size_t cfg_max_tree_size;
 extern int cfg_max_cache_ratio_percent;
 extern TimeManagement::enabled_t cfg_timemanage;
 extern int cfg_lagbuffer_cs;
+
+extern float m_search_width;
+
 extern int cfg_resignpct;
 extern int cfg_noise;
 extern int cfg_random_cnt;
