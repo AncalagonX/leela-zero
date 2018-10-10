@@ -267,11 +267,19 @@ float UCTNode::get_search_width() {
 }
 
 void UCTNode::widen_search() {
-	m_search_width = (0.9 * m_search_width); // Smaller values cause the search to WIDEN
+	m_search_width = (0.7 * m_search_width); // Smaller values cause the search to WIDEN
+	if (m_search_width < 0.003) {
+		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
+		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
+	}
 }
 
 void UCTNode::narrow_search() {
-	m_search_width = (1.11 * m_search_width); // Larger values cause search to NARROW
+	m_search_width = (1.43 * m_search_width); // Larger values cause search to NARROW
+	if (m_search_width > 1.0) {
+		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+	}
 }
 
 UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {

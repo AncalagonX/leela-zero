@@ -120,7 +120,7 @@ void GTP::setup_default_parameters() {
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
-	m_search_width = 0.025;
+	m_search_width = 0.03;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -397,71 +397,15 @@ bool GTP::execute(GameState & game, const std::string& xinput) {
         }
         return true;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     } else if (command.find("widen_search") == 0) {
-        /**
-		/////////////////////////////// TAKEN FROM "PLAY B C4" COMMAND:
-		std::istringstream cmdstream(command);
-        std::string tmp;
-        std::string color, vertex;
-
-        cmdstream >> tmp;   //eat play
-        cmdstream >> color;
-        cmdstream >> vertex;
-
-        if (!cmdstream.fail()) {
-            if (!game.play_textmove(color, vertex)) {
-                gtp_fail_printf(id, "illegal move");
-            } else {
-                gtp_printf(id, "");
-            }
-        } else {
-            gtp_fail_printf(id, "syntax not understood");
-        }		
-		**/
-
-		//m_search_width = (0.9 * m_search_width);
+		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::widen_search();
         return true;
+
     } else if (command.find("narrow_search") == 0) {
-		//m_search_width = (1.11 * m_search_width);
+		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
         return true;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
