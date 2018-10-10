@@ -69,7 +69,10 @@ public:
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
     float get_lcb_binomial(int color) const;
-    float get_ucb_binomial(int color) const;
+	float get_ucb_binomial(int color) const;
+	float get_search_width() const;
+	void widen_search();
+	void narrow_search();
     void virtual_loss();
     void virtual_loss_undo();
     void update(float eval);
@@ -113,6 +116,7 @@ private:
     float m_policy;
     // Original net eval for this node (not children).
     float m_net_eval{0.0f};
+	float m_search_width{ 0.025f};
     std::atomic<double> m_blackevals{0.0};
     std::atomic<Status> m_status{ACTIVE};
 
