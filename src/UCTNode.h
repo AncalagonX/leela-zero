@@ -73,8 +73,8 @@ public:
 
 	//static float m_search_width;
 	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
-	static void widen_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
-	static void narrow_search(); // UNUSED -- CALCULATION PERFORMED DIRECTLY IN GTP.CPP
+	static void widen_search(); // Called from GTP.cpp as a gtp command
+	static void narrow_search(); // Called from GTP.cpp as a gtp command
 
     void virtual_loss();
     void virtual_loss_undo();
