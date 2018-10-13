@@ -334,16 +334,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
-		int randomX = dis8(gen); // RNG outputting range of 1 thru 8
+		// int randomX = dis8(gen); // UNUSED NOW
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
-			&& randomX <= 7 // Uses default LZ search on approx. 1 out of every 8 visits
-			&& int_child_visits > (search_width * int_m_visits)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
-			int randomX = dis8(gen);
+			&& int_child_visits > ((search_width * int_m_visits) + 1)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
@@ -357,7 +355,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     }
 
     assert(best != nullptr);
-	int randomX = dis8(gen); // RNG outputting range of 1 thru 8
+	// int randomX = dis8(gen); // UNUSED NOW
     best->inflate();
     return best->get();
 }
