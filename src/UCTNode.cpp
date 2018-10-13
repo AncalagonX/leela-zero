@@ -344,7 +344,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
-		int randomX = dis8(gen); // RNG outputting range of 1 thru 8
+		// int randomX = dis8(gen); // UNUSED NOW
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
@@ -483,7 +483,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     }
 
     assert(best != nullptr);
-	int randomX = dis8(gen); // RNG outputting range of 1 thru 8
+	// int randomX = dis8(gen); // UNUSED NOW
     best->inflate();
     return best->get();
 }
