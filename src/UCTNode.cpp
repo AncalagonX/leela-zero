@@ -261,7 +261,7 @@ float UCTNode::get_search_width() {
 }
 
 void UCTNode::widen_search() {
-	m_search_width = (0.7 * m_search_width); // Smaller values cause the search to WIDEN
+	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
 	if (m_search_width < 0.003) {
 		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
 		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
@@ -270,7 +270,7 @@ void UCTNode::widen_search() {
 }
 
 void UCTNode::narrow_search() {
-	m_search_width = (1.43 * m_search_width); // Larger values cause search to NARROW
+	m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
 	if (m_search_width > 1.0) {
 		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
 	}
@@ -316,13 +316,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
             continue;
         }
 
-        auto winrate = fpu_eval;
+		auto winrate = fpu_eval;
+		auto lcb_winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         } else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
+			lcb_winrate = child.get_lcb_binomial(color);
         }
 		float search_width = get_search_width();
 
@@ -332,12 +334,16 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
-		int randomX = dis8(gen);
+		int randomX = dis8(gen); // RNG outputting range of 1 thru 8
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
-		if (is_root && (int_child_visits > ((search_width) * int_m_visits))) {   // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--it's simply forced to spend visits on a wider selection of its top move choices.
+		if (is_root
+			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
+			&& randomX <= 7 // Uses default LZ search on approx. 1 out of every 8 visits
+			&& int_child_visits > (search_width * int_m_visits)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			int randomX = dis8(gen);
 			continue;
 		}
 
@@ -351,7 +357,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     }
 
     assert(best != nullptr);
-	int randomX = dis8(gen);
+	int randomX = dis8(gen); // RNG outputting range of 1 thru 8
     best->inflate();
     return best->get();
 }

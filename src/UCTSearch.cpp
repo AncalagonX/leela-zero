@@ -291,13 +291,21 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
         auto move_eval = node->get_visits() ?
-                         //static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
-						 static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+                         static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
+						 //static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
 						 //node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
 						 //node->get_policy() * 100.0f,
 						 //node->get_lcb_binomial(color) * 100.0f,
+		auto move_lcb_eval = node->get_visits() ? 
+						 static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+		auto lcb_move_eval_spread = node->get_visits() ?
+						 ((move_eval - move_lcb_eval) * 1.0f) : 0; // This should give the spread of uncertainty
+		int visits_div_by_lcb_spread = static_cast<int>((static_cast<int>(node->get_visits()) / lcb_move_eval_spread) * 1000);
         // Store data in array
-        sortable_data.emplace_back(move, node->get_visits(), move_eval, pv);
+        //sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
+		sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
+		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
+		//sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
 
     }
     // Sort array to decide order
