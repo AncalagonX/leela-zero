@@ -41,6 +41,7 @@ using namespace Utils;
 using namespace boost::math;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
+
 class OutputAnalysisData {
 public:
     OutputAnalysisData(const std::string& move, int visits,

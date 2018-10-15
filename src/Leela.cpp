@@ -415,7 +415,8 @@ static void parse_commandline(int argc, char *argv[]) {
     if (vm.count("lagbuffer")) {
         int lagbuffer = vm["lagbuffer"].as<int>();
         if (lagbuffer != cfg_lagbuffer_cs) {
-            myprintf("Using per-move time margin of %.2fs.\n", lagbuffer/100.0f);
+            myprintf("Using per-move time margin of %.2fs.\n",
+                     lagbuffer/100.0f);
             cfg_lagbuffer_cs = lagbuffer;
         }
     }
