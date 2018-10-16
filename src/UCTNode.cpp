@@ -195,6 +195,13 @@ bool UCTNode::has_children() const {
 }
 
 bool UCTNode::expandable(const float min_psa_ratio) const {
+#ifndef NDEBUG
+    if (m_min_psa_ratio_children == 0.0f) {
+        // If we figured out that we are fully expandable
+        // it is impossible that we stay in INITIAL state.
+        assert(m_expand_state.load() != ExpandState::INITIAL);
+    }
+#endif
     return min_psa_ratio < m_min_psa_ratio_children;
 }
 
@@ -413,7 +420,9 @@ UCTNode& UCTNode::get_best_root_child(int color) {
 size_t UCTNode::count_nodes_and_clear_expand_state() {
     auto nodecount = size_t{0};
     nodecount += m_children.size();
-    m_expand_state = ExpandState::INITIAL;
+    if (expandable()) {
+        m_expand_state = ExpandState::INITIAL;
+    }
     for (auto& child : m_children) {
         if (child.is_inflated()) {
             nodecount += child->count_nodes_and_clear_expand_state();

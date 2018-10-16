@@ -45,12 +45,18 @@ constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 
 class OutputAnalysisData {
 public:
-    OutputAnalysisData(const std::string& move, int visits, int winrate, std::string pv) :
-        m_move(move), m_visits(visits), m_winrate(winrate), m_pv(pv) {};
+    OutputAnalysisData(const std::string& move, int visits,
+                       float winrate, float policy_prior, std::string pv)
+    : m_move(move), m_visits(visits), m_winrate(winrate),
+      m_policy_prior(policy_prior), m_pv(pv) {};
 
     std::string get_info_string(int order) const {
-        auto tmp = "info move " + m_move + " visits " + std::to_string(m_visits) +
-                          " winrate " + std::to_string(m_winrate);
+        auto tmp = "info move " + m_move
+                 + " visits " + std::to_string(m_visits)
+                 + " winrate "
+                 + std::to_string(static_cast<int>(m_winrate * 10000))
+                 + " prior "
+                 + std::to_string(static_cast<int>(m_policy_prior * 10000.0f));
         if (order >= 0) {
             tmp += " order " + std::to_string(order);
         }
@@ -68,7 +74,8 @@ public:
 private:
     std::string m_move;
     int m_visits;
-    int m_winrate;
+    float m_winrate;
+    float m_policy_prior;
     std::string m_pv;
 };
 
@@ -184,6 +191,10 @@ float UCTSearch::get_min_psa_ratio() const {
     if (mem_full > 0.5f) {
         // Memory is almost exhausted, trim more aggressively.
         if (mem_full > 0.95f) {
+            // if completely full just stop expansion by returning an impossible number
+            if (mem_full >= 1.0f) {
+                return 2.0f;
+            }
             return 0.01f;
         }
         return 0.001f;
@@ -203,7 +214,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         if (currstate.get_passes() >= 2) {
             auto score = currstate.final_score();
             result = SearchResult::from_score(score);
-        } else if (UCTNodePointer::get_tree_size() < cfg_max_tree_size) {
+        } else {
             float eval;
             const auto had_children = node->has_children();
             const auto success =
@@ -280,33 +291,41 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         return;
     }
 
-    const int color = state.get_to_move();
+    const auto color = state.get_to_move();
 
     for (const auto& node : parent.get_children()) {
         // Only send variations with visits
-        if (!node->get_visits()) continue;
-
+        if (!node->get_visits()) {
+            continue;
+        }
         std::string move = state.move_to_text(node->get_move());
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
-        auto move_eval = node->get_visits() ?
-                         static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
-						 //static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
-						 //node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
-						 //node->get_policy() * 100.0f,
-						 //node->get_lcb_binomial(color) * 100.0f,
-		auto move_lcb_eval = node->get_visits() ? 
-						 static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
-		auto lcb_move_eval_spread = node->get_visits() ?
-						 ((move_eval - move_lcb_eval) * 1.0f) : 0; // This should give the spread of uncertainty
-		int visits_div_by_lcb_spread = static_cast<int>((static_cast<int>(node->get_visits()) / lcb_move_eval_spread) * 1000);
+        auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
+
+
+		// UPDATE auto move_eval = node->get_visits() ?
+			// UPDATE static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
+			//static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+			//node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
+			//node->get_policy() * 100.0f,
+			//node->get_lcb_binomial(color) * 100.0f,
+		// UPDATE auto move_lcb_eval = node->get_visits() ?
+			// UPDATE static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+		// UPDATE auto lcb_move_eval_spread = node->get_visits() ?
+			// UPDATE ((move_eval - move_lcb_eval) * 1.0f) : 0; // This should give the spread of uncertainty
+		// UPDATE int visits_div_by_lcb_spread = static_cast<int>((static_cast<int>(node->get_visits()) / lcb_move_eval_spread) * 1000);
+
+
+        auto policy = node->get_policy();
         // Store data in array
-        //sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
-		sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
+        sortable_data.emplace_back(move, node->get_visits(),
+                                   move_eval, policy, pv); // NEW Original
+		//sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
+		// UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
 		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
 		//sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
-
     }
     // Sort array to decide order
     std::stable_sort(rbegin(sortable_data), rend(sortable_data));
@@ -541,6 +560,14 @@ int UCTSearch::get_best_move(passflag_t passflag) {
 
 std::string UCTSearch::get_pv(FastState & state, UCTNode& parent) {
     if (!parent.has_children()) {
+        return std::string();
+    }
+
+    if (parent.expandable()) {
+        // Not fully expanded. This means someone could expand
+        // the node while we want to traverse the children.
+        // Avoid the race conditions and don't go through the rabbit hole
+        // of trying to print things from this node.
         return std::string();
     }
 
