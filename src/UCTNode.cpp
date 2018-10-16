@@ -236,7 +236,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_depth_1, bool is_opponent_move) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -282,9 +282,46 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
-        assert(value > std::numeric_limits<double>::lowest());
+		//if (is_opponent_move) {
+		//	value = 1 - (winrate + puct);
+		//}
 
-        if (value > best_value) {
+
+
+
+
+
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+		int int_parent_visits = static_cast<int>(parentvisits);
+
+		assert(value > std::numeric_limits<double>::lowest());
+
+		if (is_root) {
+			if (int_child_visits > (0.1 * int_m_visits)) {
+				continue;
+			}
+		}
+
+		if (is_depth_1) {
+			if (int_child_visits > (0.25 * int_m_visits)) {
+				continue;
+			}
+		}
+
+		if (is_root && (value > best_value)) {
+			best_value = value;
+			best = &child;
+		}
+
+		if (!is_root && is_depth_1 && (value > (0.8 * best_value))) {
+			if (value > best_value) {
+				best_value = value;
+			}
+			best = &child;
+		}
+
+        if (!is_root && !is_depth_1 && (value > best_value)) {
             best_value = value;
             best = &child;
         }
