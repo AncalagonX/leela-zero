@@ -41,6 +41,7 @@
 #include "SMP.h"
 #include "Training.h"
 #include "UCTSearch.h"
+#include "UCTNode.h"
 #include "Utils.h"
 
 using namespace Utils;
@@ -57,6 +58,7 @@ size_t cfg_max_tree_size;
 int cfg_max_cache_ratio_percent;
 TimeManagement::enabled_t cfg_timemanage;
 int cfg_lagbuffer_cs;
+float m_search_width;
 int cfg_resignpct;
 int cfg_noise;
 int cfg_random_cnt;
@@ -124,6 +126,7 @@ void GTP::setup_default_parameters() {
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
+	m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -177,6 +180,8 @@ const std::string GTP::s_commands[] = {
     "clear_board",
     "komi",
     "play",
+	"widen_search",
+	"narrow_search",
     "genmove",
     "showboard",
     "undo",
@@ -401,6 +406,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             gtp_fail_printf(id, "syntax not understood");
         }
         return;
+
+    } else if (command.find("widen_search") == 0) {
+		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
+		UCTNode::widen_search();
+        return;
+
+    } else if (command.find("narrow_search") == 0) {
+		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
+		UCTNode::narrow_search();
+        return;
+
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
