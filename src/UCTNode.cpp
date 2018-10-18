@@ -317,6 +317,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 	auto best_value = std::numeric_limits<double>::lowest();
 	auto best_winrate = std::numeric_limits<double>::lowest();
 
+	int randomX = dis8(gen);
+
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
@@ -338,14 +340,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
-		//if (is_opponent_move) {
-		//	value = 1 - (winrate + puct);
-		//}
+		if (!is_opponent_move) {
+			value = (1 - abs(0.51-(winrate)) + puct);
+		}
 
 
 
 
-		// int randomX = dis8(gen); // UNUSED NOW
+		int randomX = dis8(gen);
 
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
@@ -353,13 +355,37 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 
 		assert(value > std::numeric_limits<double>::lowest());
 
-
+		/***********************
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
-			&& int_child_visits > ((search_width * int_m_visits) + 1)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& int_child_visits > ((search_width * int_m_visits) + 1)
+			&& randomX != 8) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			int randomX = dis8(gen);
 			continue;
 		}
+
+		//if ((!is_opponent_move) && (winrate < 0.40) && (randomX != 7)) {
+		//	int randomX = dis8(gen);
+		//	continue;
+		//}
+
+		***********************/
+
+
+		/***********************
+
+		if ((is_root) && (winrate > 0.6) && (randomX != 8)) {
+			int randomX = dis8(gen);
+			continue;
+		}
+
+		if ((!is_opponent_move) && (winrate > 0.6) && (randomX != 8)) {
+			int randomX = dis8(gen);
+			continue;
+		}
+
+		***********************/
 
 		if (value > best_value) {
 			best_value = value;
@@ -368,45 +394,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 		if (winrate > best_winrate) {
 			best_winrate = winrate;
 		}
-
-
-
-
-		if (is_root) {
-			if (int_child_visits > (0.1 * int_m_visits)) {
-				continue;
-			}
-		}
-
-		if (is_depth_1) {
-			if (int_child_visits > (0.25 * int_m_visits)) {
-				continue;
-			}
-		}
-
-		if (is_root && (value > best_value)) {
-			best_value = value;
-			best = &child;
-		}
-
-		if (!is_root && is_depth_1 && (value > (0.8 * best_value))) {
-			if (value > best_value) {
-				best_value = value;
-			}
-			best = &child;
-		}
-
-        if (!is_root && !is_depth_1 && (value > best_value)) {
-            best_value = value;
-            best = &child;
-        }
-		if (winrate > best_winrate) {
-			best_winrate = winrate;
-		}
     }
 
     assert(best != nullptr);
-	// int randomX = dis8(gen); // UNUSED NOW
+	randomX = dis8(gen);
     best->inflate();
     return best->get();
 }
@@ -417,7 +408,8 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-        // Calculate the lower confidence bound for each node.
+        /**
+		// Calculate the lower confidence bound for each node.
         if (a.get_visits() && b.get_visits()) {
             float a_lb = a.get_lcb_binomial(m_color);
             float b_lb = b.get_lcb_binomial(m_color);
@@ -427,6 +419,18 @@ public:
                 return a_lb < b_lb;
             }
         }
+		**/
+
+		if ((a.get_visits() >= (0.10 * cfg_max_playouts)) && (b.get_visits() >= (0.10 * cfg_max_playouts))) {
+			//float a_wr = a.get_eval(m_color);
+			//float b_wr = b.get_eval(m_color);
+			float a_wr = a.get_lcb_binomial(m_color);
+			float b_wr = b.get_lcb_binomial(m_color);
+			float a_diff = (1 - abs(0.51 - (a_wr)));
+			float b_diff = (1 - abs(0.51 - (b_wr)));
+
+			return a_diff < b_diff;
+		}
 
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
