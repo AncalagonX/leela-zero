@@ -421,16 +421,20 @@ public:
         }
 		**/
 
+		/**************
+
 		if ((a.get_visits() >= (0.10 * cfg_max_playouts)) && (b.get_visits() >= (0.10 * cfg_max_playouts))) {
 			//float a_wr = a.get_eval(m_color);
 			//float b_wr = b.get_eval(m_color);
-			float a_wr = a.get_lcb_binomial(m_color);
-			float b_wr = b.get_lcb_binomial(m_color);
-			float a_diff = (1 - abs(0.51 - (a_wr)));
-			float b_diff = (1 - abs(0.51 - (b_wr)));
+			//float a_wr = a.get_lcb_binomial(m_color);
+			//float b_wr = b.get_lcb_binomial(m_color);
+			float a_diff = (1 - abs(0.55 - (a_wr)));
+			float b_diff = (1 - abs(0.55 - (b_wr)));
 
 			return a_diff < b_diff;
 		}
+
+		**************/
 
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
