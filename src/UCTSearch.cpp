@@ -302,7 +302,8 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
-        auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
+		//auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
+		auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // NEW, gives LCB in place of winrate
 
 
 		// UPDATE auto move_eval = node->get_visits() ?
