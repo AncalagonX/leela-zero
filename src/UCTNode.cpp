@@ -245,7 +245,6 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
-/******
 // Use CI_ALPHA / 2 if calculating double sided bounds.
 float UCTNode::get_lcb_binomial(int color) const {
     return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
@@ -255,7 +254,6 @@ float UCTNode::get_lcb_binomial(int color) const {
 float UCTNode::get_ucb_binomial(int color) const {
     return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
 }
-******/
 
 double UCTNode::get_blackevals() const {
     return m_blackevals;
@@ -326,14 +324,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         }
 
 		auto winrate = fpu_eval;
-		//auto lcb_winrate = fpu_eval;
+		auto lcb_winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         } else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
-			//lcb_winrate = child.get_lcb_binomial(color);
+			lcb_winrate = child.get_lcb_binomial(color);
         }
 		float search_width = get_search_width();
 
@@ -375,7 +373,6 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-		/******
         // Calculate the lower confidence bound for each node.
         if (a.get_visits() && b.get_visits()) {
             float a_lb = a.get_lcb_binomial(m_color);
@@ -386,8 +383,6 @@ public:
                 return a_lb < b_lb;
             }
         }
-
-		******/
 
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
