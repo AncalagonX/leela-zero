@@ -29,6 +29,8 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <random>
+#include <boost/math/distributions/binomial.hpp>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -39,6 +41,21 @@
 #include "Utils.h"
 
 using namespace Utils;
+using namespace boost::math;
+
+std::random_device rd;
+
+std::mt19937 gen(rd());
+
+std::uniform_int_distribution<> dis4(1, 4);
+std::uniform_int_distribution<> dis6(1, 6);
+std::uniform_int_distribution<> dis8(1, 8);
+std::uniform_int_distribution<> dis10(1, 10);
+std::uniform_int_distribution<> dis12(1, 12);
+std::uniform_int_distribution<> dis14(1, 14);
+std::uniform_int_distribution<> dis16(1, 16);
+std::uniform_int_distribution<> dis24(1, 24);
+std::uniform_int_distribution<> dis32(1, 32);
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -228,6 +245,16 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
+// Use CI_ALPHA / 2 if calculating double sided bounds.
+float UCTNode::get_lcb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
+}
+
+// Use CI_ALPHA / 2 if calculating double sided bounds.
+float UCTNode::get_ucb_binomial(int color) const {
+    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
+}
+
 double UCTNode::get_blackevals() const {
     return m_blackevals;
 }
@@ -236,8 +263,29 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
-    wait_expanded();
+float UCTNode::get_search_width() {
+	return m_search_width;
+}
+
+void UCTNode::widen_search() {
+	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
+	if (m_search_width < 0.003) {
+		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
+		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
+	}
+}
+
+void UCTNode::narrow_search() {
+	m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
+	if (m_search_width > 1.0) {
+		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+	}
+}
+
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
+	//LOCK(get_mutex(), lock);
+	wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -251,46 +299,70 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
     }
 
-    auto numerator = std::sqrt(double(parentvisits));
-    auto fpu_reduction = 0.0f;
-    // Lower the expected eval for moves that are likely not the best.
-    // Do not do this if we have introduced noise at this node exactly
-    // to explore more.
-    if (!is_root || !cfg_noise) {
-        fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
-    }
-    // Estimated eval for unknown nodes = original parent NN eval - reduction
-    auto fpu_eval = get_net_eval(color) - fpu_reduction;
+	int movenum_now2 = movenum_now;
 
-    auto best = static_cast<UCTNodePointer*>(nullptr);
-    auto best_value = std::numeric_limits<double>::lowest();
+	auto numerator = std::sqrt(double(parentvisits));
+	auto fpu_reduction = 0.0f;
+	// Lower the expected eval for moves that are likely not the best.
+	// Do not do this if we have introduced noise at this node exactly
+	// to explore more.
+
+	auto pure_eval = get_raw_eval(color);
+	if (!is_root || !cfg_noise) {
+		fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
+	}
+	// Estimated eval for unknown nodes = original parent NN eval - reduction
+	auto fpu_eval = get_net_eval(color) - fpu_reduction;
+
+	auto best = static_cast<UCTNodePointer*>(nullptr);
+	auto best_value = std::numeric_limits<double>::lowest();
+	auto best_winrate = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
         }
 
-        auto winrate = fpu_eval;
+		auto winrate = fpu_eval;
+		auto lcb_winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         } else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
+			lcb_winrate = child.get_lcb_binomial(color);
         }
+		float search_width = get_search_width();
+
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
+		// int randomX = dis8(gen); // UNUSED NOW
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+		int int_parent_visits = static_cast<int>(parentvisits);
+
+		if (is_root
+			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
+			&& int_child_visits > ((search_width * int_m_visits) + 1)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			continue;
+		}
+
         if (value > best_value) {
-            best_value = value;
+			best_value = value;
             best = &child;
         }
+		if (winrate > best_winrate) {
+			best_winrate = winrate;
+		}
     }
 
     assert(best != nullptr);
+	// int randomX = dis8(gen); // UNUSED NOW
     best->inflate();
     return best->get();
 }
@@ -301,6 +373,17 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+        // Calculate the lower confidence bound for each node.
+        if (a.get_visits() && b.get_visits()) {
+            float a_lb = a.get_lcb_binomial(m_color);
+            float b_lb = b.get_lcb_binomial(m_color);
+
+            // Sort on lower confidence bounds
+            if (a_lb != b_lb) {
+                return a_lb < b_lb;
+            }
+        }
+
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
             return a.get_visits() < b.get_visits();

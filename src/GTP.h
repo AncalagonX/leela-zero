@@ -28,6 +28,7 @@
 #include "Network.h"
 #include "GameState.h"
 #include "UCTSearch.h"
+#include "UCTNode.h"
 
 extern bool cfg_gtp_mode;
 extern bool cfg_allow_pondering;
@@ -39,6 +40,9 @@ extern size_t cfg_max_tree_size;
 extern int cfg_max_cache_ratio_percent;
 extern TimeManagement::enabled_t cfg_timemanage;
 extern int cfg_lagbuffer_cs;
+
+extern float m_search_width;
+
 extern int cfg_resignpct;
 extern int cfg_noise;
 extern int cfg_random_cnt;
@@ -81,8 +85,7 @@ class GTP {
 public:
     static std::unique_ptr<Network> s_network;
     static void initialize(std::unique_ptr<Network>&& network);
-    static bool execute(GameState & game, const std::string& xinput);
-    static bool execute_setoption(int id, const std::string& command);
+    static void execute(GameState & game, const std::string& xinput);
     static void setup_default_parameters();
 private:
     static constexpr int GTP_VERSION = 2;
@@ -94,6 +97,8 @@ private:
         std::istringstream& is);
     static std::pair<bool, std::string> set_max_memory(
         size_t max_memory, int cache_size_ratio_percent);
+    static void execute_setoption(UCTSearch& search,
+                                  int id, const std::string& command);
 
     // Memory estimation helpers
     static size_t get_base_memory();

@@ -51,7 +51,7 @@ public:
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color);
     UCTNode& get_best_root_child(int color);
-    UCTNode* uct_select_child(int color, bool is_root);
+	UCTNode* uct_select_child(int color, bool is_root, int movenum_now);
 
     size_t count_nodes_and_clear_expand_state();
     bool first_visit() const;
@@ -68,6 +68,14 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
+    float get_lcb_binomial(int color) const;
+	float get_ucb_binomial(int color) const;
+
+	//static float m_search_width;
+	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
+	static void widen_search(); // Called from GTP.cpp as a gtp command
+	static void narrow_search(); // Called from GTP.cpp as a gtp command
+
     void virtual_loss();
     void virtual_loss_undo();
     void update(float eval);
@@ -134,6 +142,10 @@ private:
     // Tree data
     std::atomic<float> m_min_psa_ratio_children{2.0f};
     std::vector<UCTNodePointer> m_children;
+
+    // For Normal distribution confidence intervals
+    SMP::Mutex m_nodemutex;
+    std::atomic<double> m_variance{0.0};
 
     //  m_expand_state manipulation methods
     // INITIAL -> EXPANDING

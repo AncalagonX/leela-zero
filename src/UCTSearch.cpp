@@ -26,6 +26,7 @@
 #include <memory>
 #include <type_traits>
 #include <algorithm>
+#include <boost/math/distributions/binomial.hpp>
 
 #include "FastBoard.h"
 #include "FastState.h"
@@ -38,8 +39,10 @@
 #include "Utils.h"
 
 using namespace Utils;
+using namespace boost::math;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
+
 class OutputAnalysisData {
 public:
     OutputAnalysisData(const std::string& move, int visits,
@@ -61,12 +64,11 @@ public:
         return tmp;
     }
 
-    friend bool operator<(const OutputAnalysisData& a,
-                          const OutputAnalysisData& b) {
-        if (a.m_visits == b.m_visits) {
-            return a.m_winrate < b.m_winrate;
+    friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
+        if (a.m_winrate == b.m_winrate) {
+            return a.m_visits < b.m_visits;
         }
-        return a.m_visits < b.m_visits;
+        return a.m_winrate < b.m_winrate;
     }
 
 private:
@@ -189,6 +191,10 @@ float UCTSearch::get_min_psa_ratio() const {
     if (mem_full > 0.5f) {
         // Memory is almost exhausted, trim more aggressively.
         if (mem_full > 0.95f) {
+            // if completely full just stop expansion by returning an impossible number
+            if (mem_full >= 1.0f) {
+                return 2.0f;
+            }
             return 0.01f;
         }
         return 0.001f;
@@ -199,6 +205,7 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
+	const auto movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -207,7 +214,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         if (currstate.get_passes() >= 2) {
             auto score = currstate.final_score();
             result = SearchResult::from_score(score);
-        } else if (UCTNodePointer::get_tree_size() < cfg_max_tree_size) {
+        } else {
             float eval;
             const auto had_children = node->has_children();
             const auto success =
@@ -220,7 +227,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -264,11 +271,13 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (LCB-Bi: %5.2f%%) (UCB-Bi: %5.2f%%) PV: %s\n",
             move.c_str(),
             node->get_visits(),
             node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
             node->get_policy() * 100.0f,
+            node->get_lcb_binomial(color) * 100.0f,
+            node->get_ucb_binomial(color) * 100.0f,
             pv.c_str());
     }
     tree_stats(parent);
@@ -293,11 +302,31 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
-        auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f;
+		//auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
+		auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // NEW, gives LCB in place of winrate
+
+
+		// UPDATE auto move_eval = node->get_visits() ?
+			// UPDATE static_cast<int>(node->get_raw_eval(color) * 10000) : 0; // Default, gives winrate
+			//static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+			//node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
+			//node->get_policy() * 100.0f,
+			//node->get_lcb_binomial(color) * 100.0f,
+		// UPDATE auto move_lcb_eval = node->get_visits() ?
+			// UPDATE static_cast<int>(node->get_lcb_binomial(color) * 10000) : 0; // Gives LCB in place of winrate
+		// UPDATE auto lcb_move_eval_spread = node->get_visits() ?
+			// UPDATE ((move_eval - move_lcb_eval) * 1.0f) : 0; // This should give the spread of uncertainty
+		// UPDATE int visits_div_by_lcb_spread = static_cast<int>((static_cast<int>(node->get_visits()) / lcb_move_eval_spread) * 1000);
+
+
         auto policy = node->get_policy();
         // Store data in array
         sortable_data.emplace_back(move, node->get_visits(),
-                                   move_eval, policy, pv);
+                                   move_eval, policy, pv); // NEW Original
+		//sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
+		// UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
+		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
+		//sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
     }
     // Sort array to decide order
     std::stable_sort(rbegin(sortable_data), rend(sortable_data));
