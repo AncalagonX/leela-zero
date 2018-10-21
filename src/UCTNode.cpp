@@ -373,6 +373,7 @@ public:
     NodeComp(int color) : m_color(color) {};
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
+		/******
         // Calculate the lower confidence bound for each node.
         if (a.get_visits() && b.get_visits()) {
             float a_lb = a.get_lcb_binomial(m_color);
@@ -383,6 +384,7 @@ public:
                 return a_lb < b_lb;
             }
         }
+		******/
 
         // if visits are not same, sort on visits
         if (a.get_visits() != b.get_visits()) {
