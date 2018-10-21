@@ -271,13 +271,13 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) (LCB-Bi: %5.2f%%) (UCB-Bi: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
             move.c_str(),
             node->get_visits(),
             node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
             node->get_policy() * 100.0f,
-            node->get_lcb_binomial(color) * 100.0f,
-            node->get_ucb_binomial(color) * 100.0f,
+            //node->get_lcb_binomial(color) * 100.0f,
+            //node->get_ucb_binomial(color) * 100.0f,
             pv.c_str());
     }
     tree_stats(parent);
@@ -302,8 +302,8 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
-		//auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
-		auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // NEW, gives LCB in place of winrate
+		auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; // Default, gives winrate
+		//auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // NEW, gives LCB in place of winrate
 
 
 		// UPDATE auto move_eval = node->get_visits() ?
