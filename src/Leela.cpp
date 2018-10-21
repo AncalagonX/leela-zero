@@ -94,6 +94,7 @@ static void parse_commandline(int argc, char *argv[]) {
                 "ID of the OpenCL device(s) to use (disables autodetection).")
         ("full-tuner", "Try harder to find an optimal OpenCL tuning.")
         ("tune-only", "Tune OpenCL only and then exit.")
+        ("batchsize", po::value<int>(), "Max batch size. Default 4.")
 #ifdef USE_HALF
         ("precision", po::value<std::string>(), "Floating-point precision (single/half/auto).\n"
                                                 "Default is to auto which automatically determines which one to use.")
@@ -227,6 +228,10 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_tune_only = true;
     }
 
+    if (vm.count("batchsize")) {
+        cfg_batch_size = vm["batchsize"].as<int>();
+    }
+
 #ifdef USE_HALF
     if (vm.count("precision")) {
         auto precision = vm["precision"].as<std::string>();
@@ -252,6 +257,12 @@ static void parse_commandline(int argc, char *argv[]) {
         }
         cfg_num_threads = num_threads;
     }
+#ifdef USE_OPENCL
+    if (cfg_num_threads < cfg_batch_size) {
+        printf("Threads number = %d must be larger than batch size = %d\n", cfg_num_threads, cfg_batch_size);
+        exit(EXIT_FAILURE);
+    }
+#endif
     myprintf("Using %d thread(s).\n", cfg_num_threads);
 
     if (vm.count("seed")) {

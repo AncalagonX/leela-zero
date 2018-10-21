@@ -708,6 +708,10 @@ void UCTSearch::increment_playouts() {
     m_playouts++;
 }
 
+#ifdef USE_OPENCL
+extern std::atomic<size_t> batch_stats[];
+#endif
+
 int UCTSearch::think(int color, passflag_t passflag) {
     // Start counting time for us
     m_rootstate.start_clock(color);
@@ -728,7 +732,14 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
     // create a sorted list of legal moves (make sure we
     // play something legal and decent even in time trouble)
+    m_network.set_batching(false);
     m_root->prepare_root_node(m_network, color, m_nodes, m_rootstate);
+#ifdef USE_OPENCL
+    if (m_root->get_children().size() >= cfg_batch_size) {
+        // Only enable batching when there is enough nodes to eval
+        m_network.set_batching(true);
+    }
+#endif
 
     m_run = true;
     int cpus = cfg_num_threads;
@@ -768,6 +779,9 @@ int UCTSearch::think(int color, passflag_t passflag) {
         keeprunning &= have_alternate_moves(elapsed_centis, time_for_move);
     } while (keeprunning);
 
+    // Turn off batching to end other threads
+    m_network.set_batching(false);
+
     // stop the search
     m_run = false;
     tg.wait_all();
@@ -795,6 +809,9 @@ int UCTSearch::think(int color, passflag_t passflag) {
                  static_cast<int>(m_nodes),
                  static_cast<int>(m_playouts),
                  (m_playouts * 100.0) / (elapsed_centis+1));
+#ifdef USE_OPENCL
+        myprintf("batch stats: %d %d\n", batch_stats[0].load(), batch_stats[1].load());
+#endif
     }
     int bestmove = get_best_move(passflag);
 
@@ -806,8 +823,15 @@ int UCTSearch::think(int color, passflag_t passflag) {
 void UCTSearch::ponder() {
     update_root();
 
+    m_network.set_batching(false);
     m_root->prepare_root_node(m_network, m_rootstate.board.get_to_move(),
                               m_nodes, m_rootstate);
+#ifdef USE_OPENCL
+    if (m_root->get_children().size() >= cfg_batch_size) {
+        // Only enable batching when there is enough nodes to eval
+        m_network.set_batching(true);
+    }
+#endif
 
     m_run = true;
     ThreadGroup tg(thread_pool);
@@ -834,6 +858,9 @@ void UCTSearch::ponder() {
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
     } while (!Utils::input_pending() && keeprunning);
+
+    // Turn off batching to end other threads
+    m_network.set_batching(false);
 
     // stop the search
     m_run = false;
