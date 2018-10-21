@@ -402,17 +402,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         } else {
             gtp_fail_printf(id, "syntax not understood");
         }
-        return true;
+        return;
 
     } else if (command.find("widen_search") == 0) {
 		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::widen_search();
-        return true;
+        return;
 
     } else if (command.find("narrow_search") == 0) {
 		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
-        return true;
+        return;
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
@@ -1061,8 +1061,8 @@ void GTP::execute_setoption(UCTSearch & search,
             options_out_tmp = options_out_tmp + "\n" + s_options[i];
         }
         gtp_printf(id, options_out_tmp.c_str());
-        return true;
-    } *************************************/
+        return;
+    }
 
     if (name_token.find("name") != 0) {
         gtp_fail_printf(id, "incorrect syntax for lz-setoption");
