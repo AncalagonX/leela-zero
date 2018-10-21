@@ -140,6 +140,10 @@ private:
     std::atomic<float> m_min_psa_ratio_children{2.0f};
     std::vector<UCTNodePointer> m_children;
 
+    // For Normal distribution confidence intervals
+    SMP::Mutex m_nodemutex;
+    std::atomic<double> m_variance{0.0};
+
     //  m_expand_state manipulation methods
     // INITIAL -> EXPANDING
     // Return false if current state is not INITIAL
