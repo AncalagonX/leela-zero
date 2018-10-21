@@ -66,8 +66,8 @@ public:
     Netresult get_output(const GameState* const state,
                          const Ensemble ensemble,
                          const int symmetry = -1,
-                         const bool skip_cache = false,
-                         const bool force_selfcheck = false);
+                         const bool skip_cache = false);
+    void set_batching(bool is_batching) { m_forward->set_batching(is_batching); };
 
     static constexpr auto INPUT_MOVES = 8;
     static constexpr auto INPUT_CHANNELS = 2 * INPUT_MOVES + 2;

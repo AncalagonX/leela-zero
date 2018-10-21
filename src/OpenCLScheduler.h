@@ -22,12 +22,12 @@
 
 #include <list>
 #include <vector>
+#include <thread>
 
 #include "SMP.h"
 #include "ForwardPipe.h"
 #include "OpenCL.h"
 #include "ThreadPool.h"
-
 
 template <typename net_t>
 class OpenCLScheduler : public ForwardPipe {
@@ -37,8 +37,20 @@ class OpenCLScheduler : public ForwardPipe {
         OpenCLContext context;
         ContextPoolEntry(size_t index) : net_index(index) {}
     };
+    class ForwardQueueEntry {
+    public:
+      std::mutex mutex;
+      std::condition_variable cv;
+      const std::vector<float>& in;
+      std::vector<float>& out_p;
+      std::vector<float>& out_v;
+      ForwardQueueEntry(const std::vector<float>& input,
+                        std::vector<float>& output_pol,
+                        std::vector<float>& output_val) : in(input), out_p(output_pol), out_v(output_val)
+        {}
+    };
 public:
-    OpenCLScheduler();
+    virtual ~OpenCLScheduler();
     virtual void initialize(const int channels);
     virtual void forward(const std::vector<float>& input,
                          std::vector<float>& output_pol,
@@ -48,13 +60,19 @@ public:
                               unsigned int channels,
                               unsigned int outputs,
                               std::shared_ptr<const ForwardPipeWeights> weights);
+    virtual void set_batching(bool is_batching);
 private:
+    bool m_running = true;
     std::vector<std::unique_ptr<OpenCL_Network<net_t>>> m_networks;
     std::vector<std::unique_ptr<OpenCL<net_t>>> m_opencl;
 
-    using ContextPoolQueue = std::list<std::shared_ptr<ContextPoolEntry>>;
-    std::vector<ContextPoolQueue> m_context_pool;
+    std::mutex m_mutex;
+    std::condition_variable m_cv;
+    std::list<std::shared_ptr<ForwardQueueEntry>> m_forward_queue;
+    std::list<std::thread> m_worker_threads;
 
+    void batch_worker(const size_t gnum);
+    std::atomic<bool> m_is_batching;
     SMP::Mutex m_context_pool_mutex;
 
     void push_input_convolution(unsigned int filter_size,
