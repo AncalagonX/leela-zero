@@ -64,10 +64,10 @@ public:
 
     friend bool operator<(const OutputAnalysisData& a,
                           const OutputAnalysisData& b) {
-        if (a.m_visits == b.m_visits) {
-            return a.m_winrate < b.m_winrate;
-        }
-        return a.m_visits < b.m_visits;
+		if (a.m_winrate == b.m_winrate) {
+			return a.m_visits < b.m_visits;
+		}
+		return a.m_winrate < b.m_winrate; // This tells Lizzie to mark the cyan "best move" according to highest winrate, rather than highest visits. This does not modify the search in any way.
     }
 
 private:
