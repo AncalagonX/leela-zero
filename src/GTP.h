@@ -27,7 +27,7 @@
 
 #include "Network.h"
 #include "GameState.h"
-#include "UCTNode.h" // Is this necessary for the cross-file variable "m_search_width" which is initialized in GTP.cpp?
+#include "UCTNode.h" // Is this necessary for the cross-file variable "visit_search_width" which is initialized in GTP.cpp?
 #include "UCTSearch.h"
 
 extern bool cfg_gtp_mode;
@@ -43,7 +43,8 @@ extern TimeManagement::enabled_t cfg_timemanage;
 extern int cfg_lagbuffer_cs;
 extern int cfg_resignpct;
 extern int cfg_noise;
-extern float m_search_width; // This variable works properly and can be accessed from UCTNode.cpp with no problems. But is it the right way to code this?
+extern float visit_search_width; // This variable works properly and can be accessed from UCTNode.cpp with no problems. But is it the right way to code this?
+extern float puct_search_width; // This variable works properly and can be accessed from UCTNode.cpp with no problems. But is it the right way to code this?
 extern int cfg_random_cnt;
 extern int cfg_random_min_visits;
 extern float cfg_random_temp;

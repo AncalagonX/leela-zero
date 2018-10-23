@@ -40,7 +40,7 @@
 #include "SGFTree.h"
 #include "SMP.h"
 #include "Training.h"
-#include "UCTNode.h" // Is this necessary for the cross-file variable "m_search_width" which is initialized in GTP.cpp (this file)?
+#include "UCTNode.h" // Is this necessary for the cross-file variable "visit_search_width" which is initialized in GTP.cpp (this file)?
 #include "UCTSearch.h"
 #include "Utils.h"
 
@@ -58,7 +58,8 @@ size_t cfg_max_tree_size;
 int cfg_max_cache_ratio_percent;
 TimeManagement::enabled_t cfg_timemanage;
 int cfg_lagbuffer_cs;
-float m_search_width;
+float visit_search_width;
+float puct_search_width;
 int cfg_resignpct;
 int cfg_noise;
 int cfg_random_cnt;
@@ -126,7 +127,9 @@ void GTP::setup_default_parameters() {
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
-	m_search_width = 0.311; // Searches approximately a width of approx. 3-4 moves initially
+	puct_search_width = 1.000; // Unmodified policy multiplier, initially.
+	//visit_search_width = 0.311; // Searches approximately a width of approx. 3-4 moves initially
+	visit_search_width = 1.000; // Unmodified visits multiplier, initially.
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };

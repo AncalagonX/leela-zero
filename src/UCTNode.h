@@ -68,7 +68,8 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
-	static float get_search_width(); // Variable "m_search_width" is initialized as extern in GTP.cpp, and it works with no issues. But is this the proper way to code/implement this?
+	static float get_visit_search_width(); // Variable "visit_search_width" is initialized as extern in GTP.cpp, and it works with no issues. But is this the proper way to code/implement this?
+	static float get_puct_search_width(); // Variable "puct_search_width" is initialized as extern in GTP.cpp, and it works with no issues. But is this the proper way to code/implement this?
 	static void widen_search(); // Called from GTP.cpp as a GTP command
 	static void narrow_search(); // Called from GTP.cpp as a GTP command
     void virtual_loss();
