@@ -304,6 +304,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
 
+	int legal_root_move_count = 1; // Initialized
+	if (is_root) {
+		legal_root_move_count = static_cast<int>(m_children.size()); // This counts the number of valid, playable intersections at the root node.
+	}
+
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
