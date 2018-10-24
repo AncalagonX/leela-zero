@@ -319,6 +319,19 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 
 	int randomX = dis8(gen);
 
+	int random_movenum_shift = 9; // TODO - The following section gets called multiple times per move, rather than just once per move. Need to be fixed.
+
+	if (randomX == 1) {
+		random_movenum_shift += 1;
+	}
+	if (randomX == 2) {
+		random_movenum_shift -= 1;
+
+		if (random_movenum_shift <= 0) {
+			random_movenum_shift = 10;
+		}
+	}
+
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
@@ -340,14 +353,33 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
         auto value = winrate + puct;
+
+		int randomX = dis8(gen);
+
 		if (!is_opponent_move) {
-			value = (1 - abs(0.51-(winrate)) + puct);
+			if ((movenum_now % 10 == (random_movenum_shift + 0) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 1) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 2) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 3) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 4) % 10)) {
+				value = (1 - abs(0.60 - (winrate)) + puct);
+			}
+			if ((movenum_now % 10 == (random_movenum_shift + 5) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 6) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 7) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 8) % 10) ||
+			(movenum_now % 10 == (random_movenum_shift + 9) % 10)) {
+				value = (1 - abs(0.40 - (winrate)) + puct);
+			}
+			if (movenum_now <= 20) {
+				value = (1 - abs(0.50 - (winrate)) + puct);
+			}
 		}
 
 
 
 
-		int randomX = dis8(gen);
+		randomX = dis8(gen);
 
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
@@ -355,11 +387,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 
 		assert(value > std::numeric_limits<double>::lowest());
 
-		/***********************
+		// /***********************
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
-			&& int_child_visits > ((search_width * int_m_visits) + 1)
+			&& int_child_visits > ((0.9 * int_m_visits) + 1)
 			&& randomX != 8) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			int randomX = dis8(gen);
 			continue;
@@ -370,7 +402,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 		//	continue;
 		//}
 
-		***********************/
+		// ***********************/
 
 
 		/***********************
