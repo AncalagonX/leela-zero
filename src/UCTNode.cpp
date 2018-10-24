@@ -264,6 +264,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
+	
+	int legal_root_move_count = 1; // Initialized
+	if (is_root) {
+		legal_root_move_count = static_cast<int>(m_children.size()); // This counts the number of valid, playable intersetions at the root node.
+	}
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -284,10 +289,35 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
-        if (value > best_value) {
-            best_value = value;
-            best = &child;
-        }
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+		int int_parent_visits = static_cast<int>(parentvisits); // Unused.
+
+		if (is_root) {   // We only want to affect visits at the root node (i.e. the list of move choices for our immediate next move to play)
+			
+			// Below: Each intersection is visited equally, in chunks of 100 visits at a time.
+			// "legal_root_move_count" measures the number of possible playable intersections remaining.
+			// The (0.5 * cfg_num_threads) correction alleviates most inaccuracies in visit counting when multiple threads are in use. This minor correction helps dole out as close to exactly 100 visits at a time as possible.
+
+			if (static_cast<int>((int_child_visits) / 100) <= static_cast<int>((int_m_visits / (legal_root_move_count)) / (100+(0.5*cfg_num_threads)))) {   // This is the magic line that does all the work.
+			
+			// For a simpler implementation that performs only 1 visit at a time per intersection equally across the board, just comment out the above line and uncomment the below line as a direct replacement:
+			//if (int_child_visits <= (int_m_visits / legal_root_move_count)) {   // This is the simpler magic line.
+				best = &child;
+				if (value > best_value) {
+					best_value = value;
+					best = &child;
+				}
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+
+		if (value > best_value) {
+			best_value = value;
+			best = &child;
+		}
     }
 
     assert(best != nullptr);
