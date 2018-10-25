@@ -346,13 +346,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
 		}
 
-		if (value > best_value) {
-			best_value = value;
+		if (is_root &&
+			(value_wide_search > best_value)) {
 			best = &child;
 		}
 
-		if (is_root &&
-			(value_wide_search > best_value)) {
+		if (value > best_value) {
+			best_value = value;
 			best = &child;
 		}
 
@@ -361,9 +361,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 			best_value = value;
 			best = &child;
 		}
+		if (best == nullptr) {
+			best = &child;
+		}
+
     }
 
-    assert(best != nullptr);
+    //assert(best != nullptr);
     best->inflate();
     return best->get();
 }
