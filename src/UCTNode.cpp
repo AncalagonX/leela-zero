@@ -40,6 +40,8 @@
 
 using namespace Utils;
 
+int legal_root_moves_count = 1;
+
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
 
@@ -247,16 +249,18 @@ float UCTNode::get_puct_search_width() {
 void UCTNode::widen_search() {
 	// 0.558 multiplier = 10 increments from minimum width (0.003) to maximum width (1.0)
 	visit_search_width = (0.558 * visit_search_width); // Smaller "visit_search_width" values cause the search to WIDEN
-	puct_search_width = (1.11 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
+	puct_search_width = (1.585 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
 
-	if (visit_search_width < 0.010) { // ORIGINALLY = 0.003 when used with the original 0.558 multiplier above
-		visit_search_width = 0.010; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+	float min_visit_search_limit_factor = (362 / legal_root_moves_count);
+
+	if (visit_search_width < (0.003 * min_visit_search_limit_factor)) { // ORIGINALLY = 0.003 when used with the original 0.558 multiplier above
+		visit_search_width = (0.003 * min_visit_search_limit_factor); // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
 		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
 		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
 		// Update3: This will be fixed someday later by better "if statement" handling inside uct_select_child.
 	}
 	
-	if (puct_search_width < 1.0) {
+	if (puct_search_width >= 1.0) {
 		puct_search_width = 1.0; // Numbers smaller than 1.0 are unhelpful. Clamp to min policy width of of 1.0, which should be identical to traditional LZ search.
 	}
 }
@@ -264,14 +268,14 @@ void UCTNode::narrow_search() {
 	// 1.788 multiplier = 10 increments from maximum width (1.0) to minimum width (0.003)
 
 	visit_search_width = (1.788 * visit_search_width); // Larger visit_search_width values cause search to NARROW
-	puct_search_width = (0.9 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
+	puct_search_width = (0.630 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
 
 	if (visit_search_width >= 1.0) {
-		visit_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+		visit_search_width  = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
 	}
 
 	if (puct_search_width <= 0.010) {
-		puct_search_width = 0.010; // This clamps at a 100x increase in puct. Requires testing, especially since the current implementation is also widening the search using "visit_search_width" at the same time.
+		puct_search_width  = 0.010; // This clamps at a 100x increase in puct. Requires testing, especially since the current implementation is also widening the search using "visit_search_width" at the same time.
 	}
 }
 
@@ -304,9 +308,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
 
-	int legal_root_move_count = 1; // Initialized
 	if (is_root) {
-		legal_root_move_count = static_cast<int>(m_children.size()); // This counts the number of valid, playable intersections at the root node.
+		legal_root_moves_count = static_cast<int>(m_children.size()); // This counts the number of valid, playable intersections at the root node.
 	}
 
     for (auto& child : m_children) {

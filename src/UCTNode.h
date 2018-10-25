@@ -74,7 +74,7 @@ public:
 	static void narrow_search(); // Called from GTP.cpp as a GTP command
     void virtual_loss();
     void virtual_loss_undo();
-    void update(float eval);
+	void update(float eval);
 
     // Defined in UCTNodeRoot.cpp, only to be called on m_root in UCTSearch
     void randomize_first_proportionally();
