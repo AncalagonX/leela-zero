@@ -41,6 +41,8 @@
 using namespace Utils;
 
 int legal_root_moves_count = 1;
+int moves_skipped = 0;
+int moves_seen = 0;
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -324,12 +326,29 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
 	if (is_root) {
 		legal_root_moves_count = static_cast<int>(m_children.size()); // This counts the number of valid, playable intersections at the root node.
+		//for (auto& child : m_children) {
+		//TODO - If code still doesn't work, add a for loop here that just counts +1 for every psa < psa_limit
+		moves_skipped = 0;
+		moves_seen = 0;
+	}
+
+	for (auto& child : m_children) {
+		int int_child_visits = static_cast<int>(child.get_visits());
+		auto psa = child.get_policy();
+		if (is_root && int_child_visits <= 0 && psa <= 0.000005) {
+			moves_skipped += 1;
+		}
 	}
 
     for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+		moves_seen += 1;
+		//if (is_root && !child.active()) {
+			//moves_skipped += 1;
+			//continue;
+		//}
+		if (!child.active()) {
+			continue;
+		}
 
         auto winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
@@ -369,14 +388,21 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		****************************************/
 
 		if (is_root
-		&& int_child_visits > (static_cast<int>(visit_search_width * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far.
+		&& (int_child_visits * static_cast<int>((legal_root_moves_count - moves_skipped)/(legal_root_moves_count))) > (static_cast<int>(visit_search_width * int_m_visits))) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far.
+			//moves_skipped += 1;
 			continue; // This skips this move. Must be fixed later to handle race conditions which could very rarely crash LZ.
 		}
 
 		if (is_root &&
 			(value_wide_search >= best_value)) {
-			if (value > best_value) {
+			if (value >= best_value) {
 				best_value = value;
+			}
+			float raw_visit_search_width = (visit_search_width / (362 / legal_root_moves_count)); // This is used for detecting the widest two search notches
+			if (int_child_visits <= 0 && psa <= 0.000005 && raw_visit_search_width > 0.015) { // psa limit was deduced by a handful of experiments as a decent limit
+																	 // raw_visit_search_width limit activates only for last two widest search notches
+				//moves_skipped += 1;
+				continue; // Skip if policy score is way too low
 			}
 			best = &child;
 		}
