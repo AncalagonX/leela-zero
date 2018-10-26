@@ -239,6 +239,17 @@ void UCTNode::accumulate_eval(float eval) {
 }
 
 float UCTNode::get_visit_search_width() {
+	if (visit_search_width < ((1 / 361) * (362 / legal_root_moves_count))) { // ORIGINALLY = 0.003 when used with the original 0.558 multiplier above
+		visit_search_width = (1 / 361) * (362 / legal_root_moves_count); // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
+		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
+		// Update3: This will be fixed someday later by better "if statement" handling inside uct_select_child.
+	}
+
+	if (visit_search_width >= 1.0) {
+		visit_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+	}
+
 	return visit_search_width;
 }
 
@@ -252,19 +263,17 @@ void UCTNode::widen_search() {
 	// 1.585 multiplier = 10 increments from 0.01 to 1.0 (or 1 to 100)
 
 	visit_search_width = (0.558 * visit_search_width); // Smaller "visit_search_width" values cause the search to WIDEN
-	puct_search_width = (1.259 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
+	//puct_search_width = (1.259 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
 
-	float min_visit_search_limit_factor = (362 / legal_root_moves_count);
-
-	if (visit_search_width < (0.003 * min_visit_search_limit_factor)) { // ORIGINALLY = 0.003 when used with the original 0.558 multiplier above
-		visit_search_width = (0.003 * min_visit_search_limit_factor); // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+	if (visit_search_width < ((1/361) * (362 / legal_root_moves_count))) { // ORIGINALLY = 0.003 when used with the original 0.558 multiplier above
+		visit_search_width = (1/361) * (362 / legal_root_moves_count); // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
 		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
 		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
 		// Update3: This will be fixed someday later by better "if statement" handling inside uct_select_child.
 	}
 	
-	if (puct_search_width >= 100.0) {
-		puct_search_width = 100.0; // Numbers larger than 1.0 are unhelpful. Clamp to min policy width of of 1.0, which should be identical to traditional LZ search.
+	if (puct_search_width >= 10.0) {
+		puct_search_width = 10.0; // Numbers larger than 1.0 are unhelpful. Clamp to min policy width of of 1.0, which should be identical to traditional LZ search.
 	}
 }
 void UCTNode::narrow_search() {
@@ -273,7 +282,7 @@ void UCTNode::narrow_search() {
 	// 0.631 multiplier = 10 increments from 1.0 to 0.01 (or 100 to 1)
 
 	visit_search_width = (1.788 * visit_search_width); // Larger visit_search_width values cause search to NARROW
-	puct_search_width = (0.795 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
+	//puct_search_width = (0.795 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
 
 	if (visit_search_width >= 1.0) {
 		visit_search_width  = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
@@ -346,34 +355,41 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
 		// The "visit_search_width" multiplier below is the maximum allowed percentage.LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 
-		if (is_root
-		&& int_child_visits > ((visit_search_width * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far.
-			continue; // This skips this move. Must be fixed later to handle race conditions which could very rarely crash LZ.
+		/****************************************
+		*****************************************
+		
+		* Skip if:
+			* too many visits
+			* too low of value compared to "value_wide_search"?
+				* Or maybe instead, skip if no visits and low policy?
+		* Select best = &child if:
+			* "value_wide_search" > value
+		
+		*****************************************
+		****************************************/
 
+		if (is_root
+		&& int_child_visits > (static_cast<int>(visit_search_width * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far.
+			continue; // This skips this move. Must be fixed later to handle race conditions which could very rarely crash LZ.
 		}
 
 		if (is_root &&
-			(value_wide_search > best_value)) {
-			best = &child;
-		}
-
-		if (value > best_value) {
-			best_value = value;
+			(value_wide_search >= best_value)) {
+			if (value > best_value) {
+				best_value = value;
+			}
 			best = &child;
 		}
 
 		if (!is_root && 
-			(value > best_value)) {
+			(value >= best_value)) {
 			best_value = value;
-			best = &child;
-		}
-		if (best == nullptr) {
 			best = &child;
 		}
 
     }
 
-    //assert(best != nullptr);
+    assert(best != nullptr);
     best->inflate();
     return best->get();
 }
