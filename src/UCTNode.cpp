@@ -248,8 +248,11 @@ float UCTNode::get_puct_search_width() {
 
 void UCTNode::widen_search() {
 	// 0.558 multiplier = 10 increments from minimum width (0.003) to maximum width (1.0)
+	// 1.259 multiplier = 10 increments from 0.1 to 1.0 (or 1 to 10)
+	// 1.585 multiplier = 10 increments from 0.01 to 1.0 (or 1 to 100)
+
 	visit_search_width = (0.558 * visit_search_width); // Smaller "visit_search_width" values cause the search to WIDEN
-	puct_search_width = (1.585 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
+	puct_search_width = (1.259 * puct_search_width); // Larger "puct_search_width" values cause the search to WIDEN
 
 	float min_visit_search_limit_factor = (362 / legal_root_moves_count);
 
@@ -260,22 +263,24 @@ void UCTNode::widen_search() {
 		// Update3: This will be fixed someday later by better "if statement" handling inside uct_select_child.
 	}
 	
-	if (puct_search_width >= 1.0) {
-		puct_search_width = 1.0; // Numbers smaller than 1.0 are unhelpful. Clamp to min policy width of of 1.0, which should be identical to traditional LZ search.
+	if (puct_search_width >= 100.0) {
+		puct_search_width = 100.0; // Numbers larger than 1.0 are unhelpful. Clamp to min policy width of of 1.0, which should be identical to traditional LZ search.
 	}
 }
 void UCTNode::narrow_search() {
 	// 1.788 multiplier = 10 increments from maximum width (1.0) to minimum width (0.003)
+	// 0.795 multiplier = 10 increments from 1.0 to 0.1 (or 10 to 1)
+	// 0.631 multiplier = 10 increments from 1.0 to 0.01 (or 100 to 1)
 
 	visit_search_width = (1.788 * visit_search_width); // Larger visit_search_width values cause search to NARROW
-	puct_search_width = (0.630 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
+	puct_search_width = (0.795 * puct_search_width); // Smaller "puct_search_width" values cause search to NARROW
 
 	if (visit_search_width >= 1.0) {
 		visit_search_width  = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
 	}
 
-	if (puct_search_width <= 0.010) {
-		puct_search_width  = 0.010; // This clamps at a 100x increase in puct. Requires testing, especially since the current implementation is also widening the search using "visit_search_width" at the same time.
+	if (puct_search_width <= 1.0) {
+		puct_search_width  = 1.0; // This clamps at a 100x increase in puct. Requires testing, especially since the current implementation is also widening the search using "visit_search_width" at the same time.
 	}
 }
 
