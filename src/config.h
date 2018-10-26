@@ -101,8 +101,19 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
  */
 //#define USE_TUNER
 
+// KGS outputs the following on Match start:
+// YourRank [-]: GTP Engine for YourRank (black): Leela Zero version 0.15
+
+// Default values:
+//static constexpr auto PROGRAM_NAME = "Leela Zero";
+//static constexpr auto PROGRAM_VERSION = "0.15";
+
+
 static constexpr auto PROGRAM_NAME = "Leela Zero";
 static constexpr auto PROGRAM_VERSION = "0.15";
+
+// Tiebot was set to output the following on Match start:
+// YourRank [-]: GTP Engine for YourRank (white): This is a special Leela Zero modification that is designed to try to force the game to be tied. It will play at exactly your strength, instead of trying to crush you. version 3.141592
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes
