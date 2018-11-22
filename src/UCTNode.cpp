@@ -333,7 +333,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
 		float search_width = get_search_width();
 
 		if (!is_opponent_move) {
-			value = (1 - abs(0.75-(winrate)) + puct);
+			value = (1 - abs(0.625-(winrate)) + puct);
 		}
 
 
