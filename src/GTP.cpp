@@ -77,6 +77,7 @@ precision_t cfg_precision;
 float cfg_puct;
 float cfg_softmax_temp;
 float cfg_fpu_reduction;
+float cfg_fpu_root_reduction;
 std::string cfg_weightsfile;
 std::string cfg_logfile;
 FILE* cfg_logfile_handle;
@@ -142,6 +143,7 @@ void GTP::setup_default_parameters() {
     // see UCTSearch::should_resign
     cfg_resignpct = -1;
     cfg_noise = false;
+    cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
@@ -1130,6 +1132,8 @@ void GTP::execute_setoption(UCTSearch & search,
         // explicit command to set memory usage is given,
         // we will stick with the initial guess we made on startup.
         search.set_visit_limit(cfg_max_visits);
+
+        gtp_printf(id, "");
     } else if (name == "playouts") {
         std::istringstream valuestream(value);
         int playouts;
@@ -1150,11 +1154,14 @@ void GTP::execute_setoption(UCTSearch & search,
         // explicit command to set memory usage is given,
         // we will stick with the initial guess we made on startup.
         search.set_playout_limit(cfg_max_visits);
+
+        gtp_printf(id, "");
     } else if (name == "lagbuffer") {
         std::istringstream valuestream(value);
         int lagbuffer;
         valuestream >> lagbuffer;
         cfg_lagbuffer_cs = lagbuffer;
+        gtp_printf(id, "");
     } else if (name == "pondering") {
         std::istringstream valuestream(value);
         std::string toggle;
@@ -1171,11 +1178,13 @@ void GTP::execute_setoption(UCTSearch & search,
             gtp_fail_printf(id, "incorrect value");
             return;
         }
+        gtp_printf(id, "");
     } else if (name == "resign percentage") {
         std::istringstream valuestream(value);
         int resignpct;
         valuestream >> resignpct;
         cfg_resignpct = resignpct;
+        gtp_printf(id, "");
     } else {
         gtp_fail_printf(id, "Unknown option");
     }

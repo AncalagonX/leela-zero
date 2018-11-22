@@ -32,6 +32,8 @@ a good network (which you can feed into this program, suddenly making it strong)
 
 # I want to help
 
+## Using your own hardware
+
 You need a PC with a GPU, i.e. a discrete graphics card made by NVIDIA or AMD,
 preferably not too old, and with the most recent drivers installed.
 
@@ -40,21 +42,29 @@ lower. If your CPU is not *very* recent (Haswell or newer, Ryzen or newer),
 performance will be outright bad, and it's probably of no use trying to join
 the distributed effort. But you can still play, especially if you are patient.
 
-[Running Leela Zero client on a Tesla K80 GPU for free (Google Colaboratory)](COLAB.md)
-
-## Windows
+### Windows
 
 Head to the Github releases page at https://github.com/gcp/leela-zero/releases,
 download the latest release, unzip, and launch autogtp.exe. It will connect to
 the server automatically and do its work in the background, uploading results
 after each game. You can just close the autogtp window to stop it.
 
-## macOS and Linux
+### macOS and Linux
 
 Follow the instructions below to compile the leelaz binary, then go into
 the autogtp subdirectory and follow [the instructions there](autogtp/README.md)
 to build the autogtp binary. Copy the leelaz binary into the autogtp dir, and
 launch autogtp.
+
+## Using a Cloud provider
+
+Many cloud companies offer free trials (or paid solutions, not discussed here)
+that are usable for helping the leela-zero project.
+
+There are community maintained instructions available here:
+* [Running Leela Zero client on a Tesla V100 GPU for free (Google Cloud Free Trial)](https://docs.google.com/document/d/1P_c-RbeLKjv1umc4rMEgvIVrUUZSeY0WAtYHjaxjD64/edit?usp=sharing)
+
+* [Running Leela Zero client on a Tesla V100 GPU for free (Microsoft Azure Cloud Free Trial)](https://docs.google.com/document/d/1DMpi16Aq9yXXvGj0OOw7jbd7k2A9LHDUDxxWPNHIRPQ/edit?usp=sharing)
 
 # I just want to play right now
 
@@ -72,7 +82,7 @@ If you prefer a more human style, a network trained from human games is availabl
 * Boost 1.58.x or later, headers and program_options, filesystem and system libraries (libboost-dev, libboost-program-options-dev and libboost-filesystem-dev on Debian/Ubuntu)
 * zlib library (zlib1g & zlib1g-dev on Debian/Ubuntu)
 * Standard OpenCL C headers (opencl-headers on Debian/Ubuntu, or at
-https://github.com/KhronosGroup/OpenCL-Headers/tree/master/opencl22/)
+https://github.com/KhronosGroup/OpenCL-Headers/tree/master/CL)
 * OpenCL ICD loader (ocl-icd-libopencl1 on Debian/Ubuntu, or reference implementation at https://github.com/KhronosGroup/OpenCL-ICD-Loader)
 * An OpenCL capable device, preferably a very, very fast GPU, with recent
 drivers is strongly recommended (OpenCL 1.1 support is enough).
@@ -291,28 +301,33 @@ If interrupted, training can be resumed with:
 
 - [ ] Further optimize Winograd transformations.
 - [ ] Implement GPU batching.
-- [ ] Allow setting more parameters over GTP.
+- [ ] GTP extention to exclude moves from analysis.
+- [ ] Root filtering for handicap play.
 - More backends:
 - [ ] MKL-DNN based backend.
-- [ ] CUDA specific version using cuDNN.
-- [ ] AMD specific version using MIOpen.
+- [ ] CUDA specific version using cuDNN or cuBLAS.
+- [ ] AMD specific version using MIOpen/ROCm.
 
 # Related links
 
 * Status page of the distributed effort:
 https://zero.sjeng.org
+* GUI and study tool for Leela Zero:
+https://github.com/featurecat/lizzie
 * Watch Leela Zero's training games live in a GUI:
 https://github.com/fsparv/LeelaWatcher
-* GUI and study tool for Leela Zero:
-https://github.com/CamWagner/lizzie
-* Stockfish chess engine ported to Leela Zero framework:
-https://github.com/glinscott/leela-chess
 * Original Alpha Go (Lee Sedol) paper:
 https://storage.googleapis.com/deepmind-media/alphago/AlphaGoNaturePaper.pdf
-* Newer Alpha Zero (Go, Chess, Shogi) paper:
+* Alpha Go Zero paper:
+https://deepmind.com/documents/119/agz_unformatted_nature.pdf
+* Alpha Zero (Go, Chess, Shogi) paper:
 https://arxiv.org/pdf/1712.01815.pdf
 * AlphaGo Zero Explained In One Diagram:
 https://medium.com/applied-data-science/alphago-zero-explained-in-one-diagram-365f5abf67e0
+* Stockfish chess engine ported to Leela Zero framework:
+https://github.com/LeelaChessZero/lczero
+* Leela Chess Zero (chess optimized client)
+https://github.com/LeelaChessZero/lc0
 
 # License
 
