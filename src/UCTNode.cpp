@@ -299,11 +299,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
     }
 
 	int movenum_now2 = movenum_now;
-	auto pure_eval = get_raw_eval(color);
     const auto numerator = std::sqrt(double(parentvisits));
     const auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction) * std::sqrt(total_visited_policy);
     // Estimated eval for unknown nodes = original parent NN eval - reduction
     const auto fpu_eval = get_net_eval(color) - fpu_reduction;
+	auto pure_eval = get_raw_eval(color);
 
 	auto best = static_cast<UCTNodePointer*>(nullptr);
 	auto best_value = std::numeric_limits<double>::lowest();
@@ -326,10 +326,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, boo
             winrate = child.get_eval(color);
 			lcb_winrate = child.get_lcb_binomial(color);
         }
-        const auto psa = child.get_policy();
-        const auto denom = 1.0 + child.get_visits();
-        const auto puct = cfg_puct * psa * (numerator / denom);
-        const auto value = winrate + puct;
+        auto psa = child.get_policy();
+        auto denom = 1.0 + child.get_visits();
+        auto puct = cfg_puct * psa * (numerator / denom);
+        auto value = winrate + puct;
 		float search_width = get_search_width();
 
 		if (!is_opponent_move) {
