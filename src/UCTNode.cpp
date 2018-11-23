@@ -236,7 +236,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -274,7 +274,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
-        const auto puct = cfg_puct * psa * (numerator / denom);
+        auto puct = cfg_puct * psa * (numerator / denom);
+		if (movenum_here <= 30) {
+			puct = (4 * puct);
+		}
         const auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
