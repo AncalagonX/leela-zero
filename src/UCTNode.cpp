@@ -312,8 +312,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 		int int_parent_visits = static_cast<int>(parentvisits);
 
 		if (is_root
+			&& int_child_visits > ((0.5 * int_m_visits) + 1)) {
+			continue;
+		}
+
+		if (is_root
 			// && int_m_visits > 800 // This line would allow us to first require LZ to conduct an unmodified optimal search for 800 visits before allowing the widened search to happen, but is commented out. The widened search instead currently starts immediately
-			&& int_child_visits > ((search_width * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far. The "search_width" multiplier is the maximum allowed percentage. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& int_child_visits > ((0.1 * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far. The "search_width" multiplier is the maximum allowed percentage. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue; // This skips this move. Must be fixed later to handle race conditions which could very rarely crash LZ.
 
 		}
