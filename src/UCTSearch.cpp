@@ -206,6 +206,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     const auto color = currstate.get_to_move();
     auto result = SearchResult{};
 
+	auto movenum_here = int(m_rootstate.get_movenum());
+
     node->virtual_loss();
 
     if (node->expandable()) {
@@ -225,7 +227,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_here);
         auto move = next->get_move();
 
         currstate.play_move(move);
