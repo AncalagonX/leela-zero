@@ -303,7 +303,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
+
         auto value = winrate + puct;
+
+		if (movenum_here <= 10) {
+			value = winrate + (4.0 * puct);
+		}
+
         assert(value > std::numeric_limits<double>::lowest());
 
 		float search_width = get_search_width();
@@ -311,17 +317,69 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
+		if (value > best_value) {
+			best = &child;
+		}
+
 		if (is_root
-			&& int_child_visits > ((0.5 * int_m_visits) + 1)) {
+			&& (int_child_visits >= ((0.95 * int_m_visits) + 1))) {
 			continue;
 		}
 
 		if (is_root
+			&& (movenum_here <= 10)
+			&& (winrate >= 0.30)
+			&& (int_child_visits >= ((0.05 * int_m_visits) + 1))) {
+			continue;
+		}
+
+		if (is_root
+			&& (movenum_here <= 20)
+			&& (winrate >= 0.40)
+			&& (int_child_visits >= ((0.1 * int_m_visits) + 1))) {
+			continue;
+		}
+
+		if (is_root
+			&& (movenum_here <= 30)
+			&& (winrate >= 0.50)
+			&& (int_child_visits >= ((0.2 * int_m_visits) + 1))) {
+			continue;
+		}
+
+		if (is_root
+			&& (movenum_here <= 100)
+			&& (winrate >= 0.60)
+			&& (int_child_visits >= ((0.4 * int_m_visits) + 1))) {
+			continue;
+		}
+
+		/********
+
+		if (is_root
+			&& (movenum_here >= 101)
+			&& (winrate >= 0.90)
+			&& (int_m_visits >= 800)) {
+			//return the best move and end the search
+		}
+		********/
+
+
+
+
+
+
+
+
+		/********
+		if (is_root
 			// && int_m_visits > 800 // This line would allow us to first require LZ to conduct an unmodified optimal search for 800 visits before allowing the widened search to happen, but is commented out. The widened search instead currently starts immediately
-			&& int_child_visits > ((0.1 * int_m_visits) + 1)) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far. The "search_width" multiplier is the maximum allowed percentage. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& (movenum_here <= 10)
+			&& (int_child_visits >= ((0.02 * int_m_visits) + 1))) { // Forces LZ to skip visits on root nodes which exceed a certain percentage of total visits conducted so far. The "search_width" multiplier is the maximum allowed percentage. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue; // This skips this move. Must be fixed later to handle race conditions which could very rarely crash LZ.
 
 		}
+		********/
 
         if (value > best_value) {
             best_value = value;

@@ -109,8 +109,8 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
 //static constexpr auto PROGRAM_NAME = "Leela Zero";
 //static constexpr auto PROGRAM_VERSION = "0.15";
 
-static constexpr auto PROGRAM_NAME = "Custom-built Leela Zero";
-static constexpr auto PROGRAM_VERSION = "0.16a - Using LZ_191 [40x256] weights first created on 2018-11-19";
+static constexpr auto PROGRAM_NAME = "";
+static constexpr auto PROGRAM_VERSION = "";
 
 // Tiebot was set to output the following on Match start:
 // YourRank [-]: GTP Engine for YourRank (white): This is a special Leela Zero modification that is designed to try to force the game to be tied. It will play at exactly your strength, instead of trying to crush you. version 3.141592

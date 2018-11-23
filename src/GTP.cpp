@@ -171,8 +171,6 @@ void GTP::setup_default_parameters() {
 
 const std::string GTP::s_commands[] = {
     "protocol_version",
-    "name",
-    "version",
     "quit",
     "known_command",
     "list_commands",
@@ -190,8 +188,6 @@ const std::string GTP::s_commands[] = {
     "time_settings",
     "time_left",
     "fixed_handicap",
-    "place_free_handicap",
-    "set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",
