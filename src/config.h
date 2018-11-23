@@ -103,14 +103,14 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
 
 // KGS outputs the following on Match start:
 // YourRank [-]: GTP Engine for YourRank (black): Leela Zero version 0.15
+//    LZ100 [-]: GTP Engine for    LZ100 (white): Leela Zero version 0.16 - Using LZ_100 [10x128] weights first created on 2018-03-09 - Visits = 6400
 
 // Default values:
 //static constexpr auto PROGRAM_NAME = "Leela Zero";
 //static constexpr auto PROGRAM_VERSION = "0.15";
 
-
-static constexpr auto PROGRAM_NAME = "Leela Zero";
-static constexpr auto PROGRAM_VERSION = "0.16";
+static constexpr auto PROGRAM_NAME = "Custom-built Leela Zero";
+static constexpr auto PROGRAM_VERSION = "0.16a - Using LZ_191 [40x256] weights first created on 2018-11-19";
 
 // Tiebot was set to output the following on Match start:
 // YourRank [-]: GTP Engine for YourRank (white): This is a special Leela Zero modification that is designed to try to force the game to be tied. It will play at exactly your strength, instead of trying to crush you. version 3.141592
