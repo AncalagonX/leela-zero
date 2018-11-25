@@ -266,7 +266,7 @@ void UCTNode::narrow_search() {
 	}
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bool is_depth_1, bool is_opponent_move) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, int depth, bool is_depth_1, bool is_opponent_move, bool is_pondering_now) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -372,6 +372,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			continue;
 		}
 
+		/**
+
 		if ((is_root|is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 30)
@@ -388,15 +390,22 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			continue;
 		}
 
-		
-		/**
+		**/
+
 		if (is_root
 			&& (movenum_here >= 21)
 			&& (winrate >= 0.90)
 			&& (int_child_visits >= 400)) {
 			UCTSearch::set_playout_limit(800);
 		}
-		**/
+
+		if (is_root
+			&& (movenum_here >= 21)
+			&& (winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(1600);
+		}
+		
 
 
 

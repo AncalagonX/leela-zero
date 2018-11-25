@@ -233,11 +233,13 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     if (node->has_children() && !result.valid()) {
 		auto depth =
 			int(currstate.get_movenum() - m_rootstate.get_movenum());
+		bool is_depth_1 = (depth == 1);
 		if (is_pondering_now == true) {
 			depth =
 				(1 + int(currstate.get_movenum() - m_rootstate.get_movenum()));
+			is_depth_1 = (depth == 2);
 		}
-        auto next = node->uct_select_child(color, node == m_root.get(), movenum_here, (depth == 1), ((depth % 2) != 0));
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_here, depth, is_depth_1, ((depth % 2) != 0), is_pondering_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -679,6 +681,11 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 }
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
+	if (is_pondering_now) {
+		return m_playouts >= (5 * m_maxplayouts)
+			|| m_root->get_visits() >= (20 * m_maxvisits)
+			|| elapsed_centis >= time_for_move;
+	}
     return m_playouts >= m_maxplayouts
            || m_root->get_visits() >= m_maxvisits
            || elapsed_centis >= time_for_move;
