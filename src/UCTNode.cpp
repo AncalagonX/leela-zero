@@ -257,7 +257,7 @@ void UCTNode::narrow_search() {
 	}
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bool is_depth_1, bool is_opponent_move) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
