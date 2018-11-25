@@ -370,6 +370,19 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 			}
 		}
 
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)) {
+			if (randomX <= 12) {
+				if ((winrate <= 0.30)
+					&& (best_root_winrate >= 0.50)) {
+					continue;
+				}
+				if (winrate <= (0.5 * best_root_winrate)) {
+					continue;
+				}
+			}
+		}
+
 		randomX = dis16(gen);
 
 		//if ((is_depth_1)

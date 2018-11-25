@@ -499,7 +499,7 @@ int UCTSearch::get_best_move(passflag_t passflag) {
                 } else {
                     myprintf("No alternative to passing.\n");
                 }
-            } else if ((relative_score > 0.0f) && (movenum > 150)) {
+            } else if (relative_score > 0.0f) {
                 myprintf("Passing wins :-)\n");
             } else {
                 myprintf("Passing draws :-|\n");
@@ -525,12 +525,12 @@ int UCTSearch::get_best_move(passflag_t passflag) {
             // do we lose by passing?
             if (relative_score < 0.0f) {
                 myprintf("Passing loses, I'll play on.\n");
-            } else if ((relative_score > 0.0f) && (movenum > 150)) {
+            } else if (relative_score > 0.0f) {
                 myprintf("Passing wins, I'll pass out.\n");
                 bestmove = FastBoard::PASS;
             } else {
                 myprintf("Passing draws, make it depend on evaluation.\n");
-                if ((besteval < 0.5f) && (movenum > 150)) {
+                if (besteval < 0.5f) {
                     bestmove = FastBoard::PASS;
                 }
             }
@@ -609,7 +609,7 @@ int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     }
 	
 	auto movenum_here = int(m_rootstate.get_movenum());
-	int speedup_factor = 2.0;
+	int speedup_factor = 2.0; // How much to speedup "early outs" later.
 
     //const auto playout_rate = 1.0f * playouts / elapsed_centis; // Default n/s calc for "early out" calculation
 
