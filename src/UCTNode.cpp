@@ -353,7 +353,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		if ((is_root | is_depth_1)
 			&& (!is_opponent_move)) {
 			if (randomX <= 8) {
-				if (best_root_winrate <= 0.40) {
+				if (best_root_winrate <= 0.45) {
 					if (value > best_value) {
 						best_value = value;
 						best = &child;
@@ -361,7 +361,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 				}
 			}
 			if (randomX <= 12) {
-				if (best_root_winrate <= 0.30) {
+				if (best_root_winrate <= 0.35) {
 					if (value > best_value) {
 						best_value = value;
 						best = &child;
@@ -372,12 +372,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 
 		if ((is_root | is_depth_1)
 			&& (!is_opponent_move)) {
-			if (randomX <= 12) {
+			if (randomX <= 14) {
 				if ((winrate <= 0.30)
 					&& (best_root_winrate >= 0.50)) {
 					continue;
 				}
-				if (winrate <= (0.5 * best_root_winrate)) {
+				if (winrate <= (0.8 * best_root_winrate)) {
 					continue;
 				}
 			}
@@ -401,35 +401,35 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		if ((is_root|is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 10)
-			&& (int_child_visits >= ((0.05 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			&& (int_child_visits >= ((0.08 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
 		if ((is_root|is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 20)
-			&& (int_child_visits >= ((0.1 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
-			continue;
-		}
-
-		if ((is_root | is_depth_1)
-			&& (!is_opponent_move)
-			&& (movenum_here <= 30)
 			&& (int_child_visits >= ((0.16 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
 		if ((is_root | is_depth_1)
 			&& (!is_opponent_move)
+			&& (movenum_here <= 30)
+			&& (int_child_visits >= ((0.32 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			continue;
+		}
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)
 			&& (movenum_here <= 50)
-			&& (int_child_visits >= ((0.24 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			&& (int_child_visits >= ((0.48 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
 		if ((is_root | is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 100)
-			&& (int_child_visits >= ((0.4 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			&& (int_child_visits >= ((0.64 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
