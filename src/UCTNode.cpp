@@ -351,7 +351,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		//}
 
 		if ((is_root|is_depth_1)
-			&& (!is_opponent_move)
+			//&& (!is_opponent_move)
 			&& (int_child_visits >= ((0.95 * int_m_visits) + 10))) {
 			continue;
 		}
