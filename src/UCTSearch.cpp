@@ -43,6 +43,7 @@ constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 
 bool is_pondering_now = false;
 int m_maxvisits;
+int m_maxplayouts;
 
 class OutputAnalysisData {
 public:

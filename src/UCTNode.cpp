@@ -389,14 +389,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 		}
 
 		
-
+		/**
 		if (is_root
 			&& (movenum_here >= 21)
 			&& (winrate >= 0.90)
-			&& (int_child_visits >= 800)) {
-			UCTSearch::set_visit_limit(800);
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(800);
 		}
-		
+		**/
 
 
 
