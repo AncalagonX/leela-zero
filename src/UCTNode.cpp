@@ -29,6 +29,7 @@
 #include <numeric>
 #include <utility>
 #include <vector>
+#include <random>
 
 #include "UCTNode.h"
 #include "FastBoard.h"
@@ -37,8 +38,16 @@
 #include "GameState.h"
 #include "Network.h"
 #include "Utils.h"
+#include "UCTSearch.h"
 
 using namespace Utils;
+
+std::random_device rd;
+
+std::mt19937 gen(rd());
+
+std::uniform_int_distribution<> dis8(1, 8);
+std::uniform_int_distribution<> dis16(1, 16);
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -306,13 +315,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 
         auto value = winrate + puct;
 
-		if (movenum_here <= 20) {
-			value = winrate + (4.0 * puct);
-		}
+		//if ((is_root|is_depth_1) && (!is_opponent_move) && (movenum_here <= 20)) {
+		//	value = winrate + (4.0 * puct);
+		//}
 
-		if (movenum_here <= 10) {
-			value = winrate + (8.0 * puct);
-		}
+		//if ((is_root | is_depth_1) && (!is_opponent_move) && (movenum_here <= 10)) {
+		//	value = winrate + (8.0 * puct);
+		//}
 
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -321,57 +330,73 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
-		if (value > best_value) {
-			best_value = value;
-			best = &child;
+		int randomX = dis16(gen);
+
+		if (randomX == 1) {
+			if (value > best_value) {
+				best_value = value;
+				best = &child;
+				randomX = dis16(gen);
+			}
 		}
 
-		if ((value > (0.01 * best_value)) && (winrate > 0.3)) {
-			best = &child;
-		}
+		randomX = dis16(gen);
 
-		if (is_root
-			&& (int_child_visits >= ((0.95 * int_m_visits) + 1))) {
+		//if ((is_depth_1)
+		//	&& (!is_opponent_move)
+		//	&& (movenum_here <= 30)
+		//	&& (!(winrate < 0.30))
+		//	&& (int_child_visits >= ((0.1 * int_m_visits) + 10))) {
+		//	continue;
+		//}
+
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)
+			&& (int_child_visits >= ((0.95 * int_m_visits) + 10))) {
 			continue;
 		}
 
-		if (is_root
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)
 			&& (movenum_here <= 10)
-			&& (winrate >= 0.30)
-			&& (int_child_visits >= ((0.05 * int_m_visits) + 1))) {
+			&& (!(winrate < 0.30))
+			&& (int_child_visits >= ((0.05 * int_m_visits) + 10))) {
 			continue;
 		}
 
-		if (is_root
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)
 			&& (movenum_here <= 20)
-			&& (winrate >= 0.40)
-			&& (int_child_visits >= ((0.1 * int_m_visits) + 1))) {
+			&& (!(winrate < 0.40))
+			&& (int_child_visits >= ((0.1 * int_m_visits) + 10))) {
 			continue;
 		}
 
-		if (is_root
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)
 			&& (movenum_here <= 30)
-			&& (winrate >= 0.50)
-			&& (int_child_visits >= ((0.2 * int_m_visits) + 1))) {
+			&& (!(winrate < 0.50))
+			&& (int_child_visits >= ((0.2 * int_m_visits) + 10))) {
 			continue;
 		}
 
-		if (is_root
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)
 			&& (movenum_here <= 100)
-			&& (winrate >= 0.60)
-			&& (int_child_visits >= ((0.4 * int_m_visits) + 1))) {
+			&& (!(winrate < 0.60))
+			&& (int_child_visits >= ((0.4 * int_m_visits) + 10))) {
 			continue;
 		}
 
-		/********
+		
 
 		if (is_root
-			&& (movenum_here >= 101)
+			&& (movenum_here >= 21)
 			&& (winrate >= 0.90)
-			&& (int_m_visits >= 800)) {
-			//return the best move and end the search
+			&& (int_child_visits >= 800)) {
+			UCTSearch::set_visit_limit(800);
 		}
-		********/
+		
 
 
 
@@ -390,10 +415,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 		}
 		********/
 
-        if (value > best_value) {
-            best_value = value;
+		if (value > best_value) {
+			best_value = value;
 			best = &child;
-        }
+		}
+
     }
 
     assert(best != nullptr);

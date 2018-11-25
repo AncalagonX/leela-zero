@@ -42,6 +42,7 @@ using namespace Utils;
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 
 bool is_pondering_now = false;
+int m_maxvisits;
 
 class OutputAnalysisData {
 public:
@@ -603,7 +604,8 @@ int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     if (elapsed_centis < 100 || playouts < 100) {
         return playouts_left;
     }
-    const auto playout_rate = 1.0f * playouts / elapsed_centis;
+    //const auto playout_rate = 1.0f * playouts / elapsed_centis;
+	auto playout_rate = 1.0f * 1;
     const auto time_left = std::max(0, time_for_move - elapsed_centis);
     return std::min(playouts_left,
                     static_cast<int>(std::ceil(playout_rate * time_left)));
@@ -646,6 +648,7 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
     }
     // For self play use. Disables pruning of non-contenders to not bias the training data.
     auto prune = cfg_timemanage != TimeManagement::NO_PRUNING;
+	prune = false;
     auto pruned = prune_noncontenders(elapsed_centis, time_for_move, prune);
     if (pruned < m_root->get_children().size() - 1) {
         return true;
@@ -851,4 +854,3 @@ void UCTSearch::set_visit_limit(int visits) {
     // Limit to type max / 2 to prevent overflow when multithreading.
     m_maxvisits = std::min(visits, UNLIMITED_PLAYOUTS);
 }
-
