@@ -607,8 +607,18 @@ int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     if (elapsed_centis < 100 || playouts < 100) {
         return playouts_left;
     }
-    //const auto playout_rate = 1.0f * playouts / elapsed_centis;
-	auto playout_rate = 1.0f * 1;
+	
+	auto movenum_here = int(m_rootstate.get_movenum());
+	int speedup_factor = 2.0;
+
+    //const auto playout_rate = 1.0f * playouts / elapsed_centis; // Default n/s calc for "early out" calculation
+
+	auto playout_rate = 1.0f * playouts / elapsed_centis; // Default n/s calc for "early out" calculation
+	if (movenum_here >= 10) {
+		playout_rate /= speedup_factor; // This speeds up all early outs past a certain movenum
+	}
+	//const auto playout_rate = 1.0f * 2; // This forces 200n/s for "early out" calculation. It's "2" instead of "200" here because the elapsed_centis aren't divided by 100.
+
     const auto time_left = std::max(0, time_for_move - elapsed_centis);
     return std::min(playouts_left,
                     static_cast<int>(std::ceil(playout_rate * time_left)));
@@ -682,8 +692,8 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 	if (is_pondering_now) {
-		return m_playouts >= (5 * m_maxplayouts)
-			|| m_root->get_visits() >= (20 * m_maxvisits)
+		return (int(0.2 * (m_playouts)) >= m_maxplayouts)
+			|| (int(0.2 * (m_root->get_visits())) >= m_maxvisits)
 			|| elapsed_centis >= time_for_move;
 	}
     return m_playouts >= m_maxplayouts

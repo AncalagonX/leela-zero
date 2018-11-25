@@ -294,6 +294,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
+	auto best_root_winrate = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -330,13 +331,42 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
-		int randomX = dis16(gen);
+		if ((is_root|is_depth_1)
+			&& (!is_opponent_move)){
+			if (winrate > best_root_winrate) {
+				best_root_winrate = winrate;
+			}
+		}
+
+		int randomX = dis16(gen); // This next if statement catches endless loops that would otherwise crash LZ
 
 		if (randomX == 1) {
 			if (value > best_value) {
 				best_value = value;
 				best = &child;
 				randomX = dis16(gen);
+			}
+		}
+
+		// Check if best_root_winrate is at least this high, otherwise activate "maximum effort mode" (aka regular LZ search)
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)) {
+			if (randomX <= 8) {
+				if (best_root_winrate <= 0.40) {
+					if (value > best_value) {
+						best_value = value;
+						best = &child;
+					}
+				}
+			}
+			if (randomX <= 12) {
+				if (best_root_winrate <= 0.30) {
+					if (value > best_value) {
+						best_value = value;
+						best = &child;
+					}
+				}
 			}
 		}
 
@@ -351,24 +381,42 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		//}
 
 		if ((is_root|is_depth_1)
-			//&& (!is_opponent_move)
-			&& (int_child_visits >= ((0.95 * int_m_visits) + 10))) {
+			&& (int_child_visits >= ((0.95 * int_m_visits) + 10))) { // Always spend 5% of visits at root AND depth 1 examining other moves, just to ensure a slightly wider search.
 			continue;
 		}
 
 		if ((is_root|is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 10)
-			&& (!(winrate < 0.30))
-			&& (int_child_visits >= ((0.05 * int_m_visits) + 10))) {
+			&& (int_child_visits >= ((0.05 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
 		if ((is_root|is_depth_1)
 			&& (!is_opponent_move)
 			&& (movenum_here <= 20)
-			&& (!(winrate < 0.40))
-			&& (int_child_visits >= ((0.1 * int_m_visits) + 10))) {
+			&& (int_child_visits >= ((0.1 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			continue;
+		}
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)
+			&& (movenum_here <= 30)
+			&& (int_child_visits >= ((0.16 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			continue;
+		}
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)
+			&& (movenum_here <= 50)
+			&& (int_child_visits >= ((0.24 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
+			continue;
+		}
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)
+			&& (movenum_here <= 100)
+			&& (int_child_visits >= ((0.4 * int_m_visits * ((winrate*winrate) / (best_root_winrate*best_root_winrate))) + 10))) {
 			continue;
 		}
 
@@ -393,17 +441,52 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, in
 		**/
 
 		if (is_root
-			&& (movenum_here >= 21)
-			&& (winrate >= 0.90)
+			&& (movenum_here < 50)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 50)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(1600);
+		}
+
+		if (is_root
+			&& (movenum_here >= 50)
+			&& (best_root_winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 100)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(1600);
+		}
+
+		if (is_root
+			&& (movenum_here >= 100)
+			&& (best_root_winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 150)
+			&& (best_root_winrate >= 0.90)
 			&& (int_child_visits >= 400)) {
 			UCTSearch::set_playout_limit(800);
 		}
 
 		if (is_root
-			&& (movenum_here >= 21)
-			&& (winrate <= 0.89)
+			&& (movenum_here >= 150)
+			&& (best_root_winrate <= 0.89)
 			&& (int_child_visits >= 400)) {
-			UCTSearch::set_playout_limit(1600);
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
 		}
 		
 
