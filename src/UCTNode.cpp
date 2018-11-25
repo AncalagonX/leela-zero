@@ -306,8 +306,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
 
         auto value = winrate + puct;
 
-		if (movenum_here <= 10) {
+		if (movenum_here <= 20) {
 			value = winrate + (4.0 * puct);
+		}
+
+		if (movenum_here <= 10) {
+			value = winrate + (8.0 * puct);
 		}
 
         assert(value > std::numeric_limits<double>::lowest());
@@ -318,6 +322,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
 		int int_parent_visits = static_cast<int>(parentvisits);
 
 		if (value > best_value) {
+			best_value = value;
+			best = &child;
+		}
+
+		if ((value > (0.01 * best_value)) && (winrate > 0.3)) {
 			best = &child;
 		}
 
@@ -383,7 +392,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here) {
 
         if (value > best_value) {
             best_value = value;
-            best = &child;
+			best = &child;
         }
     }
 
