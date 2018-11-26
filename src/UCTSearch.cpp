@@ -609,14 +609,12 @@ int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     }
 	
 	auto movenum_here = int(m_rootstate.get_movenum());
-	int speedup_factor = 2.0; // How much to speedup "early outs" later.
+	int speedup_factor = 1.0f; // How much to speedup "early outs" later.
 
     //const auto playout_rate = 1.0f * playouts / elapsed_centis; // Default n/s calc for "early out" calculation
 
 	auto playout_rate = 1.0f * playouts / elapsed_centis; // Default n/s calc for "early out" calculation
-	if (movenum_here >= 10) {
-		playout_rate /= speedup_factor; // This speeds up all early outs past a certain movenum
-	}
+	playout_rate = (playout_rate / speedup_factor); // This speeds up all early outs
 	//const auto playout_rate = 1.0f * 2; // This forces 200n/s for "early out" calculation. It's "2" instead of "200" here because the elapsed_centis aren't divided by 100.
 
     const auto time_left = std::max(0, time_for_move - elapsed_centis);
