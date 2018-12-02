@@ -225,6 +225,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
+	int movenum_now = int(m_rootstate.get_movenum());
+
 	auto depth =
 		int(currstate.get_movenum() - m_rootstate.get_movenum());
 	auto apparent_depth = depth;
@@ -234,7 +236,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
 	}
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get(), ((apparent_depth % 2) != 0));
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now, ((apparent_depth % 2) != 0));
         auto move = next->get_move();
 
         currstate.play_move(move);

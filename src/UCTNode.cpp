@@ -40,6 +40,9 @@
 
 using namespace Utils;
 
+const double PI = 3.141592653589793238463;
+const float  PI_F = 3.14159265358979f;
+
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
 
@@ -236,7 +239,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_opponent_move) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum, bool is_opponent_move) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -263,7 +266,27 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_opponent_mov
 		cfg_winrate_target = 100;
 	}
 	const bool unmodified_search = (cfg_winrate_target == 100);
-	const auto winrate_target_value = 0.01f * cfg_winrate_target;
+	auto winrate_target_value = 0.01f * cfg_winrate_target;
+
+	// y = (pi * (2/desired_period) * movenum)
+
+	const float desired_period = 40.0f;
+
+	const float period_term = static_cast<float>(2.0f / desired_period);
+	const float movenum_as_float = static_cast<float>(movenum);
+
+	const float sin_adjustment = sin(PI_F * period_term * movenum_as_float);
+
+	const float increasing_winrate_adjustment = 0.50f * (movenum_as_float/400.0f);
+	//const float increasing_winrate_adjustment = 0.00f;
+
+	float range_of_target_winrate = abs(0.50f - (0.01f * cfg_winrate_target));
+
+	winrate_target_value = (0.50f + increasing_winrate_adjustment) - (range_of_target_winrate * sin_adjustment);
+
+	if (winrate_target_value >= 1.0f) {
+		winrate_target_value = 1.0f;
+	}
 
     for (auto& child : m_children) {
         if (!child.active()) {
