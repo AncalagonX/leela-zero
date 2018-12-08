@@ -256,7 +256,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, bool is_opponent_move) {
     LOCK(get_mutex(), lock);
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -297,8 +297,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         auto psa = child.get_score();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
-        assert(value > std::numeric_limits<double>::lowest());
+		auto value = winrate + puct;
+
+		//if (!unmodified_search && !is_opponent_move) {
+		//	value = (1 - abs(winrate_target_value - winrate)) + puct;
+		//}
+
+		assert(value > std::numeric_limits<double>::lowest());
 
         if (value > best_value) {
             best_value = value;
