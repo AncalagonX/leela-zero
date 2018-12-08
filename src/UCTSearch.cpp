@@ -196,6 +196,14 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
 
     node->virtual_loss();
 
+	auto depth =
+		int(currstate.get_movenum() - m_rootstate.get_movenum());
+	auto apparent_depth = depth;
+	if (is_pondering_now == true) { // Adjust depth by 1 to account for thinking/pondering during opponent's turn
+		apparent_depth =
+			(1 + int(currstate.get_movenum() - m_rootstate.get_movenum()));
+	}
+
     if (node->expandable()) {
         if (currstate.get_passes() >= 2) {
             auto score = currstate.final_score();
@@ -205,20 +213,13 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
             const auto had_children = node->has_children();
             const auto success =
                 node->create_children(m_nodes, currstate, eval,
-                                      get_min_psa_ratio());
+                                      get_min_psa_ratio(),
+									  ((apparent_depth % 2) != 0));
             if (!had_children && success) {
                 result = SearchResult::from_eval(eval);
             }
         }
     }
-
-	auto depth =
-		int(currstate.get_movenum() - m_rootstate.get_movenum());
-	auto apparent_depth = depth;
-	if (is_pondering_now == true) { // Adjust depth by 1 to account for thinking/pondering during opponent's turn
-		apparent_depth =
-			(1 + int(currstate.get_movenum() - m_rootstate.get_movenum()));
-	}
 
     if (node->has_children() && !result.valid()) {
         auto next = node->uct_select_child(color, node == m_root.get(), ((apparent_depth % 2) != 0));

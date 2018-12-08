@@ -54,7 +54,8 @@ SMP::Mutex& UCTNode::get_mutex() {
 bool UCTNode::create_children(std::atomic<int>& nodecount,
                               GameState& state,
                               float& eval,
-                              float min_psa_ratio) {
+                              float min_psa_ratio,
+							  bool is_opponent_move) {
     // check whether somebody beat us to it (atomic)
     if (!expandable(min_psa_ratio)) {
         return false;
@@ -79,7 +80,8 @@ bool UCTNode::create_children(std::atomic<int>& nodecount,
 
     Network *net;
 
-    if (cfg_have_aux_net && state.board.black_to_move()) {
+    //if (cfg_have_aux_net && state.board.black_to_move()) {
+	if (cfg_have_aux_net && is_opponent_move) {
         net = &aux_net;
     } else {
         net = &main_net;

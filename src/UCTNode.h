@@ -45,7 +45,8 @@ public:
 
     bool create_children(std::atomic<int>& nodecount,
                          GameState& state, float& eval,
-                         float min_psa_ratio = 0.0f);
+                         float min_psa_ratio = 0.0f,
+						 bool is_opponent_move = false);
 
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color);
