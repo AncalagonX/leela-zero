@@ -25,6 +25,11 @@
 
 NNCache::NNCache(int size) : m_size(size) {}
 
+NNCache& NNCache::get_NNCache(void) {
+    static NNCache cache;
+    return cache;
+}
+
 bool NNCache::lookup(std::uint64_t hash, Network::Netresult & result) {
     std::lock_guard<std::mutex> lock(m_mutex);
     ++m_lookups;
@@ -79,7 +84,7 @@ void NNCache::set_size_from_playouts(int max_playouts) {
                  UCTSearch::UNLIMITED_PLAYOUTS / num_cache_moves);
     auto max_size = num_cache_moves * max_playouts_per_move;
     max_size = std::min(150'000, std::max(6'000, max_size));
-    resize(max_size);
+    NNCache::get_NNCache().resize(max_size);
 }
 
 void NNCache::dump_stats() {

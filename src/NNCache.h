@@ -31,6 +31,9 @@ class NNCache {
 public:
     NNCache(int size = 150000);  // ~ 225MB
 
+    // return the global NNCache
+    static NNCache& get_NNCache(void);
+
     // Set a reasonable size gives max number of playouts
     void set_size_from_playouts(int max_playouts);
 

@@ -361,14 +361,13 @@ void init_global_objects() {
 
     // When visits are limited ensure cache size is still limited.
     auto playouts = std::min(cfg_max_playouts, cfg_max_visits);
+    NNCache::get_NNCache().set_size_from_playouts(playouts);
 
     // Initialize network
     main_net.initialize(cfg_weightsfile);
-    main_net.nncache->set_size_from_playouts(playouts);
 
     if (cfg_have_aux_net) {
         aux_net.initialize(cfg_weightsfile_aux);
-        aux_net.nncache->set_size_from_playouts(playouts);
     }
 }
 

@@ -76,8 +76,6 @@ public:
 
     std::vector<net_t> gather_features(const GameState* const state,
                                               const int symmetry);
-    NNCache *nncache;
-
 private:
     std::pair<int, int> load_v1_network(std::istream& wtfile);
     std::pair<int, int> load_network_file(const std::string& filename);
@@ -149,6 +147,8 @@ private:
     // Symmetry helper
     std::array<std::array<int, BOARD_SQUARES>, 8> symmetry_nn_idx_table;
     OpenCLScheduler opencl;
+    NNCache *nncache;
+
 };
 
 extern Network main_net;

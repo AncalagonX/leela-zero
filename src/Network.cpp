@@ -851,7 +851,7 @@ Network::Netresult Network::get_scored_moves(
 
     if (!skip_cache) {
         // See if we already have this in the cache.
-        if (nncache->lookup(state->board.get_hash(), result)) {
+        if (nncache->get_NNCache().lookup(state->board.get_hash(), result)) {
             return result;
         }
     }
@@ -884,7 +884,7 @@ Network::Netresult Network::get_scored_moves(
     }
 
     // Insert result into cache.
-    nncache->insert(state->board.get_hash(), result);
+    nncache->get_NNCache().insert(state->board.get_hash(), result);
 
     return result;
 }
