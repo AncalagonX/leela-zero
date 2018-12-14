@@ -342,9 +342,18 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         assert(value > std::numeric_limits<double>::lowest());
 
 		// int randomX = dis8(gen); // UNUSED NOW
+		int randomX = dis32(gen); // UNUSED NOW
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
+
+		if (is_root && randomX == 1) { // This is a safety catch that prevents an infinite loop race condition that can happen periodically
+			if (value > best_value) {
+				best_value = value;
+				best = &child;
+			}
+			randomX = dis32(gen);
+		}
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
