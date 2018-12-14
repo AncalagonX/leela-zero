@@ -126,7 +126,8 @@ void GTP::setup_default_parameters() {
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
-	m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
+	//m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
+	m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
