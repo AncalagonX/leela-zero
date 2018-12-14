@@ -342,7 +342,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         assert(value > std::numeric_limits<double>::lowest());
 
 		// int randomX = dis8(gen); // UNUSED NOW
-		int randomX = dis32(gen); // UNUSED NOW
+		int randomX = dis32(gen);
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
