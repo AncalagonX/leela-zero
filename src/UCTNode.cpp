@@ -363,6 +363,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			randomX = dis32(gen);
 		}
 
+		////////////// THE FOLLOWING SINGLE CODE BLOCK DOES NOT WORK PROPERLY. IT DRILLS DOWN ONTO A SINGLE VARIATION, RATHER THAN USING VISITS OPTIMALLY. THIS SHOULD BE DELETED LATER.
+		/****************
+
 		if (is_root
 			&& most_root_visits_seen_so_far <= 400) {
 			if (value > best_value) {
@@ -374,6 +377,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			}
 			continue;
 		}
+
+		****************/
 
 		if (is_root
 			//&& (int_m_visits >= 1000)
