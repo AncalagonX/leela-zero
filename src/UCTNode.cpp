@@ -340,7 +340,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
 		if (is_root) {
-			puct = (puct * 10);
+			puct = std::sqrt(puct);
 		}
 		auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
