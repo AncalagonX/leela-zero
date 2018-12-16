@@ -656,8 +656,8 @@ void Network::compare_net_outputs(const Netresult& data,
     error = std::sqrt(error);
 
     if (error > max_error || std::isnan(error)) {
-        printf("Error in OpenCL calculation: Update your GPU drivers "
-               "or reduce the amount of games played simultaneously.\n");
+        myprintf("Error in OpenCL calculation: Update your GPU drivers or reduce the amount of games "
+               "played simultaneously.\n");
         throw std::runtime_error("OpenCL self-check mismatch.");
     }
 }
@@ -917,10 +917,13 @@ std::vector<float> Network::gather_features(const GameState* const state,
                           begin(input_data) + INPUT_MOVES * NUM_INTERSECTIONS;
     const auto white_it = blacks_move ?
                           begin(input_data) + INPUT_MOVES * NUM_INTERSECTIONS :
-                          begin(input_data);
-    const auto to_move_it = blacks_move ?
-        begin(input_data) + 2 * INPUT_MOVES * NUM_INTERSECTIONS :
-        begin(input_data) + (2 * INPUT_MOVES + 1) * NUM_INTERSECTIONS;
+                          begin(input_data); 
+    const auto black_to_move_it = begin(input_data) + 2 * INPUT_MOVES * NUM_INTERSECTIONS;
+    const auto white_to_move_it = black_to_move_it + NUM_INTERSECTIONS;
+    const float plus_komi = 0.5f + (state->get_stm_komi()) / 15.0f;
+    const float minus_komi = 0.5f - (state->get_stm_komi()) / 15.0f;
+    const float black_komi = blacks_move ? plus_komi : minus_komi;
+    const float white_komi = blacks_move ? minus_komi : plus_komi;
 
     const auto moves = std::min<size_t>(state->get_movenum() + 1, INPUT_MOVES);
     // Go back in time, fill history boards
@@ -931,8 +934,9 @@ std::vector<float> Network::gather_features(const GameState* const state,
                               white_it + h * NUM_INTERSECTIONS,
                               symmetry);
     }
-
-    std::fill(to_move_it, to_move_it + NUM_INTERSECTIONS, float(true));
+    
+    std::fill(black_to_move_it, black_to_move_it + NUM_INTERSECTIONS, black_komi);
+    std::fill(white_to_move_it, white_to_move_it + NUM_INTERSECTIONS, white_komi);
 
     return input_data;
 }

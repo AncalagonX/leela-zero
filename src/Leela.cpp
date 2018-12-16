@@ -67,15 +67,15 @@ static void parse_commandline(int argc, char *argv[]) {
                        "Requires --noponder.")
         ("visits,v", po::value<int>(),
                      "Weaken engine by limiting the number of visits.")
-        ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
+        ("lagbuffer,b", po::value<int>(),//->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
-        ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
+        ("resignpct,r", po::value<int>(),
                         "Resign when winrate is less than x%.\n"
                         "-1 uses 10% but scales for handicap.")
         ("weights,w", po::value<std::string>()->default_value(cfg_weightsfile), "File with network weights.")
         ("logfile,l", po::value<std::string>(), "File to log input/output to.")
         ("quiet,q", "Disable all diagnostic output.")
-        ("timemanage", po::value<std::string>()->default_value("auto"),
+        ("timemanage", po::value<std::string>(),//->default_value("auto"),
                        "[auto|on|off|fast|no_pruning] Enable time management features.\n"
                        "auto = no_pruning when using -n, otherwise on.\n"
                        "on = Cut off search when the best move can't change"
@@ -86,6 +86,24 @@ static void parse_commandline(int argc, char *argv[]) {
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
         ("cpu-only", "Use CPU-only implementation and do not use GPU.")
+        ("handicap", "Handicap mode.")
+        ("nonslack", "Non-slack mode.")
+        ("max-wr", po::value<float>(), "Maximal white winrate.")
+        ("min-wr", po::value<float>(), "Minimal white winrate.")
+        ("wr-margin", po::value<float>(), "White winrate is adjusted to min+margin or max-margin.")
+        ("target-komi", po::value<float>(), "Target komi, default 7.5.")
+        ("max-komi", po::value<float>(), "Maximal komi allowed.")
+        ("min-komi", po::value<float>(), "Minimal komi allowed.")
+        ("adj-positions", po::value<int>(), "Number of positions to collect for komi adjustment, default 200; should be higher for strong machines to achieve more accurate komi adjustment.")
+        ("adj-pct", po::value<float>(), "Percentage of collected positions to use for komi adjustment, default 4.")
+        ("num-adj", po::value<int>(), "Maximal number of komi adjustments for each genmove, default 1.")
+        ("pos", "Use positive komi (for side-to-move) only.")
+        ("neg", "Use negative komi only.")
+        ("fixed-symmetry", po::value<int>(), "Fixed symmetry, value in [0,7].")
+        ("tg-sure-backup", "Toggle sure/no backup when --pos or --neg is used.")
+        ("tg-orig-policy", "Toggle original/adjusted policy when --pos or --neg is used.")
+        ("tg-dyn-fpu", "Toggle using dynamic parent eval as first-play urgency.")
+        ("tg-auto-pn", "Toggle automatic setting of --pos or --neg.")
         ;
 #ifdef USE_OPENCL
     po::options_description gpu_desc("GPU options");
@@ -178,6 +196,109 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("benchmark")) {
         cfg_quiet = true;  // Set this early to avoid unnecessary output.
+    }
+
+    if (vm.count("handicap")) {
+        cfg_dyn_komi = true;
+        cfg_max_wr = 0.12;
+        cfg_min_wr = 0.06;
+        cfg_wr_margin = 0.03;
+        //cfg_target_komi = 0.0;
+        cfg_dyn_fpu = true;
+        cfg_resignpct = 0;
+        cfg_collect_during_search = true;
+        //cfg_always_collect = true;
+        cfg_max_num_adjustments = 1;
+        cfg_fixed_symmetry = -1;
+    }
+
+    if (vm.count("nonslack")) { 
+        cfg_dyn_komi = true;
+        cfg_max_wr = 0.9;
+        cfg_min_wr = 0.1;
+        cfg_wr_margin = 0.1;
+        cfg_nonslack = true;
+        cfg_dyn_fpu = true;
+        cfg_collect_during_search = true;
+        //cfg_always_collect = true;
+        cfg_max_num_adjustments = 1;
+        cfg_fixed_symmetry = -1;
+    }
+
+    if (vm.count("tg-sure-backup")) {
+        cfg_sure_backup = !cfg_sure_backup;
+    }
+
+    if (vm.count("fixed-symmetry")) {
+        cfg_fixed_symmetry = vm["fixed-symmetry"].as<int>();
+        if (cfg_fixed_symmetry < 0 || cfg_fixed_symmetry > 7) {
+            cfg_fixed_symmetry = -1;
+        }
+    }
+
+    if (vm.count("tg-orig-policy")) {
+        cfg_orig_policy = !cfg_orig_policy;
+    }
+
+    if (vm.count("tg-dyn-fpu")) {
+        cfg_dyn_fpu = !cfg_dyn_fpu;
+    }
+
+    if (vm.count("tg-auto-pn")) {
+        cfg_auto_pos_neg = !cfg_auto_pos_neg;
+    }
+
+    if (vm.count("max-wr")) {
+        cfg_max_wr = vm["max-wr"].as<float>();
+        if (cfg_max_wr > 0.9999 && !cfg_noshift) {
+            cfg_max_wr = 0.9999;
+        }
+    }
+
+    if (vm.count("min-wr")) {
+        cfg_min_wr = vm["min-wr"].as<float>();
+        if (cfg_min_wr < 0.0001 && !cfg_noshift) {
+            cfg_min_wr = 0.0001;
+        }
+    }
+
+    if (vm.count("wr-margin")) {
+        cfg_wr_margin = vm["wr-margin"].as<float>();
+    }
+
+    if (vm.count("target-komi")) {
+        cfg_target_komi = vm["target-komi"].as<float>();
+    }
+
+    if (vm.count("adj-positions")) {
+        cfg_adj_positions = vm["adj-positions"].as<int>();
+        if (cfg_adj_positions < 8) {
+            cfg_adj_positions = 8;
+        }
+    }
+
+    if (vm.count("adj-pct")) {
+        cfg_adj_positions = vm["adj-pct"].as<float>();
+    }
+
+    if (vm.count("num-adj")) {
+        cfg_max_num_adjustments = vm["num-adj"].as<int>();
+    }
+
+    if (vm.count("pos")) {
+        cfg_pos = true;
+    }
+
+    if (vm.count("neg")) {
+        cfg_neg = true;
+    }
+
+    if (vm.count("max-komi")) {
+        cfg_max_komi = vm["max-komi"].as<float>();
+    }
+
+    if (vm.count("min-komi")) {
+        cfg_min_komi = vm["min-komi"].as<float>();
     }
 
 #ifdef USE_TUNER
@@ -438,7 +559,7 @@ int main(int argc, char *argv[]) {
     auto maingame = std::make_unique<GameState>();
 
     /* set board limits */
-    auto komi = 7.5f;
+    auto komi = cfg_target_komi;
     maingame->init_game(BOARD_SIZE, komi);
 
     if (cfg_benchmark) {
@@ -446,6 +567,17 @@ int main(int argc, char *argv[]) {
         benchmark(*maingame);
         return 0;
     }
+
+    extern int dyn_komi_test(Network&, GameState&, int);
+    if (cfg_dyn_komi && cfg_auto_pos_neg) {
+        switch (dyn_komi_test(*GTP::s_network, *maingame, 0)) {
+        case 0: break;
+        case 1: cfg_pos = cfg_neg = true; myprintf("Automatically set --pos and --neg.\n"); break;
+        case 2: cfg_neg = true; myprintf("Automatically set --neg.\n"); break;
+        case 3: cfg_pos = true; myprintf("Automatically set --pos.\n"); break;
+        }
+    }
+    if (cfg_pos && cfg_neg) { myprintf("Cannot set both --pos and --neg. Quitting."); return 0; }
 
     for (;;) {
         if (!cfg_gtp_mode) {

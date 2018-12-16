@@ -77,6 +77,17 @@ bool UCTNode::create_children(Network & network,
                               float min_psa_ratio) {
     // no successors in final state
     if (state.get_passes() >= 2) {
+//SMP::Mutex& UCTNode::get_mutex() { // SAVED_FOR_LATER
+//    return m_nodemutex; // SAVED_FOR_LATER
+//} // SAVED_FOR_LATER
+// // SAVED_FOR_LATER
+//bool UCTNode::create_children(Network & network, std::atomic<int>& nodecount, // SAVED_FOR_LATER
+//    GameState& state, // SAVED_FOR_LATER
+//    float& eval, // SAVED_FOR_LATER
+//    float min_psa_ratio, // SAVED_FOR_LATER
+//    int symmetry) { // SAVED_FOR_LATER
+//    // check whether somebody beat us to it (atomic) // SAVED_FOR_LATER
+//    if (!expandable(min_psa_ratio)) { // SAVED_FOR_LATER
         return false;
     }
 
@@ -91,12 +102,16 @@ bool UCTNode::create_children(Network & network,
         return false;
     }
 
-    const auto raw_netlist = network.get_output(
-        &state, Network::Ensemble::RANDOM_SYMMETRY);
+    Network::Netresult raw_netlist;
+    if (symmetry == -1) {
+        raw_netlist = network.get_output(&state, Network::Ensemble::RANDOM_SYMMETRY);
+    }
+    else {
+        raw_netlist = network.get_output(&state, Network::Ensemble::DIRECT, symmetry);
+    }
 
     // DCNN returns winrate as side to move
     m_net_eval = raw_netlist.winrate;
-    const auto to_move = state.board.get_to_move();
     // our search functions evaluate from black's point of view
     if (state.board.white_to_move()) {
         m_net_eval = 1.0f - m_net_eval;
@@ -104,6 +119,7 @@ bool UCTNode::create_children(Network & network,
     eval = m_net_eval;
 
     std::vector<Network::PolicyVertexPair> nodelist;
+    const auto to_move = state.board.get_to_move();
 
     auto legal_sum = 0.0f;
     for (auto i = 0; i < NUM_INTERSECTIONS; i++) {
@@ -123,7 +139,8 @@ bool UCTNode::create_children(Network & network,
         for (auto& node : nodelist) {
             node.first /= legal_sum;
         }
-    } else {
+    }
+    else {
         // This can happen with new randomized nets.
         auto uniform_prob = 1.0f / nodelist.size();
         for (auto& node : nodelist) {
@@ -238,6 +255,7 @@ float UCTNode::get_raw_eval(int tomove, int virtual_loss) const {
 }
 
 float UCTNode::get_eval(int tomove) const {
+    //LOCK(get_mutex(), lock);
     // Due to the use of atomic updates and virtual losses, it is
     // possible for the visit count to change underneath us. Make sure
     // to return a consistent result to the caller by caching the values.
@@ -307,20 +325,20 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         }
     }
 
+    auto numerator = std::sqrt(double(parentvisits));
+    auto fpu_reduction = 0.0f;
+    // Lower the expected eval for moves that are likely not the best.
+    // Do not do this if we have introduced noise at this node exactly
+    // to explore more.
+    if (!is_root || !cfg_noise) {
+        fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
+    }
+    // Estimated eval for unknown nodes = original parent NN eval - reduction
+    auto visits = get_visits();
+    auto parent_eval = (cfg_dyn_fpu && visits > 0) ? get_raw_eval(color) : get_net_eval(color);
+    auto fpu_eval = parent_eval - fpu_reduction;
 	int movenum_now2 = movenum_now;
-
-	auto numerator = std::sqrt(double(parentvisits));
-	auto fpu_reduction = 0.0f;
-	// Lower the expected eval for moves that are likely not the best.
-	// Do not do this if we have introduced noise at this node exactly
-	// to explore more.
-
 	auto pure_eval = get_raw_eval(color);
-	if (!is_root || !cfg_noise) {
-		fpu_reduction = cfg_fpu_reduction * std::sqrt(total_visited_policy);
-	}
-	// Estimated eval for unknown nodes = original parent NN eval - reduction
-	auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
 	auto best = static_cast<UCTNodePointer*>(nullptr);
 	auto best_value = std::numeric_limits<double>::lowest();
@@ -332,6 +350,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
             continue;
         }
 
+        auto winrate = fpu_eval;
+        auto child_visits = child.get_visits();
+        if (child_visits > 0 && (visits > 0 || !cfg_dyn_fpu)) {
+            winrate = child.get_eval(color);
+			lcb_winrate = child.get_lcb_binomial(color);
+        }
+
+		/////////////// THE FOLLOWING SINGLE COMMENTED CODE SECTION WAS FROM THE NON-DYN-KOMI ORIGINAL. IT WAS REPLACED BY THE ABOVE 5 LINES OR SO.
+		/********************************
 		auto winrate = fpu_eval;
 		auto lcb_winrate = fpu_eval;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
@@ -339,9 +366,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         } else if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
+			winrate = child.get_eval(color);
 			lcb_winrate = child.get_lcb_binomial(color);
-        }
+		}
+		********************************/
+
 		float search_width = get_search_width();
 
         auto psa = child.get_policy();
@@ -427,6 +456,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 	// int randomX = dis8(gen); // UNUSED NOW
     best->inflate();
     return best->get();
+	
+	/////////////// FOR SOME REASON, THE DYN-KOMI CODE HAS THE FOLLOWING CODE INSTEAD OF THE 3 OR SO LINES ABOVE. I DON'T KNOW IF IT'S SIGNIFICANT YET. 
+	/********************************
+	assert(best != nullptr);
+	best->inflate();
+	auto best_node = best->get();
+
+	return best_node;
+	********************************/
 }
 
 class NodeComp : public std::binary_function<UCTNodePointer&,

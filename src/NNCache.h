@@ -80,6 +80,10 @@ public:
 
     // Return the estimated memory consumption of the cache.
     size_t get_estimated_size();
+    //void clear_cache() { // SAVED_FOR_LATER
+    //    m_cache.clear(); // SAVED_FOR_LATER
+    //}; // SAVED_FOR_LATER
+
 private:
 
     std::mutex m_mutex;
