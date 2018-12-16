@@ -57,10 +57,16 @@ std::uniform_int_distribution<> dis16(1, 16);
 std::uniform_int_distribution<> dis24(1, 24);
 std::uniform_int_distribution<> dis32(1, 32);
 
+int visit_limit_tracking = 1; // This is necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
+int m_visits_tracked_here = 0;
+
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
 
 bool UCTNode::first_visit() const {
+	if (m_visits == 0) {
+		m_visits_tracked_here = 0;
+	}
     return m_visits == 0;
 }
 
@@ -187,7 +193,7 @@ void UCTNode::virtual_loss_undo() {
 
 void UCTNode::update(float eval) {
     m_visits++;
-    accumulate_eval(eval);
+	accumulate_eval(eval);
 }
 
 bool UCTNode::has_children() const {
@@ -274,6 +280,7 @@ void UCTNode::widen_search() {
 		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
 		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
 	}
+	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 void UCTNode::narrow_search() {
@@ -281,6 +288,7 @@ void UCTNode::narrow_search() {
 	if (m_search_width > 1.0) {
 		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
 	}
+	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
@@ -349,8 +357,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 
+		
 		if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
 			most_root_visits_seen_so_far = int_child_visits;
+		}
+
+		if (is_root && (int_m_visits > m_visits_tracked_here)) {
+			m_visits_tracked_here = int_m_visits;
 		}
 
 		if (randomX == 1) { // This is a safety catch that prevents an infinite loop race condition that can happen periodically
@@ -362,10 +375,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		}
 
 		if (is_root
-			//&& (int_m_visits >= 1000)
+			&& ((static_cast<float>(most_root_visits_seen_so_far) / static_cast<float>(int_m_visits)) >= 0.25f)
 			&& (psa >= 0.001)
 			&& (most_root_visits_seen_so_far >= ((1 / psa) + 1))
-			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) - 2))) {
+			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) + 8))) {
 			best = &child;
 			assert(best != nullptr);
 			best->inflate();
@@ -390,7 +403,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
 			&& (search_width < 0.99)
-			&& (static_cast<int>(int_child_visits) >= (static_cast<int>(search_width * most_root_visits_seen_so_far)))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& (static_cast<int>(int_child_visits) >= (static_cast<int>(search_width * (int_m_visits - visit_limit_tracking))))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
