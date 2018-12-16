@@ -339,9 +339,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-		if (is_root) {
-			puct = (puct * 10);
-		}
+
 		auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -364,22 +362,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		}
 
 		if (is_root
-			&& most_root_visits_seen_so_far <= 400) {
-			if (value > best_value) {
-				best_value = value;
-				best = &child;
-				assert(best != nullptr);
-				best->inflate();
-				return best->get();
-			}
-			continue;
-		}
-
-		if (is_root
 			//&& (int_m_visits >= 1000)
 			&& (psa >= 0.001)
 			&& (most_root_visits_seen_so_far >= ((1 / psa) + 1))
-			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) + 8))) {
+			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) - 2))) {
 			best = &child;
 			assert(best != nullptr);
 			best->inflate();
