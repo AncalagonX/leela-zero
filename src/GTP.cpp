@@ -57,6 +57,7 @@ size_t cfg_max_memory;
 size_t cfg_max_tree_size;
 int cfg_max_cache_ratio_percent;
 TimeManagement::enabled_t cfg_timemanage;
+float cfg_manual_komi;
 int cfg_lagbuffer_cs;
 float m_search_width;
 int cfg_resignpct;
@@ -125,6 +126,7 @@ void GTP::setup_default_parameters() {
     cfg_max_tree_size = UCTSearch::DEFAULT_MAX_MEMORY;
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
+	cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
 	//m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
 	m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
@@ -213,6 +215,7 @@ const std::string GTP::s_options[] = {
     "option name Percentage of memory for cache type spin default 10 min 1 max 99",
     "option name Visits type spin default 0 min 0 max 1000000000",
     "option name Playouts type spin default 0 min 0 max 1000000000",
+	"option name setkomi type spin default 75 min -1000 max 1000",
     "option name Lagbuffer type spin default 0 min 0 max 3000",
     "option name Resign Percentage type spin default -1 min -1 max 30",
     "option name Pondering type check default true",
@@ -416,6 +419,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("narrow_search") == 0) {
 		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
+		game.set_komi((cfg_manual_komi / 10.0f));
         return;
 
     } else if (command.find("genmove") == 0
@@ -1117,6 +1121,12 @@ void GTP::execute_setoption(UCTSearch & search,
             gtp_fail_printf(id, reason.c_str());
         }
         return;
+    } else if (name == "setkomi") {
+        std::istringstream valuestream(value);
+        int manual_komi;
+        valuestream >> manual_komi;
+		cfg_manual_komi = manual_komi;
+        gtp_printf(id, "");
     } else if (name == "visits") {
         std::istringstream valuestream(value);
         int visits;

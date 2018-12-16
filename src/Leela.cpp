@@ -67,6 +67,8 @@ static void parse_commandline(int argc, char *argv[]) {
                        "Requires --noponder.")
         ("visits,v", po::value<int>(),
                      "Weaken engine by limiting the number of visits.")
+		("setkomi", po::value<int>()->default_value(cfg_manual_komi),
+                        "Safety margin for time usage in centiseconds.")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
         ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
@@ -340,6 +342,15 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_timemanage =
             cfg_noise ? TimeManagement::NO_PRUNING : TimeManagement::ON;
     }
+
+	if (vm.count("setkomi")) {
+		int manual_komi = vm["setkomi"].as<int>();
+		if (manual_komi != cfg_manual_komi) {
+			myprintf("Using komi of %.2fs.\n",
+				(manual_komi / 10.0f));
+			cfg_manual_komi = manual_komi;
+		}
+	}
 
     if (vm.count("lagbuffer")) {
         int lagbuffer = vm["lagbuffer"].as<int>();

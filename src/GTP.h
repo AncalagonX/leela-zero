@@ -40,6 +40,7 @@ extern size_t cfg_max_memory;
 extern size_t cfg_max_tree_size;
 extern int cfg_max_cache_ratio_percent;
 extern TimeManagement::enabled_t cfg_timemanage;
+extern float cfg_manual_komi;
 extern int cfg_lagbuffer_cs;
 
 extern float m_search_width;
