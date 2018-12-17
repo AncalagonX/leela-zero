@@ -47,24 +47,28 @@ constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 
 class OutputAnalysisData {
 public:
+	/********************************
     OutputAnalysisData(const std::string& move, int visits,
                        float winrate, float policy_prior, std::string pv)
     : m_move(move), m_visits(visits), m_winrate(winrate),
       m_policy_prior(policy_prior), m_pv(pv) {};
+	********************************/
 	///////////////////// THE FOLLOWING TWO LINES ARE FROM THE DYN-KOMI CODE. NOT SURE WHY IT'S SLIGHTLY DIFFERENT. IT'S MORE THAN JUST A FORMATTING CHANGE. IT REPLACES THE ABOVE FOUR LINES.
-    // OutputAnalysisData(const std::string& move, int visits, int winrate, std::string N_num, std::string pv) :
-    //    m_move(move), m_visits(visits), m_winrate(winrate), m_N_num(N_num), m_pv(pv) {};
+    OutputAnalysisData(const std::string& move, int visits, int winrate, std::string N_num, std::string pv) :
+       m_move(move), m_visits(visits), m_winrate(winrate), m_N_num(N_num), m_pv(pv) {};
 
     std::string get_info_string(int order) const {
+		/********************************
         auto tmp = "info move " + m_move
                  + " visits " + std::to_string(m_visits)
                  + " winrate "
                  + std::to_string(static_cast<int>(m_winrate * 10000))
                  + " prior "
                  + std::to_string(static_cast<int>(m_policy_prior * 10000.0f));
+		********************************/
 		///////////////////// THE FOLLOWING TWO LINES ARE FROM THE DYN-KOMI CODE. NOT SURE WHY IT'S SLIGHTLY DIFFERENT. IT'S MORE THAN JUST A FORMATTING CHANGE. IT REPLACES THE ABOVE SIX LINES.
-        //auto tmp = "info move " + m_move + " visits " + std::to_string(m_visits) +
-        //    " winrate " + std::to_string(m_winrate) + " N " + m_N_num;
+        auto tmp = "info move " + m_move + " visits " + std::to_string(m_visits) +
+            " winrate " + std::to_string(m_winrate) + " N " + m_N_num;
         if (order >= 0) {
             tmp += " order " + std::to_string(order);
         }
@@ -82,12 +86,15 @@ public:
 private:
     std::string m_move;
     int m_visits;
+	/********************************
     float m_winrate;
     float m_policy_prior;
+	********************************/
 	///////////////////// THE FOLLOWING TWO LINES ARE FROM THE DYN-KOMI CODE. NOT SURE WHY IT'S SLIGHTLY DIFFERENT. IT'S MORE THAN JUST A FORMATTING CHANGE. IT REPLACES THE ABOVE TWO LINES.
-    //int m_winrate;
-    //std::string m_N_num;
-    std::string m_pv;
+    int m_winrate;
+    std::string m_N_num;
+    
+	std::string m_pv;
 };
 
 
@@ -389,12 +396,14 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
 
         auto policy = node->get_policy();
         // Store data in array
-        //float N_num_f = node->get_policy() * 100.0f;
-        //sortable_data.emplace_back(move, node->get_visits(), move_eval, std::to_string(N_num_f), pv);
+        float N_num_f = node->get_policy() * 100.0f;
+        sortable_data.emplace_back(move, node->get_visits(), move_eval, std::to_string(N_num_f), pv);
 		///////////////////// THE ABOVE TWO LINES ARE FROM THE DYN-KOMI CODE. THEY REPLACE THE BELOW TWO UNCOMMENTED LINES. OBVIOUSLY, THE FOUR COMMENTED LINES BELOW THAT ARE FROM MY OWN MODIFICATIONS OF THE GTP OUTPUT.
-
+		/********************************
         sortable_data.emplace_back(move, node->get_visits(),
                                    move_eval, policy, pv); // NEW Original
+		********************************/
+
 		//sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
 		// UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
 		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits

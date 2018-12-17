@@ -74,9 +74,11 @@ bool UCTNode::create_children(Network & network,
                               std::atomic<int>& nodecount,
                               GameState& state,
                               float& eval,
-                              float min_psa_ratio) {
+                              float min_psa_ratio,
+							  int symmetry) {
     // no successors in final state
     if (state.get_passes() >= 2) {
+
 //SMP::Mutex& UCTNode::get_mutex() { // SAVED_FOR_LATER
 //    return m_nodemutex; // SAVED_FOR_LATER
 //} // SAVED_FOR_LATER
@@ -351,6 +353,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         }
 
         auto winrate = fpu_eval;
+		auto lcb_winrate = fpu_eval;
         auto child_visits = child.get_visits();
         if (child_visits > 0 && (visits > 0 || !cfg_dyn_fpu)) {
             winrate = child.get_eval(color);

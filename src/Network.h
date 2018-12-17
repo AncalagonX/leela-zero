@@ -93,9 +93,9 @@ public:
     size_t get_estimated_cache_size();
     void nncache_resize(int max_count);
 
-   // void clear_cache() { // SAVED_FOR_LATER
-   //     m_nncache.clear_cache(); // SAVED_FOR_LATER
-   // } // SAVED_FOR_LATER
+    void clear_cache() { // SAVED_FOR_LATER
+        m_nncache.clear_cache(); // SAVED_FOR_LATER
+    } // SAVED_FOR_LATER
 private:
     std::pair<int, int> load_v1_network(std::istream& wtfile);
     std::pair<int, int> load_network_file(const std::string& filename);

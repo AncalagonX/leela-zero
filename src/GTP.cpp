@@ -623,8 +623,8 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         if (!game.has_resigned()) {
             // Outputs winrate and pvs through gtp
             game.set_to_move(who);
-            search->ponder();
-            //search->ponder(true); // SAVED_FOR_LATER
+            //search->ponder(); // ORIGINAL NON-DYN-KOMI CODE, COMMENTED OUT AND REPLACED WITH THE SINGLE LINE BELOW:
+            search->ponder(true); // SAVED_FOR_LATER
         }
         cfg_analyze_interval_centis = 0;
         // Terminate multi-line response
@@ -799,7 +799,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
 
         gtp_printf(id, "");
-        return true;
+        return;
     }
     else if (command.find("dyn_komi_test") == 0) {
         std::istringstream cmdstream(command);
