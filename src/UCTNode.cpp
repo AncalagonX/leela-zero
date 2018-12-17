@@ -405,7 +405,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
 			&& (search_width < 0.99)
-			&& (static_cast<int>(int_child_visits) >= (static_cast<int>(search_width * (int_m_visits - visit_limit_tracking))))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& (static_cast<int>(int_child_visits) >= (static_cast<int>(search_width * (int_m_visits - visit_limit_tracking)) + 10))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
