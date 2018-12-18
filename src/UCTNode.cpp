@@ -350,7 +350,17 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		//if (is_root) {
 		//	puct = std::sqrt(puct);
 		//}
+
+		if (winrate > 0.9) {
+			puct = (1.0f - winrate) * puct;
+		}
+
+		if (winrate < 0.1) {
+			puct = (0.11f - winrate) * puct;
+		}
+		
 		auto value = winrate + puct;
+
         assert(value > std::numeric_limits<double>::lowest());
 
 		// int randomX = dis8(gen); // UNUSED NOW
@@ -358,7 +368,6 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		int int_m_visits = static_cast<int>(m_visits);
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
-
 		
 		if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
 			most_root_visits_seen_so_far = int_child_visits;
@@ -368,7 +377,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			m_visits_tracked_here = int_m_visits;
 		}
 
-		if (randomX == 1) { // This is a safety catch that prevents an infinite loop race condition that can happen periodically
+		if (randomX <= 2) { // This is a safety catch that prevents an infinite loop race condition that can happen periodically
 			if (value > best_value) {
 				best_value = value;
 				best = &child;
@@ -376,15 +385,96 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			randomX = dis32(gen);
 		}
 
+		/**
 		if (is_root
+			&& (m_search_width < 1.1
+				&& int_child_visits < 2)) {
+			if (value > ((0.1 * best_value) + 0.01)) {
+				if (value > best_value) {
+					best_value = value;
+				}
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+
+		if (is_root
+			&& (m_search_width < 0.06
+				&& int_child_visits < 4)) {
+			if (value > ((0.1 * best_value) + 0.01)) {
+				if (value > best_value) {
+					best_value = value;
+				}
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+		**/
+
+		if (is_root
+			&& (m_search_width < 0.01
+				&& int_child_visits < 1)) {
+			if (puct > 0.001) {
+				if (value > best_value) {
+					best_value = value;
+				}
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+
+		if (is_root
+			&& (randomX > 16)
+			&& (int_m_visits > 1000)
+			&& ((static_cast<float>(most_root_visits_seen_so_far) / static_cast<float>(int_m_visits)) >= 0.25f)
+			&& (psa >= 0.1)
+			&& (most_root_visits_seen_so_far >= ((1 / psa) + 1))
+			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) + 398))) {
+			if (value > best_value) {
+				best_value = value;
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+
+		if (is_root
+			&& (randomX > 20)
+			&& (int_m_visits > 1000)
+			&& ((static_cast<float>(most_root_visits_seen_so_far) / static_cast<float>(int_m_visits)) >= 0.25f)
+			&& (psa >= 0.01)
+			&& (most_root_visits_seen_so_far >= ((1 / psa) + 1))
+			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) + 98))) {
+			if (value > best_value) {
+				best_value = value;
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+		}
+
+		if (is_root
+			&& (randomX > 24)
+			&& (int_m_visits > 1000)
 			&& ((static_cast<float>(most_root_visits_seen_so_far) / static_cast<float>(int_m_visits)) >= 0.25f)
 			&& (psa >= 0.001)
 			&& (most_root_visits_seen_so_far >= ((1 / psa) + 1))
 			&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 1000))) + 8))) {
-			best = &child;
-			assert(best != nullptr);
-			best->inflate();
-			return best->get();
+			if (value > best_value) {
+				best_value = value;
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
 		}
 
 		/****************
