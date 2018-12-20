@@ -89,6 +89,12 @@ public:
     static constexpr size_t MIN_TREE_SPACE = 100'000'000;
 
     /*
+        Default search width.
+        Searches approximately a width of approx. 2-4 moves initially.
+    */
+    static constexpr float DEFAULT_SEARCH_WIDTH = 1.0f;
+
+    /*
         Value representing unlimited visits or playouts. Due to
         concurrent updates while multithreading, we need some
         headroom within the native type.

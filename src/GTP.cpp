@@ -128,8 +128,7 @@ void GTP::setup_default_parameters() {
     cfg_timemanage = TimeManagement::AUTO;
 	cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
-	//m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
-	m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
+	m_search_width = UCTSearch::DEFAULT_SEARCH_WIDTH;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -412,14 +411,24 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         return;
 
     } else if (command.find("widen_search") == 0) {
-		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
-		UCTNode::widen_search();
+        UCTNode::widen_search();
+        gtp_printf(id, "%d", (int) (m_search_width * 1000.0f));
         return;
 
     } else if (command.find("narrow_search") == 0) {
-		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
-		UCTNode::narrow_search();
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        cmdstream >> tmp; // eat command
+        cmdstream >> tmp;
+
+        if (tmp == "reset")
+            UCTNode::reset_search_width();
+        else
+            UCTNode::narrow_search();
+
 		game.set_komi((cfg_manual_komi / 10.0f));
+
+        gtp_printf(id, "%d", (int) (m_search_width * 1000.0f));
         return;
 
     } else if (command.find("genmove") == 0

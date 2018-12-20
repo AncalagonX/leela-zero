@@ -273,6 +273,10 @@ float UCTNode::get_search_width() {
 	return m_search_width;
 }
 
+void UCTNode::reset_search_width() {
+    m_search_width = UCTSearch::DEFAULT_SEARCH_WIDTH;
+}
+
 void UCTNode::widen_search() {
 	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
 	if (m_search_width < 0.003) {
