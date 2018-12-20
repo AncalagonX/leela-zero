@@ -71,9 +71,10 @@ public:
     float get_lcb_binomial(int color) const;
 	float get_ucb_binomial(int color) const;
 
-	//static float m_search_width;
-	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
-	static void widen_search(); // Called from GTP.cpp as a gtp command
+    // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
+	static float get_search_width();
+    static void reset_search_width();
+	static void widen_search();  // Called from GTP.cpp as a gtp command
 	static void narrow_search(); // Called from GTP.cpp as a gtp command
 
     void virtual_loss();
