@@ -298,6 +298,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         if (!node->get_visits()) {
             continue;
         }
+		if (node->get_visits() <= 4) {
+			continue;
+		}
         std::string move = state.move_to_text(node->get_move());
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
