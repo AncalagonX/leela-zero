@@ -398,6 +398,15 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		}
 		**/
 
+
+
+
+
+
+		/////////////////////////////////////////////////////////////////
+		/****************************************************************
+		/////////////////////////////////////////////////////////////////
+
 		if (is_root
 			&& (m_search_width < 0.01
 				&& int_child_visits < 1)) {
@@ -460,20 +469,31 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			}
 		}
 
-		/****************
+		
 
-		if (is_root
-			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
-			&& (search_width < 0.99)
-			&& (randomX <= 30)
-			&& int_child_visits >= (most_root_visits_seen_so_far - 4)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
-			randomX = dis32(gen);
-			continue;
-		}
+		//if (is_root
+		//	// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
+		//	&& (search_width < 0.99)
+		//	&& (randomX <= 30)
+		//	&& int_child_visits >= (most_root_visits_seen_so_far - 4)) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+		//	randomX = dis32(gen);
+		//	continue;
+		//}
 
-		****************/
+		
 
 		//&& (int_child_visits < ((10 * (static_cast<int>(most_root_visits_seen_so_far / 4000))) + 8))) {
+
+		/////////////////////////////////////////////////////////////////
+		****************************************************************/
+		/////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
