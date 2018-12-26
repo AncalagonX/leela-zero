@@ -494,6 +494,40 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 
 
+		if (is_root
+			//&& (m_search_width < 0.01
+			&& (int_child_visits < 100)
+			&& (psa > 0.1)
+			&& (value >= (0.95 * best_value))) {
+			
+			if (value > best_value) {
+				best_value = value;
+			}
+			best = &child;
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
+
+		if (is_root
+			//&& (m_search_width < 0.01
+			&& (int_child_visits < 10)
+			&& (psa > 0.01)
+			&& (value >= (0.95 * best_value))) {
+			
+			if (value > best_value) {
+				best_value = value;
+			}
+			best = &child;
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
+
+
+
+
+
 
 		if (is_root
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
