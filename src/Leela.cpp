@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
+    Copyright (C) 2017-2019 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,6 +14,17 @@
 
     You should have received a copy of the GNU General Public License
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
+
+    Additional permission under GNU GPL version 3 section 7
+
+    If you modify this Program, or any covered work, by linking or
+    combining it with NVIDIA Corporation's libraries from the
+    NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
+    Network library and/or the NVIDIA TensorRT inference library
+    (or a modified version of those libraries), containing parts covered
+    by the terms of the respective license agreement, the licensors of
+    this Program grant you additional permission to convey the resulting
+    work.
 */
 
 #include "config.h"
@@ -46,7 +57,7 @@ using namespace Utils;
 
 static void license_blurb() {
     printf(
-        "Leela Zero %s  Copyright (C) 2017-2018  Gian-Carlo Pascutto and contributors\n"
+        "Leela Zero %s  Copyright (C) 2017-2019  Gian-Carlo Pascutto and contributors\n"
         "This program comes with ABSOLUTELY NO WARRANTY.\n"
         "This is free software, and you are welcome to redistribute it\n"
         "under certain conditions; see the COPYING file for details.\n\n",
@@ -97,8 +108,9 @@ static void parse_commandline(int argc, char *argv[]) {
         ("full-tuner", "Try harder to find an optimal OpenCL tuning.")
         ("tune-only", "Tune OpenCL only and then exit.")
 #ifdef USE_HALF
-        ("precision", po::value<std::string>(), "Floating-point precision (single/half/auto).\n"
-                                                "Default is to auto which automatically determines which one to use.")
+        ("precision", po::value<std::string>(),
+            "Floating-point precision (single/half/auto).\n"
+            "Default is to auto which automatically determines which one to use.")
 #endif
         ;
 #endif
@@ -231,6 +243,11 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("full-tuner")) {
         cfg_sgemm_exhaustive = true;
+
+        // --full-tuner auto-implies --tune-only.  The full tuner is so slow
+        // that nobody will wait for it to finish befure running a game.
+        // This simply prevents some edge cases from confusing other people.
+        cfg_tune_only = true;
     }
 
     if (vm.count("tune-only")) {
@@ -248,6 +265,14 @@ static void parse_commandline(int argc, char *argv[]) {
             cfg_precision = precision_t::AUTO;
         } else {
             printf("Unexpected option for --precision, expecting single/half/auto\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+    if (cfg_precision == precision_t::AUTO) {
+        // Auto precision is not supported for full tuner cases.
+        if (cfg_sgemm_exhaustive) {
+            printf("Automatic precision not supported when doing exhaustive tuning\n");
+            printf("Please add '--precision single' or '--precision half'\n");
             exit(EXIT_FAILURE);
         }
     }
@@ -384,6 +409,9 @@ static void parse_commandline(int argc, char *argv[]) {
         }
     }
 
+    // Do not lower the expected eval for root moves that are likely not
+    // the best if we have introduced noise there exactly to explore more.
+    cfg_fpu_root_reduction = cfg_noise ? 0.0f : cfg_fpu_reduction;
 
     auto out = std::stringstream{};
     for (auto i = 1; i < argc; i++) {
@@ -431,8 +459,6 @@ void benchmark(GameState& game) {
 }
 
 int main(int argc, char *argv[]) {
-    auto input = std::string{};
-
     // Set up engine parameters
     GTP::setup_default_parameters();
     parse_commandline(argc, argv);
@@ -444,7 +470,7 @@ int main(int argc, char *argv[]) {
 
     setbuf(stdout, nullptr);
     setbuf(stderr, nullptr);
-#ifndef WIN32
+#ifndef _WIN32
     setbuf(stdin, nullptr);
 #endif
 
@@ -471,6 +497,7 @@ int main(int argc, char *argv[]) {
             std::cout << "Leela: ";
         }
 
+        auto input = std::string{};
         if (std::getline(std::cin, input)) {
             Utils::log_input(input);
             GTP::execute(*maingame, input);

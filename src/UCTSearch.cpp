@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
+    Copyright (C) 2017-2019 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,6 +14,17 @@
 
     You should have received a copy of the GNU General Public License
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
+
+    Additional permission under GNU GPL version 3 section 7
+
+    If you modify this Program, or any covered work, by linking or
+    combining it with NVIDIA Corporation's libraries from the
+    NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
+    Network library and/or the NVIDIA TensorRT inference library
+    (or a modified version of those libraries), containing parts covered
+    by the terms of the respective license agreement, the licensors of
+    this Program grant you additional permission to convey the resulting
+    work.
 */
 
 #include "config.h"
@@ -764,7 +775,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
         // check if we should still search
         if (elapsed_centis - last_update > 250) {
             last_update = elapsed_centis;
-            dump_analysis(static_cast<int>(m_playouts));
+            dump_analysis(m_playouts.load());
         }
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(elapsed_centis, time_for_move);
@@ -792,13 +803,11 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
     Time elapsed;
     int elapsed_centis = Time::timediff_centis(start, elapsed);
-    if (elapsed_centis+1 > 0) {
-        myprintf("%d visits, %d nodes, %d playouts, %.0f n/s\n\n",
-                 m_root->get_visits(),
-                 static_cast<int>(m_nodes),
-                 static_cast<int>(m_playouts),
-                 (m_playouts * 100.0) / (elapsed_centis+1));
-    }
+    myprintf("%d visits, %d nodes, %d playouts, %.0f n/s\n\n",
+             m_root->get_visits(),
+             m_nodes.load(),
+             m_playouts.load(),
+             (m_playouts * 100.0) / (elapsed_centis+1));
     int bestmove = get_best_move(passflag);
 
     // Copy the root state. Use to check for tree re-use in future calls.

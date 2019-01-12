@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
+    Copyright (C) 2017-2019 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,6 +14,17 @@
 
     You should have received a copy of the GNU General Public License
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
+
+    Additional permission under GNU GPL version 3 section 7
+
+    If you modify this Program, or any covered work, by linking or
+    combining it with NVIDIA Corporation's libraries from the
+    NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
+    Network library and/or the NVIDIA TensorRT inference library
+    (or a modified version of those libraries), containing parts covered
+    by the terms of the respective license agreement, the licensors of
+    this Program grant you additional permission to convey the resulting
+    work.
 */
 
 #include "config.h"
@@ -39,6 +50,9 @@
 #include "Random.h"
 
 const auto TUNER_FILE_LOCAL = std::string("leelaz_opencl_tuning");
+
+template <typename net_t>
+std::vector<std::string> Tuner<net_t>::tuned_devices;
 
 #ifndef USE_BLAS
 // Eigen helpers
@@ -579,7 +593,24 @@ std::string Tuner<net_t>::load_sgemm_tuners(const int m, const int n, const int 
                                      const int batch_size) {
     auto tuner_file = leelaz_file(TUNER_FILE_LOCAL);
     auto file = std::ifstream{tuner_file};
-    if (!cfg_sgemm_exhaustive && file.good()) {
+
+    auto try_prior_tuning = file.good();
+
+    // If we want full tuning, don't reuse previously tuned results
+    // except if the tuning was created from this run from a different
+    // GPU instance with the same name.  This prevents the tuner running
+    // for multiple times if the system has multiple same GPUs.
+    if (try_prior_tuning && cfg_sgemm_exhaustive) {
+        auto dev = m_opencl.get_device_name();
+        try_prior_tuning = std::any_of(
+            begin(tuned_devices),
+            end(tuned_devices),
+            [&dev](const std::string & x) { return dev == x; }
+        );
+    }
+    tuned_devices.emplace_back(m_opencl.get_device_name());
+
+    if (try_prior_tuning) {
         auto line = std::string{};
         while (std::getline(file, line)) {
             auto tuners = sgemm_tuners_from_line(line, m, n, k, batch_size);

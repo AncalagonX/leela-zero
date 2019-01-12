@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017-2018 Gian-Carlo Pascutto and contributors
+    Copyright (C) 2017-2019 Gian-Carlo Pascutto and contributors
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,6 +14,17 @@
 
     You should have received a copy of the GNU General Public License
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
+
+    Additional permission under GNU GPL version 3 section 7
+
+    If you modify this Program, or any covered work, by linking or
+    combining it with NVIDIA Corporation's libraries from the
+    NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
+    Network library and/or the NVIDIA TensorRT inference library
+    (or a modified version of those libraries), containing parts covered
+    by the terms of the respective license agreement, the licensors of
+    this Program grant you additional permission to convey the resulting
+    work.
 */
 
 #ifndef SGEMM_TUNER_H_INCLUDED
@@ -39,6 +50,10 @@ public:
                            const int batch_size, const int runs = 4);
     std::string load_sgemm_tuners(const int m, const int n, const int k,
                                   const int batch_size);
+
+    // list of device types that was tuned in this run.
+    // This is to prevent the same device from being tuned multiple times.
+    static std::vector<std::string> tuned_devices;
 
     static constexpr auto TUNER_VERSION = 0;
     Tuner(OpenCL<net_t> & opencl, cl::Context context, cl::Device device) :
