@@ -290,6 +290,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         const auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
+		if (is_root && (m_visits <= 100)) {
+			myprintf("(N-0: %5.2f%%) (N-1: %5.2f%%)\n",
+				(m_children[0].get_policy() * 100.0f),
+				(m_children[1].get_policy() * 100.0f));
+		}
+
         if (value > best_value) {
             best_value = value;
             best = &child;
