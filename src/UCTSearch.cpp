@@ -624,11 +624,9 @@ void UCTSearch::update_best_winrate(int playouts, bool is_pondering) {
 		expected_best_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 		if (color == FastBoard::WHITE) {
 			expected_white_winrate = 100.0f * ((m_root->get_raw_eval(color)));
-			myprintf("\nis_pondering = true, color = white\n");
 		}
 		if (color == FastBoard::BLACK) {
 			expected_black_winrate = 100.0f * ((m_root->get_raw_eval(color)));
-			myprintf("\nis_pondering = true, color = black\n");
 		}
 	}
 	// NOTE TO SELF: THE COLORS BELOW !! SHOULD !! BE REVERSED HERE. IF COLOR = WHITE, THEN LZ IS PROCESSING BLACK'S MOVE.
@@ -638,12 +636,10 @@ void UCTSearch::update_best_winrate(int playouts, bool is_pondering) {
 		if (color == FastBoard::WHITE) { // reversed colors because of when this code gets called
 			expected_white_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 			actual_black_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
-			myprintf("\nis_pondering = false, color = white\n");
 		}
 		if (color == FastBoard::BLACK) { // reversed colors because of when this code gets called
 			expected_black_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 			actual_white_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
-			myprintf("\nis_pondering = false, color = black\n");
 		}
 	}
 	
@@ -809,18 +805,13 @@ int UCTSearch::think(int color, passflag_t passflag) {
         if (elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
             dump_analysis(m_playouts.load());
-			update_best_winrate(m_playouts.load(), is_pondering);
+			//update_best_winrate(m_playouts.load(), is_pondering);
         }
 
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		// RE-ENABLE THIS CODE BLOCK AFTER TESTING, AND REMOVE THE SINGLE LINE FOR update_best_winrate() IN THE CODE BLOCK ABOVE  //
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/**
 		if (elapsed_centis - last_update > 10) {
 			last_update = elapsed_centis;
 			update_best_winrate(m_playouts.load(), is_pondering);
 		}
-		**/
 
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(elapsed_centis, time_for_move);
@@ -856,23 +847,6 @@ int UCTSearch::think(int color, passflag_t passflag) {
 		cumulative_moves_so_far += 1;
 
 		auto movenum_now = int(m_rootstate.get_movenum());
-
-		//myprintf("Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nAverage Diff: %5.2f%%/move, Moves So Far: %d\n",
-		//	  expected_best_winrate, actual_best_winrate, cumulative_opponent_winrate_diff, (cumulative_opponent_winrate_diff / (cumulative_moves_so_far)), cumulative_moves_so_far);
-
-
-		////////////// DELETE THE FOLLOWING IF THE BINARY WORKED:
-		if (color == FastBoard::WHITE) { // DEBUG DELETE
-			myprintf("\noutput time color = white (so should be calculating black's stuff)\n"); // DEBUG DELETE
-		} // DEBUG DELETE
-		if (color == FastBoard::BLACK) { // DEBUG DELETE
-			myprintf("\noutput time color = black (so should be calculating white's stuff)\n"); // DEBUG DELETE
-		} // DEBUG DELETE
-
-		myprintf("\nBlack Expected: %5.2f%%, Actual: %5.2f%%\n\n",  // DEBUG DELETE
-			expected_black_winrate, actual_black_winrate);  // DEBUG DELETE
-		myprintf("\nWhite Expected: %5.2f%%, White Actual: %5.2f%%\n\n",  // DEBUG DELETE
-			expected_white_winrate, actual_white_winrate);  // DEBUG DELETE
 
 		if (color == FastBoard::WHITE
 			&& expected_black_winrate > 0.0f && actual_black_winrate > 0.0f) {
