@@ -52,6 +52,19 @@ using namespace Utils;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 bool is_pondering = false;
+int cumulative_moves_so_far = 0;
+int cumulative_white_moves_so_far = 0;
+int cumulative_black_moves_so_far = 0;
+float cumulative_opponent_winrate_diff = 0.0f;
+float cumulative_white_winrate_diff = 0.0f;
+float cumulative_black_winrate_diff = 0.0f;
+float LZ_expected_winrate_during_pondering = 0.0f;
+float expected_best_winrate = 0.0f;
+float expected_white_winrate = 0.0f;
+float expected_black_winrate = 0.0f;
+float actual_best_winrate = 0.0f;
+float actual_best_white_winrate = 0.0f;
+float actual_best_black_winrate = 0.0f;
 
 class OutputAnalysisData {
 public:
@@ -593,6 +606,24 @@ void UCTSearch::dump_analysis(int playouts) {
              playouts, winrate, pvstring.c_str());
 }
 
+void UCTSearch::update_best_winrate(int playouts, bool is_pondering) {
+	if (cfg_quiet) {
+		return;
+	}
+
+	FastState tempstate = m_rootstate;
+	int color = tempstate.board.get_to_move();
+
+	std::string pvstring = get_pv(tempstate, *m_root);
+	float winrate = 100.0f * m_root->get_raw_eval(color);
+	if (is_pondering) {
+		expected_best_winrate = 100.0f * ((m_root->get_raw_eval(color)));
+	}
+	else {
+		actual_best_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color))));;
+	}
+}
+
 bool UCTSearch::is_running() const {
     return m_run && UCTNodePointer::get_tree_size() < cfg_max_tree_size;
 }
@@ -750,10 +781,22 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
         // output some stats every few seconds
         // check if we should still search
-        if (elapsed_centis - last_update > 250) {
+        if (elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
             dump_analysis(m_playouts.load());
+			update_best_winrate(m_playouts.load(), is_pondering);
         }
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// RE-ENABLE THIS CODE BLOCK AFTER TESTING, AND REMOVE THE SINGLE LINE FOR update_best_winrate() IN THE CODE BLOCK ABOVE  //
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/**
+		if (elapsed_centis - last_update > 10) {
+			last_update = elapsed_centis;
+			update_best_winrate(m_playouts.load(), is_pondering);
+		}
+		**/
+
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(elapsed_centis, time_for_move);
         keeprunning &= have_alternate_moves(elapsed_centis, time_for_move);
@@ -781,6 +824,18 @@ int UCTSearch::think(int color, passflag_t passflag) {
     // Display search info.
     myprintf("\n");
     dump_stats(m_rootstate, *m_root);
+
+	if (expected_best_winrate > 0.0f && actual_best_winrate > 0.0f) {
+		float winrate_diff = (expected_best_winrate - actual_best_winrate);
+		cumulative_opponent_winrate_diff += winrate_diff;
+		cumulative_moves_so_far += 1;
+
+		auto movenum_now = int(m_rootstate.get_movenum());
+
+		myprintf("Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nAverage Diff: %5.2f%%/move, Moves So Far: %d\n",
+			expected_best_winrate, actual_best_winrate, cumulative_opponent_winrate_diff, (cumulative_opponent_winrate_diff / (cumulative_moves_so_far)), cumulative_moves_so_far);
+	}
+
     Training::record(m_network, m_rootstate, *m_root);
 
     Time elapsed;
@@ -811,6 +866,7 @@ void UCTSearch::ponder() {
     }
     Time start;
     auto keeprunning = true;
+	auto last_update = 0;
     auto last_output = 0;
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
@@ -818,14 +874,33 @@ void UCTSearch::ponder() {
         if (result.valid()) {
             increment_playouts();
         }
-        if (cfg_analyze_interval_centis) {
-            Time elapsed;
-            int elapsed_centis = Time::timediff_centis(start, elapsed);
-            if (elapsed_centis - last_output > cfg_analyze_interval_centis) {
-                last_output = elapsed_centis;
-                output_analysis(m_rootstate, *m_root);
-            }
-        }
+
+		Time elapsed;
+		int elapsed_centis = Time::timediff_centis(start, elapsed);
+
+		if (cfg_analyze_interval_centis &&
+			elapsed_centis - last_output > cfg_analyze_interval_centis) {
+			last_output = elapsed_centis;
+			output_analysis(m_rootstate, *m_root);
+		}
+
+		// output some stats every few seconds
+		// check if we should still search
+		if (elapsed_centis - last_update > 100) {
+			last_update = elapsed_centis;
+			dump_analysis(m_playouts.load());
+			update_best_winrate(m_playouts.load(), is_pondering);
+		}
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// RE-ENABLE THIS CODE BLOCK AFTER TESTING, AND REMOVE THE SINGLE LINE FOR update_best_winrate() IN THE CODE BLOCK ABOVE  //
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/**
+		if (elapsed_centis - last_update > 10) {
+			last_update = elapsed_centis;
+			update_best_winrate(m_playouts.load(), is_pondering);
+		}
+		**/
+
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
     } while (!Utils::input_pending() && keeprunning);
@@ -844,7 +919,10 @@ void UCTSearch::ponder() {
     dump_stats(m_rootstate, *m_root);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
-    is_pondering = false;
+    
+	is_pondering = false;
+	LZ_expected_winrate_during_pondering = expected_best_winrate;
+
 
     // Copy the root state. Use to check for tree re-use in future calls.
     m_last_rootstate = std::make_unique<GameState>(m_rootstate);
