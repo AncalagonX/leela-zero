@@ -454,20 +454,20 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 game.set_to_move(who);
                 // Outputs winrate and pvs for lz-genmove_analyze
                 int move = search->think(who);
-                game.play_move(move);
+                //game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
                 if (!analysis_output) {
-                    gtp_printf(id, "%s", vertex.c_str());
+                    //gtp_printf(id, "%s", vertex.c_str());
                 } else {
-                    gtp_printf_raw("play %s\n", vertex.c_str());
+                    //gtp_printf_raw("play %s\n", vertex.c_str());
                 }
             }
             if (cfg_allow_pondering) {
                 // now start pondering
                 if (!game.has_resigned()) {
                     // Outputs winrate and pvs through gtp for lz-genmove_analyze
-                    search->ponder();
+                    //search->ponder();
                 }
             }
             if (analysis_output) {
