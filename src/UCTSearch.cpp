@@ -633,12 +633,15 @@ void UCTSearch::update_best_winrate(int playouts, bool is_pondering) {
 	}
 	// NOTE TO SELF: THE COLORS BELOW !! SHOULD !! BE REVERSED HERE. IF COLOR = WHITE, THEN LZ IS PROCESSING BLACK'S MOVE.
 	else {
+		expected_best_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 		actual_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color))));
 		if (color == FastBoard::WHITE) { // reversed colors because of when this code gets called
+			expected_white_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 			actual_black_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
 			myprintf("\nis_pondering = false, color = white\n");
 		}
 		if (color == FastBoard::BLACK) { // reversed colors because of when this code gets called
+			expected_black_winrate = 100.0f * ((m_root->get_raw_eval(color)));
 			actual_white_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
 			myprintf("\nis_pondering = false, color = black\n");
 		}
