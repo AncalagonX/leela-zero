@@ -58,13 +58,12 @@ int cumulative_black_moves_so_far = 0;
 float cumulative_opponent_winrate_diff = 0.0f;
 float cumulative_white_winrate_diff = 0.0f;
 float cumulative_black_winrate_diff = 0.0f;
-float LZ_expected_winrate_during_pondering = 0.0f;
 float expected_best_winrate = 0.0f;
 float expected_white_winrate = 0.0f;
 float expected_black_winrate = 0.0f;
-float actual_best_winrate = 0.0f;
-float actual_best_white_winrate = 0.0f;
-float actual_best_black_winrate = 0.0f;
+float actual_winrate = 0.0f;
+float actual_white_winrate = 0.0f;
+float actual_black_winrate = 0.0f;
 
 class OutputAnalysisData {
 public:
@@ -616,12 +615,35 @@ void UCTSearch::update_best_winrate(int playouts, bool is_pondering) {
 
 	std::string pvstring = get_pv(tempstate, *m_root);
 	float winrate = 100.0f * m_root->get_raw_eval(color);
+	float white_winrate = 100.0f * m_root->get_raw_eval(FastBoard::WHITE);
+	float black_winrate = 100.0f * m_root->get_raw_eval(FastBoard::BLACK);
+
+	// NOTE TO SELF: THE COLORS BELOW SHOULDN'T BE REVERSED HERE. IF COLOR = WHITE, THEN LZ IS PROCESSING WHITE'S MOVE.
+
 	if (is_pondering) {
 		expected_best_winrate = 100.0f * ((m_root->get_raw_eval(color)));
+		if (color == FastBoard::WHITE) {
+			expected_white_winrate = 100.0f * ((m_root->get_raw_eval(color)));
+			myprintf("\nis_pondering = true, color = white\n");
+		}
+		if (color == FastBoard::BLACK) {
+			expected_black_winrate = 100.0f * ((m_root->get_raw_eval(color)));
+			myprintf("\nis_pondering = true, color = black\n");
+		}
 	}
+	// NOTE TO SELF: THE COLORS BELOW !! SHOULD !! BE REVERSED HERE. IF COLOR = WHITE, THEN LZ IS PROCESSING BLACK'S MOVE.
 	else {
-		actual_best_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color))));;
+		actual_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color))));
+		if (color == FastBoard::WHITE) { // reversed colors because of when this code gets called
+			actual_black_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
+			myprintf("\nis_pondering = false, color = white\n");
+		}
+		if (color == FastBoard::BLACK) { // reversed colors because of when this code gets called
+			actual_white_winrate = 100.0f * (1.0f - (1.0f * (m_root->get_raw_eval(color)))); // reversed colors because of when this code gets called
+			myprintf("\nis_pondering = false, color = black\n");
+		}
 	}
+	
 }
 
 bool UCTSearch::is_running() const {
@@ -825,16 +847,78 @@ int UCTSearch::think(int color, passflag_t passflag) {
     myprintf("\n");
     dump_stats(m_rootstate, *m_root);
 
-	if (expected_best_winrate > 0.0f && actual_best_winrate > 0.0f) {
-		float winrate_diff = (expected_best_winrate - actual_best_winrate);
+	if (expected_best_winrate > 0.0f && actual_winrate > 0.0f) {
+		float winrate_diff = (expected_best_winrate - actual_winrate);
 		cumulative_opponent_winrate_diff += winrate_diff;
 		cumulative_moves_so_far += 1;
 
 		auto movenum_now = int(m_rootstate.get_movenum());
 
-		myprintf("Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nAverage Diff: %5.2f%%/move, Moves So Far: %d\n",
-			expected_best_winrate, actual_best_winrate, cumulative_opponent_winrate_diff, (cumulative_opponent_winrate_diff / (cumulative_moves_so_far)), cumulative_moves_so_far);
+		//myprintf("Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nAverage Diff: %5.2f%%/move, Moves So Far: %d\n",
+		//	  expected_best_winrate, actual_best_winrate, cumulative_opponent_winrate_diff, (cumulative_opponent_winrate_diff / (cumulative_moves_so_far)), cumulative_moves_so_far);
+
+
+		////////////// DELETE THE FOLLOWING IF THE BINARY WORKED:
+		if (color == FastBoard::WHITE) { // DEBUG DELETE
+			myprintf("\noutput time color = white (so should be calculating black's stuff)\n"); // DEBUG DELETE
+		} // DEBUG DELETE
+		if (color == FastBoard::BLACK) { // DEBUG DELETE
+			myprintf("\noutput time color = black (so should be calculating white's stuff)\n"); // DEBUG DELETE
+		} // DEBUG DELETE
+
+		myprintf("\nBlack Expected: %5.2f%%, Actual: %5.2f%%\n\n",  // DEBUG DELETE
+			expected_black_winrate, actual_black_winrate);  // DEBUG DELETE
+		myprintf("\nWhite Expected: %5.2f%%, White Actual: %5.2f%%\n\n",  // DEBUG DELETE
+			expected_white_winrate, actual_white_winrate);  // DEBUG DELETE
+
+		if (color == FastBoard::WHITE
+			&& expected_black_winrate > 0.0f && actual_black_winrate > 0.0f) {
+			//myprintf("Scoring winrate of BLACK move\n");
+			// NOTE: This is to calculate for BLACK
+			float black_winrate_diff = (expected_black_winrate - actual_black_winrate);
+			cumulative_black_winrate_diff += black_winrate_diff;
+			cumulative_black_moves_so_far += 1;
+
+			myprintf("\nBlack Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nBlack Average Diff: %5.2f%%/move, Moves So Far: %d\n\n",
+				expected_black_winrate, actual_black_winrate, cumulative_black_winrate_diff, (cumulative_black_winrate_diff / (cumulative_black_moves_so_far)), cumulative_black_moves_so_far);
+		}
+		if (color == FastBoard::BLACK
+			&& expected_white_winrate > 0.0f && actual_white_winrate > 0.0f) {
+			//myprintf("Scoring winrate of WHITE move\n");
+			// NOTE: This is to calculate for WHITE
+			float white_winrate_diff = (expected_white_winrate - actual_white_winrate);
+			cumulative_white_winrate_diff += white_winrate_diff;
+			cumulative_white_moves_so_far += 1;
+
+			myprintf("\nWhite Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nWhite Average Diff: %5.2f%%/move, Moves So Far: %d\n\n",
+				expected_white_winrate, actual_white_winrate, cumulative_white_winrate_diff, (cumulative_white_winrate_diff / (cumulative_white_moves_so_far)), cumulative_white_moves_so_far);
+		}
 	}
+
+	/**
+	if (color == FastBoard::WHITE) {
+		myprintf("Scoring winrate of BLACK move\n");
+		// NOTE: This is to calculate for BLACK
+		float blacK_winrate_diff = (expected_black_winrate - actual_black_winrate);
+		cumulative_black_winrate_diff += blacK_winrate_diff;
+
+		if (expected_black_winrate > 0.0f && actual_black_winrate > 0.0f) {
+			float winrate_diff = (expected_best_winrate - actual_winrate);
+			cumulative_opponent_winrate_diff += winrate_diff;
+			cumulative_moves_so_far += 1;
+
+			auto movenum_now = int(m_rootstate.get_movenum());
+
+			myprintf("Expected: %5.2f%%, Actual: %5.2f%%, Cumulative Diff: %5.2f%%, \nAverage Diff: %5.2f%%/move, Moves So Far: %d\n",
+				expected_best_winrate, actual_winrate, cumulative_opponent_winrate_diff, (cumulative_opponent_winrate_diff / (cumulative_moves_so_far)), cumulative_moves_so_far);
+		}
+	}
+	if (color == FastBoard::BLACK) {
+		myprintf("Scoring winrate of WHITE move\n");
+		// NOTE: This is to calculate for WHITE
+
+	}
+	**/
 
     Training::record(m_network, m_rootstate, *m_root);
 
@@ -921,7 +1005,6 @@ void UCTSearch::ponder() {
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
     
 	is_pondering = false;
-	LZ_expected_winrate_during_pondering = expected_best_winrate;
 
 
     // Copy the root state. Use to check for tree re-use in future calls.
