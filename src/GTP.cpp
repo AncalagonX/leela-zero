@@ -678,20 +678,29 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 gtp_fail_printf(id, "syntax error");
                 return;
             }
-        }
+            if (analysis_output) {
+                // Start of multi-line response
+                cfg_analyze_interval_centis = interval;
+                if (id != -1) gtp_printf_raw("=%d\n", id);
+                else gtp_printf_raw("=\n");
+            }
+            // start thinking
+            {
+                game.set_to_move(who);
+				
+				if (game.get_handicap() >= 2) {
+					int move = FastBoard::RESIGN;
+					game.play_move(move);
+				}
 
-        if (analysis_output) {
-            // Start of multi-line response
-            cfg_analyze_tags = tags;
-            if (id != -1) gtp_printf_raw("=%d\n", id);
-            else gtp_printf_raw("=\n");
-        }
-        // start thinking
-        {
-            game.set_to_move(who);
-            // Outputs winrate and pvs for lz-genmove_analyze
-            int move = search->think(who);
-            game.play_move(move);
+				if (game.get_komi() != 7.5 || game.get_komi() != 6.5) {
+					int move = FastBoard::RESIGN;
+					game.play_move(move);
+				}
+
+                // Outputs winrate and pvs for lz-genmove_analyze
+                int move = search->think(who);
+                game.play_move(move);
 
             std::string vertex = game.move_to_text(move);
             if (!analysis_output) {
