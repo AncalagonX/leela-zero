@@ -375,6 +375,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 Training::clear_training();
                 game.init_game(tmp, old_komi);
                 gtp_printf(id, "");
+				game.set_komi((cfg_manual_komi / 10.0f));
             }
         } else {
             gtp_fail_printf(id, "syntax not understood");
@@ -400,6 +401,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         if (!cmdstream.fail()) {
             if (komi != old_komi) {
                 game.set_komi(komi);
+				game.set_komi((cfg_manual_komi / 10.0f));
             }
             gtp_printf(id, "");
         } else {
@@ -408,6 +410,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("play") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         std::string color, vertex;
@@ -440,6 +443,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
         auto interval = 0;
 
@@ -499,6 +503,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         analysis_output = false;
         return;
     } else if (command.find("lz-analyze") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         auto who = game.board.get_to_move();
@@ -581,6 +586,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("undo") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         if (game.undo_move()) {
             gtp_printf(id, "");
         } else {
@@ -664,6 +670,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("auto") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         do {
             int move = search->think(game.get_to_move(), UCTSearch::NORMAL);
             game.play_move(move);
@@ -673,6 +680,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("go") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         int move = search->think(game.get_to_move());
         game.play_move(move);
 
@@ -715,6 +723,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "");
         return;
     } else if (command.find("fixed_handicap") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -730,6 +739,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("place_free_handicap") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -747,6 +757,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("set_free_handicap") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -771,6 +782,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("loadsgf") == 0) {
+		game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp, filename;
         int movenum;
