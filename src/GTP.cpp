@@ -691,11 +691,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 				if (game.get_handicap() >= 2) {
 					int move = FastBoard::RESIGN;
 					game.play_move(move);
+					std::string vertex = game.move_to_text(move);
+					gtp_printf(id, "%s", vertex.c_str());
+					return;
 				}
 
-				if (game.get_komi() != 7.5 || game.get_komi() != 6.5) {
+				if (game.get_komi() >= 7.6f || game.get_komi() <= 7.4f) {
 					int move = FastBoard::RESIGN;
 					game.play_move(move);
+					std::string vertex = game.move_to_text(move);
+					gtp_printf(id, "%s", vertex.c_str());
+					return;
 				}
 
                 // Outputs winrate and pvs for lz-genmove_analyze
