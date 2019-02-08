@@ -302,7 +302,7 @@ void UCTNode::narrow_search() {
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int depth) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -363,11 +363,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 		int int_child_visits = static_cast<int>(child.get_visits());
 		int int_parent_visits = static_cast<int>(parentvisits);
 		
-		if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
+		if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
 			most_root_visits_seen_so_far = int_child_visits;
 		}
 
-		if (is_root && (int_m_visits > m_visits_tracked_here)) {
+		if (is_root && depth == 0 && (int_m_visits > m_visits_tracked_here)) {
 			m_visits_tracked_here = int_m_visits;
 		}
 
@@ -505,7 +505,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 
 
-		if (is_root
+		if (is_root && depth == 0
 			//&& (m_search_width < 0.01
 			&& (int_child_visits < 100)
 			&& (psa > 0.1)
@@ -520,7 +520,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 			return best->get();
 		}
 
-		if (is_root
+		if (is_root && depth == 0
 			//&& (m_search_width < 0.01
 			&& (int_child_visits < 10)
 			&& (psa > 0.01)
@@ -540,14 +540,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
 
 
-		if (is_root
+		if (is_root && depth == 0
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
 			&& (search_width < 0.99)
 			&& (static_cast<int>(int_child_visits) >= (static_cast<int>(search_width * (int_m_visits - visit_limit_tracking)) + 10))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
-		if (is_root
+		if (is_root && depth == 0
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
 			&& (search_width > 0.99)
 			&& (int_child_visits > (0.95 * int_m_visits))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
