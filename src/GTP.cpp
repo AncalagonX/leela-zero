@@ -436,6 +436,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             // start thinking
             {
                 game.set_to_move(who);
+				
+				if (game.get_handicap() >= 2) {
+					int move = FastBoard::RESIGN;
+					game.play_move(move);
+				}
+
+				if (game.get_komi() != 7.5 || game.get_komi() != 6.5) {
+					int move = FastBoard::RESIGN;
+					game.play_move(move);
+				}
+
                 // Outputs winrate and pvs for lz-genmove_analyze
                 int move = search->think(who);
                 game.play_move(move);
