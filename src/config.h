@@ -101,8 +101,8 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
  */
 //#define USE_TUNER
 
-static constexpr auto PROGRAM_NAME = ". - NOTE: No handicap allowed. Komi must be 7.5 - Leela Zero ";
-static constexpr auto PROGRAM_VERSION = "0.16 - Using LZ_203 [40x256] weights first created on 2019-02-02.";
+static constexpr auto PROGRAM_NAME = ". --- Note: No handicap allowed --- Leela Zero";
+static constexpr auto PROGRAM_VERSION = " 0.16 - Using LZ_203 [40x256] weights first created on 2019-02-02.";
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes
