@@ -37,6 +37,7 @@
 #include "GameState.h"
 #include "Network.h"
 #include "Utils.h"
+#include "UCTSearch.h"
 
 using namespace Utils;
 
@@ -236,7 +237,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bool is_depth_1, bool is_opponent_move, bool is_pondering_now) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -258,6 +259,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
+	auto best_root_winrate = std::numeric_limits<double>::lowest();
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -277,6 +279,64 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         const auto puct = cfg_puct * psa * (numerator / denom);
         const auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
+
+		int int_child_visits = static_cast<int>(child.get_visits());
+
+		if ((is_root | is_depth_1)
+			&& (!is_opponent_move)) {
+			if (winrate > best_root_winrate) {
+				best_root_winrate = winrate;
+			}
+		}
+
+		if (is_root
+			&& (movenum_here < 50)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 50)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(1600);
+		}
+
+		if (is_root
+			&& (movenum_here >= 50)
+			&& (best_root_winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 100)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(1200);
+		}
+
+		if (is_root
+			&& (movenum_here >= 100)
+			&& (best_root_winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
+
+		if (is_root
+			&& (movenum_here >= 150)
+			&& (best_root_winrate >= 0.90)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(800);
+		}
+
+		if (is_root
+			&& (movenum_here >= 150)
+			&& (best_root_winrate <= 0.89)
+			&& (int_child_visits >= 400)) {
+			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+		}
 
         if (value > best_value) {
             best_value = value;

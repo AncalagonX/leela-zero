@@ -33,6 +33,9 @@
 #include "UCTNode.h"
 #include "Network.h"
 
+extern int m_maxvisits; // I added "extern" to this so I could access it from UCTNode.cpp. I had to add #include UCTSearch.h to the UCTNode.cpp file.
+extern int m_maxplayouts; // I added "extern" to this so I could access it from UCTNode.cpp. I had to add #include UCTSearch.h to the UCTNode.cpp file.
+
 
 class SearchResult {
 public:
@@ -98,8 +101,8 @@ public:
 
     UCTSearch(GameState& g, Network & network);
     int think(int color, passflag_t passflag = NORMAL);
-    void set_playout_limit(int playouts);
-    void set_visit_limit(int visits);
+	static void set_playout_limit(int playouts); // I added "static" to this so I could access it from UCTNode.cpp. I had to add #include UCTSearch.h to the UCTNode.cpp file.
+	static void set_visit_limit(int visits); // I added "static" to this so I could access it from UCTNode.cpp. I had to add #include UCTSearch.h to the UCTNode.cpp file.
     void ponder();
     bool is_running() const;
     void increment_playouts();
@@ -128,8 +131,6 @@ private:
     std::atomic<int> m_nodes{0};
     std::atomic<int> m_playouts{0};
     std::atomic<bool> m_run{false};
-    int m_maxplayouts;
-    int m_maxvisits;
 
     std::list<Utils::ThreadGroup> m_delete_futures;
 
