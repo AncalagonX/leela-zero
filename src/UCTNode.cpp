@@ -579,6 +579,8 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
         // Calculate the lower confidence bound for each node.
+		int a_visit = a.get_visits();
+		int b_visit = b.get_visits();
         if (a.get_visits() && b.get_visits()) {
             float a_lb = a.get_lcb_binomial(m_color);
             float b_lb = b.get_lcb_binomial(m_color);
