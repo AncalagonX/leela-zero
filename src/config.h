@@ -107,11 +107,6 @@ static constexpr auto TRAINED_UNIT_KOMI = 7.5f;
 
 #endif
 
-/* Maximum supported batch size for OpenCL.
- */
-static constexpr auto MAX_BATCH = 1;
-static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
-
 /*
  * USE_TUNER: Expose some extra command line parameters that allow tuning the
  * search algorithm.
