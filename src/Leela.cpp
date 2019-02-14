@@ -83,6 +83,7 @@ static void calculate_thread_count_cpu(boost::program_options::variables_map & v
 #ifdef USE_OPENCL
 static void calculate_thread_count_gpu(boost::program_options::variables_map & vm) {
     auto cfg_max_threads = size_t{MAX_CPUS};
+	//size_t cfg_max_threads = 64;
 
     // Default thread count : GPU case
     // 1) if no args are given, use batch size of 5 and thread count of (batch size) * (number of gpus) * 2

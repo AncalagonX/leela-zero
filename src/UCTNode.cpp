@@ -327,6 +327,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 	auto best = static_cast<UCTNodePointer*>(nullptr);
 	auto best_value = std::numeric_limits<double>::lowest();
 	auto best_winrate = std::numeric_limits<double>::lowest();
+	auto best_psa = std::numeric_limits<double>::lowest();
 	int most_root_visits_seen_so_far = 0;
 
     for (auto& child : m_children) {
@@ -349,10 +350,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
         auto psa = child.get_policy();
         auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
-		//if (is_root) {
-		//	puct = std::sqrt(puct);
-		//}
 		
+		if (psa > best_psa) {
+			best_psa = psa;
+		}
+				
 		auto value = winrate + puct;
 
         assert(value > std::numeric_limits<double>::lowest());
@@ -502,14 +504,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 
 
 
-
-
-
 		if (is_root && depth == 0
-			//&& (m_search_width < 0.01
+			&& (m_search_width < 0.9
 			&& (int_child_visits < 100)
-			&& (psa > 0.1)
-			&& (value >= (0.95 * best_value))) {
+			&& (psa > (0.1 * best_psa))
+			&& (value >= (0.95 * best_value)))) {
 			
 			if (value > best_value) {
 				best_value = value;
@@ -521,10 +520,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 		}
 
 		if (is_root && depth == 0
-			//&& (m_search_width < 0.01
+			&& (m_search_width < 0.9
 			&& (int_child_visits < 10)
-			&& (psa > 0.01)
-			&& (value >= (0.95 * best_value))) {
+			&& (psa > (0.01 * best_psa))
+			&& (value >= (0.95 * best_value)))) {
 			
 			if (value > best_value) {
 				best_value = value;
@@ -534,6 +533,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 			best->inflate();
 			return best->get();
 		}
+
 
 
 
