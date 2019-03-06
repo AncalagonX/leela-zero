@@ -589,7 +589,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("komi") == 0) {
         std::istringstream cmdstream(command);
         std::string tmp;
-        float komi;
+        float komi = KOMI;
         float old_komi = game.get_komi();
 
         cmdstream >> tmp;  // eat komi
@@ -635,7 +635,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("narrow_search") == 0) {
 		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
         return;
 
     } else if (command.find("genmove") == 0

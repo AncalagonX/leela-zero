@@ -53,10 +53,9 @@ static constexpr auto NUM_INTERSECTIONS = BOARD_SIZE * BOARD_SIZE;
 static constexpr auto POTENTIAL_MOVES = NUM_INTERSECTIONS + 1; // including pass
 
 /*
- * TRAINED_UNIT_KOMI: Define the komi used during training that represents a
- * value of 1.0 for the side to move NN inputs
+ * KOMI: Define the default komi to use when training.
  */
-static constexpr auto TRAINED_UNIT_KOMI = 7.5f;
+static constexpr auto KOMI = 7.5f;
 
 /*
  * Features
