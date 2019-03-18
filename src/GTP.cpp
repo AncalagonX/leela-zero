@@ -325,7 +325,7 @@ void GTP::setup_default_parameters() {
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
     // This will be overwriiten in initialize() after network size is known.
     cfg_max_tree_size = UCTSearch::DEFAULT_MAX_MEMORY;
-    cfg_max_cache_ratio_percent = 10;
+    cfg_max_cache_ratio_percent = 25;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
     cfg_weightsfile = leelaz_file("best-network");
@@ -654,6 +654,8 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
 		// TODO: THE ABOVE SIX LINES SHOULD BE FINE WITH THE BELOW CODE BLOCK ABOUT HANDICAP/KOMI UNCHANGED.
 
+		/****************************************************************************************
+
         // start thinking
         {
             game.set_to_move(who);
@@ -667,28 +669,31 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 else gtp_printf_raw("=\n");
             }
             // start thinking
-            {
-                game.set_to_move(who);
+
+		****************************************************************************************/
+
+        {
+            game.set_to_move(who);
 				
-				if (game.get_handicap() >= 2) {
-					int move = FastBoard::RESIGN;
-					game.play_move(move);
-					std::string vertex = game.move_to_text(move);
-					gtp_printf(id, "%s", vertex.c_str());
-					return;
-				}
+			if (game.get_handicap() >= 2) {
+				int move = FastBoard::RESIGN;
+				game.play_move(move);
+				std::string vertex = game.move_to_text(move);
+				gtp_printf(id, "%s", vertex.c_str());
+				return;
+			}
 
-				if (game.get_komi() >= 7.6f || game.get_komi() <= 0.4f) {
-					int move = FastBoard::RESIGN;
-					game.play_move(move);
-					std::string vertex = game.move_to_text(move);
-					gtp_printf(id, "%s", vertex.c_str());
-					return;
-				}
+			if (game.get_komi() >= 7.6f || game.get_komi() <= 7.4f) {
+				int move = FastBoard::RESIGN;
+				game.play_move(move);
+				std::string vertex = game.move_to_text(move);
+				gtp_printf(id, "%s", vertex.c_str());
+				return;
+			}
 
-                // Outputs winrate and pvs for lz-genmove_analyze
-                int move = search->think(who);
-                game.play_move(move);
+            // Outputs winrate and pvs for lz-genmove_analyze
+            int move = search->think(who);
+            game.play_move(move);
 
             std::string vertex = game.move_to_text(move);
             if (!analysis_output) {

@@ -301,20 +301,75 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			}
 		}
 
+
+
+		// FAST FIRST 8 MOVES
 		if (is_root
-			&& (movenum_here < 50)
-			&& (best_root_winrate >= 0.90)
-			&& (int_child_visits >= 400)) {
+			&& (movenum_here < 8)) {
+			UCTSearch::set_playout_limit(3200);
+		}
+
+		if (is_root
+			&& (movenum_here >= 8) && (movenum_here < 50)) {
 			UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
 		}
 
+
+
+		// CONTROL TIME MANAGEMENT IF NOT WINNING QUICKLY
+		if (is_root
+			&& (movenum_here < 20)) {
+			cfg_timemanage = TimeManagement::FAST;
+		}
+
+		if (is_root
+			&& (movenum_here >= 20)	&& (movenum_here < 40)
+			&& (best_root_winrate <= 0.65)
+			&& (int_child_visits >= 1600)) {
+			cfg_timemanage = TimeManagement::OFF;
+		}
+		if (is_root
+			&& (movenum_here >= 20)	&& (movenum_here < 40)
+			&& (best_root_winrate >= 0.66)
+			&& (int_child_visits >= 1600)) {
+			cfg_timemanage = TimeManagement::FAST;
+		}
+
+		if (is_root
+			&& (movenum_here >= 40) && (movenum_here < 150)
+			&& (best_root_winrate <= 0.8)
+			&& (int_child_visits >= 800)) {
+			cfg_timemanage = TimeManagement::OFF;
+		}
+		if (is_root
+			&& (movenum_here >= 40) && (movenum_here < 150)
+			&& (best_root_winrate >= 0.81)
+			&& (int_child_visits >= 800)) {
+			cfg_timemanage = TimeManagement::FAST;
+		}
+
+		if (is_root
+			&& (movenum_here >= 150)
+			&& (best_root_winrate <= 0.9)
+			&& (int_child_visits >= 800)) {
+			cfg_timemanage = TimeManagement::OFF;
+		}
+		if (is_root
+			&& (movenum_here >= 150)
+			&& (best_root_winrate >= 0.91)
+			&& (int_child_visits >= 800)) {
+			cfg_timemanage = TimeManagement::FAST;
+		}
+
+
+
+		// CONTROL PLAYOUT LIMIT IF EXTREMELY WINNING
 		if (is_root
 			&& (movenum_here >= 50)
 			&& (best_root_winrate >= 0.90)
 			&& (int_child_visits >= 400)) {
 			UCTSearch::set_playout_limit(1600);
 		}
-
 		if (is_root
 			&& (movenum_here >= 50)
 			&& (best_root_winrate <= 0.89)
@@ -328,7 +383,6 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			&& (int_child_visits >= 400)) {
 			UCTSearch::set_playout_limit(1200);
 		}
-
 		if (is_root
 			&& (movenum_here >= 100)
 			&& (best_root_winrate <= 0.89)
@@ -342,7 +396,6 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			&& (int_child_visits >= 400)) {
 			UCTSearch::set_playout_limit(800);
 		}
-
 		if (is_root
 			&& (movenum_here >= 150)
 			&& (best_root_winrate <= 0.89)
