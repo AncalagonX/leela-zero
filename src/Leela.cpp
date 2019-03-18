@@ -159,6 +159,10 @@ static void parse_commandline(int argc, char *argv[]) {
                        "fast = Same as on but always plays faster.\n"
                        "no_pruning = For self play training use.\n")
         ("noponder", "Disable thinking on opponent's time.")
+        //Number of non-pass moves LZ is forced to play before considering "pass" again
+        //cfg_kgs_cleanup_moves
+        ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
+                        "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
 #ifndef USE_CPU_ONLY
@@ -409,6 +413,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("randomvisits")) {
         cfg_random_min_visits = vm["randomvisits"].as<int>();
+    }
+
+    if (vm.count("kgscleanupmoves")) {
+        cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
     }
 
     if (vm.count("randomtemp")) {

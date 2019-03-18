@@ -94,6 +94,8 @@ extern int cfg_resignpct;
 extern int cfg_noise;
 extern int cfg_random_cnt;
 extern int cfg_random_min_visits;
+extern int cfg_kgs_cleanup_moves;
+extern int kgs_cleanup_counter;
 extern float cfg_random_temp;
 extern std::uint64_t cfg_rng_seed;
 extern bool cfg_dumbpass;
