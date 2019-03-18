@@ -539,10 +539,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 
 
 		if (is_root && depth == 0
-			&& (m_search_width < 0.9
-			&& (int_child_visits < 100)
+			&& (m_search_width < 0.9)
+			&& (int_child_visits < 200)
 			&& (psa > (0.1 * best_psa))
-			&& (value >= (0.95 * best_value)))) {
+			&& (value >= (0.95 * best_value))){
 			
 			if (value > best_value) {
 				best_value = value;
@@ -554,10 +554,11 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 		}
 
 		if (is_root && depth == 0
-			&& (m_search_width < 0.9
-			&& (int_child_visits < 10)
-			&& (psa > (0.01 * best_psa))
-			&& (value >= (0.95 * best_value)))) {
+			&& (m_search_width < 0.9)
+			&& (int_child_visits < 200)
+			&& (psa >= (0.01 * best_psa))
+			&& (psa >= 0.0333)
+			&& (value >= (0.95 * best_value))) {
 			
 			if (value > best_value) {
 				best_value = value;
@@ -584,7 +585,13 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 		if (is_root && depth == 0
 			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
 			&& (search_width > 0.99)
-			&& (int_child_visits > (0.95 * int_m_visits))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			&& (static_cast<int>(int_child_visits) > static_cast<int>(0.95 * int_m_visits))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
+			continue;
+		}
+
+		if (depth == 1
+			// && int_m_visits > 800 // Allow us to get an instant, unmodified LZ search result 800 visits deep. This allows us to know LZ's unmodified preferred choice immediately.
+			&& (static_cast<int>(int_child_visits) > static_cast<int>(0.95 * int_m_visits))) { // Forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
 			continue;
 		}
 
