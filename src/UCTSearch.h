@@ -1,6 +1,6 @@
 /*
     This file is part of Leela Zero.
-    Copyright (C) 2017-2018 Gian-Carlo Pascutto
+    Copyright (C) 2017-2019 Gian-Carlo Pascutto
 
     Leela Zero is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,6 +14,17 @@
 
     You should have received a copy of the GNU General Public License
     along with Leela Zero.  If not, see <http://www.gnu.org/licenses/>.
+
+    Additional permission under GNU GPL version 3 section 7
+
+    If you modify this Program, or any covered work, by linking or
+    combining it with NVIDIA Corporation's libraries from the
+    NVIDIA CUDA Toolkit and/or the NVIDIA CUDA Deep Neural
+    Network library and/or the NVIDIA TensorRT inference library
+    (or a modified version of those libraries), containing parts covered
+    by the terms of the respective license agreement, the licensors of
+    this Program grant you additional permission to convey the resulting
+    work.
 */
 
 #ifndef UCTSEARCH_H_INCLUDED
@@ -106,6 +117,7 @@ public:
     void ponder();
     bool is_running() const;
     void increment_playouts();
+    std::string explain_last_think() const;
     SearchResult play_simulation(GameState& currstate, UCTNode* const node);
 
 private:
@@ -113,7 +125,7 @@ private:
     void dump_stats(FastState& state, UCTNode& parent);
     void tree_stats(const UCTNode& node);
     std::string get_pv(FastState& state, UCTNode& parent);
-    void dump_analysis(int playouts);
+    std::string get_analysis();
     bool should_resign(passflag_t passflag, float besteval);
     bool have_alternate_moves(int elapsed_centis, int time_for_move);
     int est_playouts_left(int elapsed_centis, int time_for_move) const;
@@ -131,6 +143,9 @@ private:
     std::atomic<int> m_nodes{0};
     std::atomic<int> m_playouts{0};
     std::atomic<bool> m_run{false};
+    //int m_maxplayouts; // THIS IS NOW AN EXTERN AT THE VERY TOP, TO CONTROL PLAYOUT/VISIT LIMITS WHEN EXTREMELY WINNING.
+    //int m_maxvisits; // THIS IS NOW AN EXTERN AT THE VERY TOP, TO CONTROL PLAYOUT/VISIT LIMITS WHEN EXTREMELY WINNING.
+    std::string m_think_output;
 
     std::list<Utils::ThreadGroup> m_delete_futures;
 
