@@ -100,6 +100,8 @@ extern int cfg_noise;
 extern int cfg_random_cnt;
 extern int cfg_random_min_visits;
 extern int cfg_opponent_color;
+extern int cfg_kgs_cleanup_moves;
+extern int kgs_cleanup_counter;
 extern float cfg_random_temp;
 extern int cfg_winrate_target;
 extern std::uint64_t cfg_rng_seed;

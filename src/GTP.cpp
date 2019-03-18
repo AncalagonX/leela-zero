@@ -75,6 +75,8 @@ int cfg_resignpct;
 int cfg_noise;
 int cfg_random_cnt;
 int cfg_random_min_visits;
+int cfg_kgs_cleanup_moves;
+int kgs_cleanup_counter;
 float cfg_random_temp;
 int cfg_winrate_target;
 int cfg_opponent_color;
@@ -360,6 +362,8 @@ void GTP::setup_default_parameters() {
     cfg_ci_alpha = 1e-5f;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
+    cfg_kgs_cleanup_moves = 10;
+    kgs_cleanup_counter = 0;
     cfg_random_temp = 1.0f;
     cfg_winrate_target = 55;
 	cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
@@ -589,6 +593,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
         assert(UCTNodePointer::get_tree_size() == 0);
+        kgs_cleanup_counter = 0; // Reset on new game
         gtp_printf(id, "");
         return;
     } else if (command.find("komi") == 0) {
@@ -754,9 +759,14 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
-                //int move = search->think(who, UCTSearch::NOPASS); // ORIGINAL LINE
-				int move = search->think(who); // MY NEW LINE WITH "NOPASS" REMOVED
-
+                int move = search->think(who);
+                // Check if we've already played the configured number of non-pass moves.
+                // If not, play another non-pass move if possible.
+                // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
+                if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
+                    move = search->think(who, UCTSearch::NOPASS);
+                    kgs_cleanup_counter++;
+                }
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
@@ -796,6 +806,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("final_status_list") == 0) {
+        kgs_cleanup_counter = 0; // Reset if both players go to scoring
         if (command.find("alive") != std::string::npos) {
             std::string livelist = get_life_list(game, true);
             gtp_printf(id, livelist.c_str());
@@ -1041,7 +1052,8 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
         return;
     } else if (command.find("kgs-game_over") == 0) {
-        // Do nothing. Particularly, don't ponder.
+        // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
+        kgs_cleanup_counter = 0;
         gtp_printf(id, "");
         return;
     } else if (command.find("kgs-time_settings") == 0) {
