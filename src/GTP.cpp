@@ -760,7 +760,9 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
-                int move = search->think(who, UCTSearch::NOPASS);
+                //int move = search->think(who, UCTSearch::NOPASS); // ORIGINAL LINE
+				int move = search->think(who); // MY NEW LINE WITH "NOPASS" REMOVED
+
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
