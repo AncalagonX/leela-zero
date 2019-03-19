@@ -237,8 +237,16 @@ void UCTNode::virtual_loss_undo() {
 }
 
 void UCTNode::update(float eval) {
+    // Cache values to avoid race conditions.
+    auto old_eval = static_cast<float>(m_blackevals);
+    auto old_visits = static_cast<int>(m_visits);
+    auto old_delta = old_visits > 0 ? eval - old_eval / old_visits : 0.0f;
     m_visits++;
-	accumulate_eval(eval);
+    accumulate_eval(eval);
+    auto new_delta = eval - (old_eval + eval) / (old_visits + 1);
+    // Welford's online algorithm for calculating variance.
+    auto delta = old_delta * new_delta;
+    atomic_add(m_squared_diff, delta);
 }
 
 bool UCTNode::has_children() const {
@@ -264,8 +272,30 @@ void UCTNode::set_policy(float policy) {
     m_policy = policy;
 }
 
+float UCTNode::get_variance(float default_var) const {
+    return m_visits > 1 ? m_squared_diff / (m_visits - 1) : default_var;
+}
+
+float UCTNode::get_stddev(float default_stddev) const {
+    return m_visits > 1 ? std::sqrt(get_variance()) : default_stddev;
+}
+
 int UCTNode::get_visits() const {
     return m_visits;
+}
+
+float UCTNode::get_lcb(int color) const {
+    // Lower confidence bound of winrate.
+    auto visits = get_visits();
+    if (visits < 2) {
+        return 0.0f;
+    }
+    auto mean = get_raw_eval(color);
+
+    auto stddev = std::sqrt(get_variance(1.0f) / visits);
+    auto z = cached_t_quantile(visits - 1);
+
+    return mean - z * stddev;
 }
 
 float UCTNode::get_raw_eval(int tomove, int virtual_loss) const {
@@ -296,6 +326,9 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
+/***************************************
+// COMMENTING OUT ROY7'S LCB CODE BELOW:
+
 // Use CI_ALPHA / 2 if calculating double sided bounds.
 float UCTNode::get_lcb_binomial(int color) const {
     return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
@@ -305,6 +338,8 @@ float UCTNode::get_lcb_binomial(int color) const {
 float UCTNode::get_ucb_binomial(int color) const {
     return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
 }
+
+***************************************/
 
 double UCTNode::get_blackevals() const {
     return m_blackevals;
@@ -370,14 +405,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
         }
 
 		auto winrate = fpu_eval;
-		auto lcb_winrate = fpu_eval;
+		//auto lcb_winrate = fpu_eval; // Commented out Roy7's LCB stuff
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         } else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
-			lcb_winrate = child.get_lcb_binomial(color);
+			//lcb_winrate = child.get_lcb_binomial(color); // Commenting out Roy7's LCB code
         }
 		float search_width = get_search_width();
 
@@ -620,8 +655,12 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
         // Calculate the lower confidence bound for each node.
-		int a_visit = a.get_visits();
-		int b_visit = b.get_visits();
+		int a_visit = a.get_visits(); // new Ttl
+		int b_visit = b.get_visits(); // new Ttl
+
+        /***************************************
+        // COMMENTING OUT ROY7'S LCB CODE BELOW:
+
         if (a.get_visits() && b.get_visits()) {
             float a_lb = a.get_lcb_binomial(m_color);
             float b_lb = b.get_lcb_binomial(m_color);
@@ -631,6 +670,21 @@ public:
                 return a_lb < b_lb;
             }
         }
+
+        ***************************************/
+
+        // Calculate the lower confidence bound for each node.
+        if (a_visit && b_visit) { // new Ttl
+            auto a_lcb = a.get_lcb(m_color); // new Ttl
+            auto b_lcb = b.get_lcb(m_color); // new Ttl
+
+            // Sort on lower confidence bounds // new Ttl
+            if (a_lcb != b_lcb) { // new Ttl
+                return a_lcb < b_lcb; // new Ttl
+            } // new Ttl
+}
+
+        // THE FOLLOWING COMPARISONS ARE DEFAULT FOR ROY7'S AND TTL'S LCB BRANCHES. IT'S PROBABLY ALSO THE DEFAULT LZ COMPARISONS.
 
         // if visits are not same, sort on visits
         if (a_visit != b_visit) {
