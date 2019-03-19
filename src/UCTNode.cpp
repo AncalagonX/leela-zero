@@ -356,6 +356,20 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_here, bo
 			cfg_timemanage = TimeManagement::FAST;
 		}
 
+        if (is_root
+            && (movenum_here < 20)
+            && (best_root_winrate <= 0.40)
+            && (int_child_visits >= 1600)) {
+            cfg_timemanage = TimeManagement::OFF;
+            UCTSearch::set_playout_limit(UCTSearch::UNLIMITED_PLAYOUTS);
+        }
+        if (is_root
+            && (movenum_here < 20)
+            && (best_root_winrate >= 0.41)
+            && (int_child_visits >= 1600)) {
+            cfg_timemanage = TimeManagement::FAST;
+        }
+
 		if (is_root
 			&& (movenum_here >= 20)	&& (movenum_here < 40)
 			&& (best_root_winrate <= 0.65)
