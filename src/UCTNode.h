@@ -81,8 +81,8 @@ public:
     float get_eval(int tomove) const;
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
-    float get_lcb_binomial(int color) const;
-	float get_ucb_binomial(int color) const;
+    //float get_lcb_binomial(int color) const; // Commented out Roy7's old LCB/UCB code
+	//float get_ucb_binomial(int color) const; // Commented out Roy7's old LCB/UCB code
 
 	//static float m_search_width;
 	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H

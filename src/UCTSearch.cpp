@@ -68,7 +68,7 @@ public:
         auto tmp = "info move " + m_move
                  + " visits " + std::to_string(m_visits)
                  + " winrate "
-                 + std::to_string(static_cast<int>(m_winrate * 10000))
+                 + std::to_string(static_cast<int>(m_winrate * 100))
                  + " prior "
                  + std::to_string(static_cast<int>(m_policy_prior * 10000.0f));
         if (order >= 0) {

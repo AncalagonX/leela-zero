@@ -916,7 +916,7 @@ void Network::fill_input_plane_pair(const FullBoard& board,
 }
 
 float Network::get_normalised_komi(const GameState* const state) {
-    const auto norm_komi = 0.5f + (state->get_komi() / (2.0f * TRAINED_UNIT_KOMI));
+    const auto norm_komi = 0.5f + (state->get_komi() / (2.0f * KOMI));
     return norm_komi;
 }
 
