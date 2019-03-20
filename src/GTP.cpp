@@ -327,7 +327,7 @@ void GTP::setup_default_parameters() {
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
     // This will be overwriiten in initialize() after network size is known.
     cfg_max_tree_size = UCTSearch::DEFAULT_MAX_MEMORY;
-    cfg_max_cache_ratio_percent = 25;
+    cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
     cfg_weightsfile = leelaz_file("best-network");
