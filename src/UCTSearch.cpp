@@ -682,7 +682,8 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
     }
     auto my_color = m_rootstate.get_to_move();
     // For self play use. Disables pruning of non-contenders to not bias the training data.
-    auto prune = cfg_timemanage != TimeManagement::NO_PRUNING;
+    //auto prune = cfg_timemanage != TimeManagement::NO_PRUNING;
+    auto prune = false;
     auto pruned = prune_noncontenders(my_color, elapsed_centis, time_for_move, prune);
     if (pruned < m_root->get_children().size() - 1) {
         return true;
