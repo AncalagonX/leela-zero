@@ -227,11 +227,71 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     game.play_textmove("b", "q13");
     game.play_textmove("w", "d5");
     game.play_textmove("b", "k4");
-	//game.play_textmove("w", "k17");
+	game.play_textmove("w", "k17");
 	**/
 
-	//game.set_to_move(FastBoard::BLACK);
-	game.set_to_move(FastBoard::WHITE);
+	/**
+	game.play_textmove("b", "q16");
+	game.play_textmove("b", "d4");
+	game.play_textmove("b", "q4");
+	game.play_textmove("b", "d16");
+
+	//Five handi below
+	//game.play_textmove("b", "k10");
+
+	//Six handi below, disable k10 above
+	game.play_textmove("b", "q10");
+	game.play_textmove("b", "d10");
+	**/
+
+	////////////////////////////////////////////////////////////////
+	// THIS 32-MOVE SEQUENCE LEAVES BLACK THOROUGHLY IN THE LEAD
+
+	/**
+
+	game.play_textmove("b", "q16");
+	game.play_textmove("w", "d3");
+	game.play_textmove("b", "d16");
+	game.play_textmove("w", "c5");
+	game.play_textmove("b", "q4");
+	game.play_textmove("w", "c14");
+	game.play_textmove("b", "c15");
+	game.play_textmove("w", "d14");
+	game.play_textmove("b", "f16");
+	game.play_textmove("w", "d10");
+	game.play_textmove("b", "b12");
+	game.play_textmove("w", "b15");
+	game.play_textmove("b", "b16");
+	game.play_textmove("w", "d15");
+	game.play_textmove("b", "c16");
+	game.play_textmove("w", "b13");
+	game.play_textmove("b", "c12");
+	game.play_textmove("w", "e12");
+	game.play_textmove("b", "c9");
+	game.play_textmove("w", "d9");
+	game.play_textmove("b", "c8");
+	game.play_textmove("w", "d8");
+	game.play_textmove("b", "c7");
+	game.play_textmove("w", "e6");
+	game.play_textmove("b", "b5");
+	game.play_textmove("w", "c4");
+	game.play_textmove("b", "b4");
+	game.play_textmove("w", "b3");
+	game.play_textmove("b", "c6");
+	game.play_textmove("w", "d6");
+	game.play_textmove("b", "l3");
+	game.play_textmove("w", "r10");
+
+	**/
+
+	bool testing_white_to_play = false; // Set this to choose the color whose komi range will be tested
+
+
+	if (testing_white_to_play == true) {
+		game.set_to_move(FastBoard::WHITE);
+	} else {
+		game.set_to_move(FastBoard::BLACK);
+	}
 
     // todo: configurable lower/upper limits and gap, allow black or white to move, more accurate (with raw_winrate, no bias towards pos or neg)
     auto vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
@@ -247,7 +307,11 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     for (auto s = -300.0f; s <= 0.0f; s = s + 0.5) {
         game.m_stm_komi = s;
         vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
-        myprintf("%f\n", vec.winrate);
+		if (testing_white_to_play == true) {
+			myprintf("%f\n", (1.0f - vec.winrate));
+		} else {
+			myprintf("%f\n", vec.winrate);
+		}
         if (vec_old.winrate < vec.winrate) {
             loc_incr.emplace_back(s);
             accum_neg += vec.winrate - vec_old.winrate;
@@ -258,7 +322,12 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     for (auto s = 0.5; s <= 300.0f; s = s + 0.5) {
         game.m_stm_komi = s;
         vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
-        myprintf("%f\n", vec.winrate);
+		if (testing_white_to_play == true) {
+			myprintf("%f\n", (1.0f - vec.winrate));
+		}
+		else {
+			myprintf("%f\n", vec.winrate);
+		}
         if (vec_old.winrate < vec.winrate) {
             loc_incr.emplace_back(s);
             accum_pos += vec.winrate - vec_old.winrate;
