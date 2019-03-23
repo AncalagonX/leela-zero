@@ -217,6 +217,12 @@ void GTP::setup_default_parameters() {
 }
 
 int dyn_komi_test(Network & net, GameState &game, int sym) {
+
+
+
+
+	////////////////////////////////////////////////////////////////
+	// 10-MOVE SEQUENCE WITH EQUAL WINRATES ON BOTH SIDES
 	/**
     game.play_textmove("b", "q16");
     game.play_textmove("w", "d3");
@@ -245,7 +251,7 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
 	**/
 
 	////////////////////////////////////////////////////////////////
-	// THIS 32-MOVE SEQUENCE LEAVES BLACK THOROUGHLY IN THE LEAD
+	// 32-MOVE SEQUENCE WITH EXTREME BLACK LEAD
 
 	/**
 
@@ -283,6 +289,50 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
 	game.play_textmove("w", "r10");
 
 	**/
+
+	////////////////////////////////////////////////////////////////
+	// 32-MOVE SEQUENCE WITH EQUAL WINRATES ON BOTH SIDES
+
+	/**
+
+	game.play_textmove("b", "q16");
+	game.play_textmove("w", "d3");
+	game.play_textmove("b", "r4");
+	game.play_textmove("w", "d17");
+	game.play_textmove("b", "c15");
+	game.play_textmove("w", "c16");
+	game.play_textmove("b", "d15");
+	game.play_textmove("w", "f17");
+	game.play_textmove("b", "d11");
+	game.play_textmove("w", "c6");
+	game.play_textmove("b", "p4");
+	game.play_textmove("w", "o17");
+	game.play_textmove("b", "q14");
+	game.play_textmove("w", "p15");
+	game.play_textmove("b", "q15");
+	game.play_textmove("w", "q18");
+	game.play_textmove("b", "r10");
+	game.play_textmove("w", "l3");
+	game.play_textmove("b", "n3");
+	game.play_textmove("w", "h4");
+	game.play_textmove("b", "c8");
+	game.play_textmove("w", "o9");
+	game.play_textmove("b", "f5");
+	game.play_textmove("w", "d5");
+	game.play_textmove("b", "f3");
+	game.play_textmove("w", "h6");
+	game.play_textmove("b", "f7");
+	game.play_textmove("w", "h8");
+	game.play_textmove("b", "c7");
+	game.play_textmove("w", "b6");
+	game.play_textmove("b", "k4");
+	game.play_textmove("w", "k3");
+	
+	**/
+
+	game.play_textmove("b", "q16");
+	game.play_textmove("w", "d3");
+
 
 	bool testing_white_to_play = false; // Set this to choose the color whose komi range will be tested
 
