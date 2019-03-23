@@ -1394,14 +1394,18 @@ void GTP::execute_setoption(UCTSearch & search,
         cfg_max_playouts = playouts;
 
         // 0 may be specified to mean "no limit"
-        if (cfg_max_playouts == 0) {
-            cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
+		if (cfg_max_playouts == 0) {
+			cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
+		}
+		/********************************
+		// REMOVE PREVIOUS BRACKET IF UNCOMMENTING THE FOLLOWING BLOCK:
         } else if (cfg_allow_pondering) {
             // Limiting playouts while pondering is still enabled
             // makes no sense.
             gtp_fail_printf(id, "incorrect value");
             return;
         }
+		**/
 
         // Note that if the playouts are changed but no
         // explicit command to set memory usage is given,

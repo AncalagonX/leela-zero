@@ -713,9 +713,14 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 }
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
-    return m_playouts >= m_maxplayouts
-           || m_root->get_visits() >= m_maxvisits
-           || elapsed_centis >= time_for_move;
+	if (is_pondering_now) {
+		return (int(0.05 * (m_playouts)) >= m_maxplayouts)
+			|| (int(0.05 * (m_root->get_visits())) >= m_maxvisits)
+			|| elapsed_centis >= time_for_move;
+	}
+	return m_playouts >= m_maxplayouts
+		|| m_root->get_visits() >= m_maxvisits
+		|| elapsed_centis >= time_for_move;
 }
 
 void UCTWorker::operator()() {
