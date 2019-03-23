@@ -217,6 +217,22 @@ void GTP::setup_default_parameters() {
 }
 
 int dyn_komi_test(Network & net, GameState &game, int sym) {
+	/**
+    game.play_textmove("b", "q16");
+    game.play_textmove("w", "d3");
+    game.play_textmove("b", "q3");
+    game.play_textmove("w", "d16");
+    game.play_textmove("b", "r5");
+    game.play_textmove("w", "c14");
+    game.play_textmove("b", "q13");
+    game.play_textmove("w", "d5");
+    game.play_textmove("b", "k4");
+	//game.play_textmove("w", "k17");
+	**/
+
+	//game.set_to_move(FastBoard::BLACK);
+	game.set_to_move(FastBoard::WHITE);
+
     // todo: configurable lower/upper limits and gap, allow black or white to move, more accurate (with raw_winrate, no bias towards pos or neg)
     auto vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
     auto current_komi = game.m_stm_komi;
@@ -226,10 +242,12 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     auto accum_neg = 1.0f - vec_old.winrate;
     myprintf("komi | winrate\n");
     myprintf("---- | ----\n");
+    system("cls");
+	std::cout << cfg_weightsfile << "\n";
     for (auto s = -300.0f; s <= 0.0f; s = s + 0.5) {
         game.m_stm_komi = s;
         vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
-        myprintf("%f | %f\n", s, vec.winrate);
+        myprintf("%f\n", vec.winrate);
         if (vec_old.winrate < vec.winrate) {
             loc_incr.emplace_back(s);
             accum_neg += vec.winrate - vec_old.winrate;
@@ -240,7 +258,7 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     for (auto s = 0.5; s <= 300.0f; s = s + 0.5) {
         game.m_stm_komi = s;
         vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
-        myprintf("%f | %f\n", s, vec.winrate);
+        myprintf("%f\n", vec.winrate);
         if (vec_old.winrate < vec.winrate) {
             loc_incr.emplace_back(s);
             accum_pos += vec.winrate - vec_old.winrate;
@@ -250,27 +268,32 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     accum_pos += vec.winrate;
     game.m_stm_komi = current_komi;
     //if (loc_incr.empty()) { myprintf("Perfect weight file! 完美的权重！\n"); }
-    myprintf("在以下贴目值附近胜率是上升的：Winrate increasing near ");
+    /**
+	myprintf("在以下贴目值附近胜率是上升的：Winrate increasing near ");
     for (float s : loc_incr) { myprintf("%4.1f, ", s); }
     myprintf(".\n");
     myprintf("Negative komi total score: %e\n", accum_neg);
     myprintf("Positive komi total score: %e\n", accum_pos);
+	**/
     const auto thres = 0.05f;
+
+	std::cout << "\n" << cfg_weightsfile << "\n";
+
     if (accum_neg <= thres && accum_pos <= thres) {
-        myprintf("Weight file is of good quality for dynamic komi! 权重质量不错，可用于让子／不退让版。\n");
-        return 0;
+        //myprintf("Weight file is of good quality for dynamic komi! 权重质量不错，可用于让子／不退让版。\n");
+        return 1;
     }
     else if (accum_neg > thres && accum_pos > thres) {
-        myprintf("Weight file is unusable for dynamic komi. Sorry. 权重质量不佳，不能用于让子／不退让版。\n");
+        //myprintf("Weight file is unusable for dynamic komi. Sorry. 权重质量不佳，不能用于让子／不退让版。\n");
         return 1;
     }
     else if (accum_neg <= thres) {
-        myprintf("Weight file is of mediocre quality for dynamic komi. Use with the option --neg. 权重质量中等，正贴目表现不佳，推荐使用--neg参数。\n");
-        return 2;
+        //myprintf("Weight file is of mediocre quality for dynamic komi. Use with the option --neg. 权重质量中等，正贴目表现不佳，推荐使用--neg参数。\n");
+        return 1;
     }
     else {
-        myprintf("Weight file is of mediocre quality for dynamic komi. Use with the option --pos. 权重质量中等，负贴目表现不佳，推荐使用--pos参数。\n");
-        return 3;
+        //myprintf("Weight file is of mediocre quality for dynamic komi. Use with the option --pos. 权重质量中等，负贴目表现不佳，推荐使用--pos参数。\n");
+        return 1;
     }
 }
 

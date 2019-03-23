@@ -572,12 +572,12 @@ int main(int argc, char *argv[]) {
     if (cfg_dyn_komi && cfg_auto_pos_neg) {
         switch (dyn_komi_test(*GTP::s_network, *maingame, 0)) {
         case 0: break;
-        case 1: cfg_pos = cfg_neg = true; myprintf("Automatically set --pos and --neg.\n"); break;
-        case 2: cfg_neg = true; myprintf("Automatically set --neg.\n"); break;
-        case 3: cfg_pos = true; myprintf("Automatically set --pos.\n"); break;
+        case 1: cfg_pos = cfg_neg = true; break;
+        case 2: cfg_neg = true; break;
+        case 3: cfg_pos = true; break;
         }
     }
-    if (cfg_pos && cfg_neg) { myprintf("Cannot set both --pos and --neg. Quitting."); return 0; }
+    if (cfg_pos && cfg_neg) { return 0; }
 
     for (;;) {
         if (!cfg_gtp_mode) {
