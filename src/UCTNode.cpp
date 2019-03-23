@@ -372,7 +372,7 @@ void UCTNode::narrow_search() {
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -406,6 +406,14 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
+    const auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+
+    bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
+
+	if (color_to_move == 1) {
+		is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+	}
+
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
@@ -423,7 +431,12 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
-        const auto value = winrate + puct;
+        auto value = winrate + puct;
+
+        if (!is_opponent_move) {
+            value = (1 - abs(winrate_target_value - winrate)) + puct;
+        }
+
         assert(value > std::numeric_limits<double>::lowest());
 
         int int_m_visits = static_cast<int>(m_visits);
