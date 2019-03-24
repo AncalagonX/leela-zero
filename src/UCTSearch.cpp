@@ -77,13 +77,20 @@ public:
         tmp += " pv " + m_pv;
         return tmp;
     }
-
+	/**
     friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
         if (a.m_winrate == b.m_winrate) {
             return a.m_visits < b.m_visits;
         }
         return a.m_winrate < b.m_winrate;
     }
+	**/
+	friend bool operator<(const OutputAnalysisData& a, const OutputAnalysisData& b) {
+		if (a.m_visits == b.m_visits) {
+			return a.m_winrate < b.m_winrate;
+		}
+		return a.m_visits < b.m_visits;
+	}
 
 private:
     std::string m_move;
