@@ -251,8 +251,19 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
 	auto depth =
 		int(currstate.get_movenum() - m_rootstate.get_movenum());
 
+	int vertex;
+
+	for (auto i = 0; i < NUM_INTERSECTIONS; i++) {
+		const auto x = i % BOARD_SIZE;
+		const auto y = i / BOARD_SIZE;
+		//vertex = currstate.board.get_vertex(x, y);
+		vertex = ((x * 1000) + y);
+	}
+
+	//vertex = move.c_str();
+
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, vertex);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -689,13 +700,21 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
         return true;
     }
     auto my_color = m_rootstate.get_to_move();
-    // For self play use. Disables pruning of non-contenders to not bias the training data.
+    
+	
+	
+	
+	/**
+	// For self play use. Disables pruning of non-contenders to not bias the training data.
     //auto prune = cfg_timemanage != TimeManagement::NO_PRUNING;
     auto prune = false;
     auto pruned = prune_noncontenders(my_color, elapsed_centis, time_for_move, prune);
     if (pruned < m_root->get_children().size() - 1) {
         return true;
     }
+	**/
+
+
     // If we cannot save up time anyway, use all of it. This
     // behavior can be overruled by setting "fast" time management,
     // which will cause Leela to quickly respond to obvious/forced moves.
