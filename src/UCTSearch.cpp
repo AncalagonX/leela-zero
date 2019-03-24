@@ -219,6 +219,7 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
+	const auto color_to_move = m_rootstate.get_to_move();
 	const auto movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
@@ -244,7 +245,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
 		int(currstate.get_movenum() - m_rootstate.get_movenum());
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now, depth);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
         auto move = next->get_move();
 
         currstate.play_move(move);
