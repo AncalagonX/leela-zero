@@ -105,6 +105,7 @@ float cfg_puct;
 float cfg_softmax_temp;
 float cfg_fpu_reduction;
 std::string cfg_weightsfile;
+std::string test_style;
 std::string cfg_logfile;
 FILE* cfg_logfile_handle;
 bool cfg_quiet;
@@ -331,7 +332,14 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
 	**/
 
 	game.play_textmove("b", "q16");
-	game.play_textmove("w", "d3");
+	game.play_textmove("w", "d4");
+	game.play_textmove("b", "q4");
+	game.play_textmove("w", "d16");
+	game.play_textmove("b", "f3");
+	game.play_textmove("w", "o17");
+	game.play_textmove("b", "f17");
+	game.play_textmove("w", "o3");
+	
 
 
 	bool testing_white_to_play = false; // Set this to choose the color whose komi range will be tested
@@ -353,7 +361,7 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
     myprintf("komi | winrate\n");
     myprintf("---- | ----\n");
     system("cls");
-	std::cout << cfg_weightsfile << "\n";
+	std::cout << "\n" << cfg_weightsfile << " " << test_style << "\n";
     for (auto s = -300.0f; s <= 0.0f; s = s + 0.5) {
         game.m_stm_komi = s;
         vec = net.get_output(&game, Network::Ensemble::DIRECT, sym, true);
@@ -396,7 +404,7 @@ int dyn_komi_test(Network & net, GameState &game, int sym) {
 	**/
     const auto thres = 0.05f;
 
-	std::cout << "\n" << cfg_weightsfile << "\n";
+	std::cout << "\n" << cfg_weightsfile << " " << test_style <<"\n";
 
     if (accum_neg <= thres && accum_pos <= thres) {
         //myprintf("Weight file is of good quality for dynamic komi! 权重质量不错，可用于让子／不退让版。\n");
