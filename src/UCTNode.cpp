@@ -406,6 +406,38 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
+
+
+	// Test: Try to make Vertex 140 (6x6 point) appear
+
+	// NOTE:
+	// m_sidevertices = size + 2;
+	// m_numvertices = m_sidevertices * m_sidevertices;
+
+	// These are the (x, y) coordinates of moves to convert. Crude implementation.
+	int x_1 = 16;  // across
+	int y_1 = 4; // then up (starts in bottom left corner
+
+	assert(x_1 >= 1 && x_1 <= 19);
+	assert(y_1 >= 1 && y_1 <= 19);
+
+	int vertex_to_search_for_1 = ((y_1) * 21) + (x_1); // Original formula
+
+	assert(vertex_to_search_for >= 0 && vertex_to_search_for < 450);
+
+	// These are the (x, y) coordinates of moves to convert. Crude implementation.
+	int x_2 = 14;  // across
+	int y_2 = 4; // then up (starts in bottom left corner
+
+	assert(x_2 >= 1 && x_2 <= 19);
+	assert(y_2 >= 1 && y_2 <= 19);
+
+	int vertex_to_search_for_2 = ((y_2) * 21) + (x_2); // Original formula
+
+	assert(vertex_to_search_for >= 0 && vertex_to_search_for < 450);
+
+
+
 	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
 	
@@ -415,6 +447,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 							  // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
 		is_opponent_move = !is_opponent_move; // Opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
 	}
+
+
+
+	int depth_1_vertex = 0;
+	int depth_2_vertex = 0;
+
+
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -440,10 +479,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         int int_child_visits = static_cast<int>(child.get_visits());
         int int_parent_visits = static_cast<int>(parentvisits);
 
+		int current_move_vertex = child.get_move(); // THIS GIVES ME VERTEXES!
+
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
         }
+
+		if (depth == 1) {
+			depth_1_vertex = current_move_vertex;
+		}
+		if (depth == 2) {
+			depth_2_vertex = current_move_vertex;
+		}
+		if ((depth_1_vertex == vertex_to_search_for_1)
+		&& (current_move_vertex == vertex_to_search_for_2)) {
+			if (value > best_value) {
+				best_value = value;
+				best_value2 = value;
+			}
+			best = &child;
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
 
         if (value > best_value) {
             best_value = value;
