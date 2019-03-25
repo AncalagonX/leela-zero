@@ -149,6 +149,9 @@ static void parse_commandline(int argc, char *argv[]) {
                      "Weaken engine by limiting the number of visits.")
 		("setkomi", po::value<int>()->default_value(cfg_manual_komi),
                         "Safety margin for time usage in centiseconds.")
+		("opponent", po::value<std::string>()->default_value("none"),
+                       "[black|white|none] Declares which color should be considered LZ's opponent.\n"
+                       "This changes some custom search functionality.\n")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
         ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
@@ -446,6 +449,29 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_timemanage =
             cfg_noise ? TimeManagement::NO_PRUNING : TimeManagement::ON;
     }
+
+	/**
+	("opponent", po::value<std::string>()->default_value("none"),
+		"[black|white|none] Declares which color should be considered LZ's opponent.\n"
+		"This changes some custom search functionality.\n")
+	**/
+
+	if (vm.count("opponent")) {
+		auto opp = vm["opponent"].as<std::string>();
+		if (opp == "black") {
+			cfg_opponent = 0;
+		}
+		else if (opp == "white") {
+			cfg_opponent = 1;
+		}
+		else if (opp == "none") {
+			cfg_opponent = -1; // invalid value
+		}
+		else {
+			printf("Invalid color value.\n");
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	if (vm.count("setkomi")) {
 		int manual_komi = vm["setkomi"].as<int>();

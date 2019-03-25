@@ -372,7 +372,7 @@ void UCTNode::narrow_search() {
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -405,6 +405,16 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
 	int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
+
+	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
+
+	
+	
+	if (color_to_move == cfg_opponent) { // This sets which color is considered to be LZ's opponent using the --opponent flag.
+							  // BLACK = 0, WHITE = 1
+							  // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
+		is_opponent_move = !is_opponent_move; // Opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+	}
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -452,6 +462,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     int random_search_count = dis_moves(gen);
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
+
+	// The following short if statement tries to keep LZ from sending too many visits to its favorite move.
     if ((random_search_count == 0)
         && (most_root_visits_second_root_visits_ratio >= 2)) {
         
@@ -468,6 +480,10 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int
             if (!is_root) {
                 continue;
             }
+
+			if (is_opponent_move && (cfg_opponent != -1)) {
+				continue;
+			}
 
             auto winrate = fpu_eval;
             if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
