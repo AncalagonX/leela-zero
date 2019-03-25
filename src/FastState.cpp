@@ -82,6 +82,10 @@ bool FastState::is_move_legal(int color, int vertex) const {
                       !board.is_suicide(vertex, color)));
 }
 
+bool FastState::is_move_occupied_by_opponent(int vertex) const {
+	return (board.get_state(vertex) == cfg_opponent);
+}
+
 void FastState::play_move(int vertex) {
     play_move(board.m_tomove, vertex);
 }

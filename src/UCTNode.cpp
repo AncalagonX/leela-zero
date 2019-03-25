@@ -408,9 +408,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-	// Test: Try to make Vertex 140 (6x6 point) appear
-	//int vertex_6x6 = 140;
-	int vertex_6x6 = 300;
+	//int vertex_6x6 = 140; // Is this wrong?
+	//int vertex_6x6 = 300; // Is this wrong?
+	int vertex_6x6 = 322;
 	int vertex_10x10 = 220;
 
 	// NOTE:
@@ -418,8 +418,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 	// m_numvertices = m_sidevertices * m_sidevertices;
 
 	// These are the (x, y) coordinates of moves to convert. Crude implementation.
-	int x_1 = 16;  // across
-	int y_1 = 4; // then up (starts in bottom left corner
+	int x_1 = 10;  // across
+	int y_1 = 10; // then up (starts in bottom left corner
 
 	assert(x_1 >= 1 && x_1 <= 19);
 	assert(y_1 >= 1 && y_1 <= 19);
@@ -440,6 +440,28 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 	assert(vertex_to_search_for_2 >= 0 && vertex_to_search_for_2 < 450);
 
 
+	int x_3 = 10;  // across
+	int y_3 = 10; // then up (starts in bottom left corner
+	int vertex_to_search_for_3 = state.board.get_vertex(x_3, y_3);
+
+	std::string move_4a = "O6";
+	std::string move_4b = "O6";
+	std::string move_4c = "O6";
+	std::string move_4d = "O6";
+
+	//std::string move_4b = "O14";
+	//std::string move_4c = "F14";
+	//std::string move_4d = "F6";
+
+	
+	int vertex_to_search_for_4a = (state.board.text_to_move(move_4a));
+	int vertex_to_search_for_4b = (state.board.text_to_move(move_4b));
+	int vertex_to_search_for_4c = (state.board.text_to_move(move_4c));
+	int vertex_to_search_for_4d = (state.board.text_to_move(move_4d));
+	//state.board.get_vertex(x_4, y_4);
+	//myprintf("vertex computed for %s - %d\n", move_4, vertex_to_search_for_4);
+
+
 
 	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
@@ -457,6 +479,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 	int depth_2_vertex = 0;
 	int best_vertex = 0;
 
+	bool best_vertex_was_played = false;
+
 
 
     for (auto& child : m_children) {
@@ -464,27 +488,69 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             continue;
         }
 
-        auto winrate = fpu_eval;
+		//auto winrate = fpu_eval;
+		auto winrate = 0.0f;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
         }
-        else if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-        }
+
+		bool test_3_best_vertex_was_played = false;
+
+		if ((state.FastState::get_last_move() == vertex_to_search_for_4a)
+			|| (state.FastState::get_last_move() == vertex_to_search_for_4b)
+			|| (state.FastState::get_last_move() == vertex_to_search_for_4c)
+			|| (state.FastState::get_last_move() == vertex_to_search_for_4d)) {
+			test_3_best_vertex_was_played = true;
+		}
+
+		else if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
+			if ((!is_opponent_move) && (!test_3_best_vertex_was_played)) {
+				//winrate = 0.001;
+			}
+
+			if ((!is_opponent_move) && (test_3_best_vertex_was_played)) {
+				//winrate = winrate;
+			}
+		}
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
 
-        auto value = (1.0 * (winrate + puct));
+		//bool function_best_vertex_was_played = state.FastState::is_move_occupied_by_opponent(vertex_to_search_for_4);
+
+        auto value = (1.0 * winrate) + puct;
+
+		//bool test_3_best_vertex_was_played = (state.FastState::get_last_move() == vertex_to_search_for_4);
+
+		if ((!is_opponent_move) && (!test_3_best_vertex_was_played)) {
+			//value = (0.0001 * winrate) + (1.0 * puct);
+			value = (1.0 * winrate) + (1.0 * puct);
+		}
+
+		if ((!is_opponent_move) && (test_3_best_vertex_was_played)) {
+			value = (1.0 * winrate) + (1.0 * puct);
+		}
+
+		/**
+		if ((!is_opponent_move)
+		//&& (state.FastState::get_last_move() == vertex_6x6)
+		//&& ((depth == 3) || (depth == 4))
+		//&& (depth <= 10)
+		&& (state.board.get_state(vertex_to_search_for_4) != cfg_opponent)) { // If NOT occupied by opponent = penalize
+			//value = ((1.0 + (10.0 / (depth + 1)) * (winrate + puct))) + (winrate + puct);
+			value = ((5.0 / (depth+5)) * winrate) + puct;
+		}
 
 		if ((!is_opponent_move)
-		//&& ((depth == 3) || (depth == 4))
-		&& (depth <= 10)
-		&& (state.FastState::get_last_move() == vertex_6x6) ){
-			value = (10.0 * (winrate + puct));
+		&& (state.board.get_state(vertex_to_search_for_4) == cfg_opponent)) { // If OCCUPIED by opponent = reward
+			//value = ((1.0 + (10.0 / (depth + 1)) * (winrate + puct))) + (winrate + puct);
+			value = (20.0 * (winrate + puct));
 		}
+		**/
+		
 
 		if (is_opponent_move) {
 			value = (1.0 * (winrate + puct));
@@ -555,8 +621,18 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best_value = value;
             best_value2 = value;
             best = &child;
-			best_vertex = child.get_move(); // THIS GIVES ME VERTEXES!
+			//if (is_opponent_move
+			//&& (child.get_move() == vertex_to_search_for_4)) {
+			//	best_vertex_was_played = true;
+			//}
         }
+
+		//if ((depth >= 16 && (!test_3_best_vertex_was_played))) {
+		//	continue;
+		//}
+		//if (psa <= 0.01 && (!test_3_best_vertex_was_played)) {
+			//continue;
+		//}
 
 		/**
 		
@@ -611,24 +687,83 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 continue;
             }
 
+			//if (depth > 5) {
+			//	continue;
+			//}
+
 			if (is_opponent_move && (cfg_opponent != -1)) {
 				continue;
 			}
 
-            auto winrate = fpu_eval;
+            //auto winrate = fpu_eval;
+			auto winrate = 0.0f;
             if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
                 // Someone else is expanding this node, never select it
                 // if we can avoid so, because we'd block on it.
                 winrate = -1.0f - fpu_reduction;
             }
+
+			bool test_3_best_vertex_was_played = false;
+
+			if ((state.FastState::get_last_move() == vertex_to_search_for_4a)
+				|| (state.FastState::get_last_move() == vertex_to_search_for_4b)
+				|| (state.FastState::get_last_move() == vertex_to_search_for_4c)
+				|| (state.FastState::get_last_move() == vertex_to_search_for_4d)) {
+				test_3_best_vertex_was_played = true;
+			}
+
             else if (child.get_visits() > 0) {
                 winrate = child.get_eval(color);
+				if ((!is_opponent_move) && (!test_3_best_vertex_was_played)) {
+					//winrate = 0.001;
+				}
+
+				if ((!is_opponent_move) && (test_3_best_vertex_was_played)) {
+					//winrate = winrate;
+				}
             }
 
             const auto psa = child.get_policy();
             const auto denom = 1.0 + child.get_visits();
-            const auto puct = cfg_puct * psa * (numerator / denom);
-            const auto value = winrate + puct;
+			const auto puct = cfg_puct * psa * (numerator / denom);
+
+
+			//bool function_best_vertex_was_played = state.FastState::is_move_occupied_by_opponent(vertex_to_search_for_4);
+
+			auto value = (1.0 * winrate) + puct;
+
+			//bool test_3_best_vertex_was_played = (state.FastState::get_last_move() == vertex_to_search_for_4);
+
+			if ((!is_opponent_move) && (!test_3_best_vertex_was_played)) {
+				value = (1.0 * winrate) + (1.0 * puct);
+			}
+
+			if ((!is_opponent_move) && (test_3_best_vertex_was_played)) {
+				value = (1.0 * winrate) + (1.0 * puct);
+			}
+
+			/**
+			if ((!is_opponent_move)
+			//&& (state.FastState::get_last_move() == vertex_6x6)
+			//&& ((depth == 3) || (depth == 4))
+			//&& (depth <= 10)
+			&& (state.board.get_state(vertex_to_search_for_4) != cfg_opponent)) { // If NOT occupied by opponent = penalize
+				//value = ((1.0 + (10.0 / (depth + 1)) * (winrate + puct))) + (winrate + puct);
+				value = ((5.0 / (depth+5)) * winrate) + puct;
+			}
+
+			if ((!is_opponent_move)
+			&& (state.board.get_state(vertex_to_search_for_4) == cfg_opponent)) { // If OCCUPIED by opponent = reward
+				//value = ((1.0 + (10.0 / (depth + 1)) * (winrate + puct))) + (winrate + puct);
+				value = (20.0 * (winrate + puct));
+			}
+			**/
+
+
+			if (is_opponent_move) {
+				value = (1.0 * (winrate + puct));
+			}
+
             assert(value > std::numeric_limits<double>::lowest());
 
             if (value < best_value2) {

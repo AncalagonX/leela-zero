@@ -703,7 +703,8 @@ bool Network::probe_cache(const GameState* const state,
     // symmetries if we are in the early opening.
     if (!cfg_noise && !cfg_random_cnt
         && state->get_movenum()
-           < (state->get_timecontrol().opening_moves(BOARD_SIZE))) {
+           < (state->get_timecontrol().opening_moves(BOARD_SIZE))
+		&& (5 == 1)) { // SYMMETRY DISABLED HERE IN EARLY OPENING FUSEKI
         for (auto sym = 0; sym < Network::NUM_SYMMETRIES; ++sym) {
             if (sym == Network::IDENTITY_SYMMETRY) {
                 continue;
