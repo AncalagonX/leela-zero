@@ -217,7 +217,8 @@ float UCTSearch::get_min_psa_ratio() const {
 }
 
 SearchResult UCTSearch::play_simulation(GameState & currstate,
-                                        UCTNode* const node) {
+                                        UCTNode* const node, bool old_sim) {
+	old_sim = false;
     const auto color = currstate.get_to_move();
 	const auto color_to_move = m_rootstate.get_to_move();
 	const auto movenum_now = m_rootstate.get_movenum();

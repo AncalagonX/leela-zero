@@ -409,6 +409,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 	// Test: Try to make Vertex 140 (6x6 point) appear
+	//int vertex_6x6 = 140;
+	int vertex_6x6 = 300;
+	int vertex_10x10 = 220;
 
 	// NOTE:
 	// m_sidevertices = size + 2;
@@ -452,6 +455,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 	int depth_1_vertex = 0;
 	int depth_2_vertex = 0;
+	int best_vertex = 0;
 
 
 
@@ -472,7 +476,20 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
-        const auto value = winrate + puct;
+
+        auto value = (1.0 * (winrate + puct));
+
+		if ((!is_opponent_move)
+		//&& ((depth == 3) || (depth == 4))
+		&& (depth <= 10)
+		&& (state.FastState::get_last_move() == vertex_6x6) ){
+			value = (10.0 * (winrate + puct));
+		}
+
+		if (is_opponent_move) {
+			value = (1.0 * (winrate + puct));
+		}
+
         assert(value > std::numeric_limits<double>::lowest());
 
         int int_m_visits = static_cast<int>(m_visits);
@@ -486,7 +503,19 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
-		if ((depth == 2)
+		
+
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////
+		//////////     MAKE OPPONENT PLAY THE 6X6 POINT!     ////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////
+
+		/**************** MOVED FURTHER BELOW OUTSIDE OF THE FOR LOOP!
+
+		if ((is_opponent_move)
+		&& (current_move_vertex == vertex_6x6)
+		&& (value > best_value)
 		&& (state.FastState::get_last_move() == vertex_to_search_for_1)
 		&& (current_move_vertex == vertex_to_search_for_2)) {
 			if (value > best_value) {
@@ -498,6 +527,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 				best->inflate();
 				return best->get();
 		}
+		****************/
 
 		/*************
 
@@ -525,12 +555,31 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best_value = value;
             best_value2 = value;
             best = &child;
+			best_vertex = child.get_move(); // THIS GIVES ME VERTEXES!
         }
+
+		/**
+		
+		if ((is_opponent_move)
+			&& (best_vertex == vertex_6x6)) {
+			//state.FastState::get_last_move();
+			best = &child;
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
+		**/
+		
     }
 
 
 
-    float search_width = get_search_width();
+
+	   	  
+
+
+	
+	float search_width = get_search_width();
     int number_of_moves_to_search = 1 + static_cast<int>(0.96f / search_width);
     int moves_searched = 0;
     int most_root_visits_second_root_visits_ratio = static_cast<int>(most_root_visits_seen_so_far / (second_most_root_visits_seen_so_far + 1));
@@ -545,6 +594,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         
         random_search_count = dis_moves(gen);
     }
+
+
+
+
+
 
 
     
