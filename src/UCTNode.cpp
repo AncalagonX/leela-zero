@@ -372,7 +372,7 @@ void UCTNode::narrow_search() {
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth, GameState& state) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -423,10 +423,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 	int vertex_to_search_for_1 = ((y_1) * 21) + (x_1); // Original formula
 
-	assert(vertex_to_search_for >= 0 && vertex_to_search_for < 450);
+	assert(vertex_to_search_for_1 >= 0 && vertex_to_search_for_1 < 450);
 
 	// These are the (x, y) coordinates of moves to convert. Crude implementation.
-	int x_2 = 14;  // across
+	int x_2 = 13;  // across
 	int y_2 = 4; // then up (starts in bottom left corner
 
 	assert(x_2 >= 1 && x_2 <= 19);
@@ -434,7 +434,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 	int vertex_to_search_for_2 = ((y_2) * 21) + (x_2); // Original formula
 
-	assert(vertex_to_search_for >= 0 && vertex_to_search_for < 450);
+	assert(vertex_to_search_for_2 >= 0 && vertex_to_search_for_2 < 450);
 
 
 
@@ -486,6 +486,21 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
+		if ((depth == 2)
+		&& (state.FastState::get_last_move() == vertex_to_search_for_1)
+		&& (current_move_vertex == vertex_to_search_for_2)) {
+			if (value > best_value) {
+				best_value = value;
+					best_value2 = value;
+			}
+			best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+		}
+
+		/*************
+
 		if (depth == 1) {
 			depth_1_vertex = current_move_vertex;
 		}
@@ -493,7 +508,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 			depth_2_vertex = current_move_vertex;
 		}
 		if ((depth_1_vertex == vertex_to_search_for_1)
-		&& (current_move_vertex == vertex_to_search_for_2)) {
+		&& (current_move_vertex == vertex_to_search_for_2)
+		&& (depth == 2)) {
 			if (value > best_value) {
 				best_value = value;
 				best_value2 = value;
@@ -503,6 +519,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 			best->inflate();
 			return best->get();
 		}
+		*************/
 
         if (value > best_value) {
             best_value = value;
