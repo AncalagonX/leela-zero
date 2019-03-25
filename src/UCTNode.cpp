@@ -372,7 +372,7 @@ void UCTNode::narrow_search() {
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, int depth) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -399,21 +399,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 	auto best_value = std::numeric_limits<double>::lowest();
     auto best_value2 = std::numeric_limits<double>::lowest();
     auto best_value_next = std::numeric_limits<double>::lowest();
-	auto best_value_vertex = std::numeric_limits<double>::lowest();
 	auto best_winrate = std::numeric_limits<double>::lowest();
     auto best_winrate2 = std::numeric_limits<double>::lowest();
-	auto best_winrate_vertex = std::numeric_limits<double>::lowest();
-	auto best_puct_vertex = std::numeric_limits<double>::lowest();
 	auto best_psa = std::numeric_limits<double>::lowest();
 	int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
-
-	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
-
-	if (color_to_move == 1) { // When set to "1" (white), it tries to force WHITE to play a specific move.
-		is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
-	}
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -432,105 +423,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
-		//if (!is_opponent_move) {
-		//	value = winrate + puct + best_value_vertex;
-		//}
-		//auto value_vertex = winrate + puct + best_value_vertex;
-        //assert(value > std::numeric_limits<double>::lowest());
+        const auto value = winrate + puct;
+        assert(value > std::numeric_limits<double>::lowest());
 
         int int_m_visits = static_cast<int>(m_visits);
         int int_child_visits = static_cast<int>(child.get_visits());
         int int_parent_visits = static_cast<int>(parentvisits);
-
-		// Test: Try to make Vertex 140 (6x6 point) appear
-
-		int current_move_vertex = child.get_move(); // THIS GIVES ME VERTEXES!
-		//auto text_vertex = child.move_to_text(current_move_vertex);
-
-
-		/**/
-		// This is one method of converting vertexes.
-
-		// NOTE:
-		// m_sidevertices = size + 2;
-		// m_numvertices = m_sidevertices * m_sidevertices;
-
-		int x = 15;  // across
-		int y = 4; // then up (starts in bottom left corner
-
-		assert(x >= 1 && x <= 19);
-		assert(y >= 1 && y <= 19);
-
-		int vertex_to_search_for = ((y) * 21) + (x); // Original formula
-
-		assert(vertex_to_search_for >= 0 && vertex_to_search_for < 450);
-
-		/**/
-
-		// This is another method.
-
-
-
-
-
-
-
-
-
-
-
-
-		//std::string vertex = GameState::move_to_text(child);
-
-		/** Don't need this test display code anymore
-		if (is_root && (int_m_visits % 10 == 0)) {
-			myprintf("vertex is %d\n",
-				current_move_vertex);
-		}
-		**/
-
-		//if (!is_opponent_move) {
-		//	value = (1 - abs(winrate_target_value - winrate)) + puct;
-		//}
-
-
-
-		if ((is_opponent_move)
-		&& (depth <= 10)) {
-			/**
-			if (value_vertex > best_value_vertex) {
-				best_value_vertex = value_vertex;
-				best = &child;
-				assert(best != nullptr);
-				best->inflate();
-				return best->get();
-			}
-			**/
-
-			/*************
-			if (value > best_value_vertex) {
-				best_value_vertex = value;
-			}
-			if (value > best_value) {
-				best_value = value;
-				best_value2 = value;
-				best = &child;
-				if (current_move_vertex == vertex_to_search_for) {
-					assert(best != nullptr);
-					best->inflate();
-					return best->get();
-				}
-			}
-			if ((current_move_vertex == vertex_to_search_for)
-			&& (int_child_visits <= 1)) {
-				best = &child;
-				assert(best != nullptr);
-				best->inflate();
-				return best->get();
-			}
-			*************/
-		}
 
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
@@ -554,15 +452,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     int random_search_count = dis_moves(gen);
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
-
-    /*******************************************
-	// The following short codeblock tries to keep LZ from sending too many visits to its favorite move.
-	if ((random_search_count == 0)
+    if ((random_search_count == 0)
         && (most_root_visits_second_root_visits_ratio >= 2)) {
         
         random_search_count = dis_moves(gen);
     }
-	**/
 
 
     
@@ -574,9 +468,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             if (!is_root) {
                 continue;
             }
-			//if (is_opponent_move) {
-			//    continue;
-			//}
 
             auto winrate = fpu_eval;
             if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
