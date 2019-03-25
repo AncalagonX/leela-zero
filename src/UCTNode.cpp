@@ -247,7 +247,7 @@ void UCTNode::update(float eval) {
     auto new_delta = eval - (old_eval + eval) / (old_visits + 1);
     // Welford's online algorithm for calculating variance.
     auto delta = old_delta * new_delta;
-    atomic_add(m_squared_diff, delta);
+    atomic_add(m_squared_eval_diff, delta);
 }
 
 bool UCTNode::has_children() const {
@@ -273,27 +273,24 @@ void UCTNode::set_policy(float policy) {
     m_policy = policy;
 }
 
-float UCTNode::get_variance(float default_var) const {
-    return m_visits > 1 ? m_squared_diff / (m_visits - 1) : default_var;
-}
-
-float UCTNode::get_stddev(float default_stddev) const {
-    return m_visits > 1 ? std::sqrt(get_variance()) : default_stddev;
+float UCTNode::get_eval_variance(float default_var) const {
+    return m_visits > 1 ? m_squared_eval_diff / (m_visits - 1) : default_var;
 }
 
 int UCTNode::get_visits() const {
     return m_visits;
 }
 
-float UCTNode::get_lcb(int color) const {
+float UCTNode::get_eval_lcb(int color) const {
     // Lower confidence bound of winrate.
     auto visits = get_visits();
     if (visits < 2) {
-        return 0.0f;
+        // Return large negative value if not enough visits.
+        return -1e6f + visits;
     }
     auto mean = get_raw_eval(color);
 
-    auto stddev = std::sqrt(get_variance(1.0f) / visits);
+    auto stddev = std::sqrt(get_eval_variance(1.0f) / visits);
     auto z = cached_t_quantile(visits - 1);
 
     return mean - z * stddev;
@@ -613,7 +610,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 class NodeComp : public std::binary_function<UCTNodePointer&,
                                              UCTNodePointer&, bool> {
 public:
-    NodeComp(int color) : m_color(color) {};
+    NodeComp(int color, float lcb_min_visits) : m_color(color),
+        m_lcb_min_visits(lcb_min_visits){};
 
     // WARNING : on very unusual cases this can be called on multithread
     // contexts (e.g., UCTSearch::get_pv()) so beware of race conditions
@@ -623,31 +621,27 @@ public:
 		int a_visit = a.get_visits(); // new Ttl
 		int b_visit = b.get_visits(); // new Ttl
 
-        /***************************************
+        /***************************************/
         // COMMENTING OUT ROY7'S LCB CODE BELOW:
+		// EDIT: UNCOMMENTED IT NOW, BECAUSE NEW CODE ROLLED IN.
 
-        if (a.get_visits() && b.get_visits()) {
-            float a_lb = a.get_lcb_binomial(m_color);
-            float b_lb = b.get_lcb_binomial(m_color);
+        // Need at least 2 visits for LCB.
+        if (m_lcb_min_visits < 2) {
+            m_lcb_min_visits = 2;
+        }
+
+        // Calculate the lower confidence bound for each node.
+        if ((a_visit > m_lcb_min_visits) && (b_visit > m_lcb_min_visits)) {
+            auto a_lcb = a.get_eval_lcb(m_color);
+            auto b_lcb = b.get_eval_lcb(m_color);
 
             // Sort on lower confidence bounds
-            if (a_lb != b_lb) {
-                return a_lb < b_lb;
+            if (a_lcb != b_lcb) {
+                return a_lcb < b_lcb;
             }
         }
 
-        ***************************************/
-
-        // Calculate the lower confidence bound for each node.
-        if (a_visit && b_visit) { // new Ttl
-            auto a_lcb = a.get_lcb(m_color); // new Ttl
-            auto b_lcb = b.get_lcb(m_color); // new Ttl
-
-            // Sort on lower confidence bounds // new Ttl
-            if (a_lcb != b_lcb) { // new Ttl
-                return a_lcb < b_lcb; // new Ttl
-            } // new Ttl
-}
+		/***************************************/
 
         // THE FOLLOWING COMPARISONS ARE DEFAULT FOR ROY7'S AND TTL'S LCB BRANCHES. IT'S PROBABLY ALSO THE DEFAULT LZ COMPARISONS.
 
@@ -666,10 +660,11 @@ public:
     }
 private:
     int m_color;
+    float m_lcb_min_visits;
 };
 
-void UCTNode::sort_children(int color) {
-    std::stable_sort(rbegin(m_children), rend(m_children), NodeComp(color));
+void UCTNode::sort_children(int color, float lcb_min_visits) {
+    std::stable_sort(rbegin(m_children), rend(m_children), NodeComp(color, lcb_min_visits));
 }
 
 UCTNode& UCTNode::get_best_root_child(int color) {
@@ -677,8 +672,13 @@ UCTNode& UCTNode::get_best_root_child(int color) {
 
     assert(!m_children.empty());
 
+    auto max_visits = 0;
+    for (const auto& node : m_children) {
+        max_visits = std::max(max_visits, node.get_visits());
+    }
+
     auto ret = std::max_element(begin(m_children), end(m_children),
-                                NodeComp(color));
+                                NodeComp(color, cfg_lcb_min_visit_ratio * max_visits));
     ret->inflate();
 
     return *(ret->get());

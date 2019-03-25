@@ -131,12 +131,11 @@ public:
     float get_lcb_binomial(int color) const;
     float get_ucb_binomial(int color) const;
     float get_policy() const;
-    float get_stddev(float default_stddev) const;
-    float get_lcb(int color) const;
     bool active() const;
     int get_move() const;
-    // this can only be called if it is an inflated pointer
+    // these can only be called if it is an inflated pointer
     float get_eval(int tomove) const;
+    float get_eval_lcb(int color) const;
 };
 
 #endif
