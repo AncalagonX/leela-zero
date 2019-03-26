@@ -307,6 +307,11 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         max_visits = std::max(max_visits, node->get_visits());
     }
 
+    auto max_visits = 0;
+    for (const auto& node : parent.get_children()) {
+        max_visits = std::max(max_visits, node->get_visits());
+    }
+
     for (const auto& node : parent.get_children()) {
         // Send only variations with visits, unless more moves were
         // requested explicitly.

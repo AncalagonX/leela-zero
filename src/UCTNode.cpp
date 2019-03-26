@@ -380,8 +380,8 @@ private:
     float m_lcb_min_visits;
 };
 
-void UCTNode::sort_children(int color) {
-    std::stable_sort(rbegin(m_children), rend(m_children), NodeComp(color));
+void UCTNode::sort_children(int color, float lcb_min_visits) {
+    std::stable_sort(rbegin(m_children), rend(m_children), NodeComp(color, lcb_min_visits));
 }
 
 UCTNode& UCTNode::get_best_root_child(int color) {
