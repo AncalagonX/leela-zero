@@ -79,6 +79,7 @@ int cfg_random_min_visits;
 float cfg_random_temp;
 std::uint64_t cfg_rng_seed;
 bool cfg_dumbpass;
+int cfg_multidepth_search;
 #ifdef USE_OPENCL
 std::vector<int> cfg_gpus;
 bool cfg_sgemm_exhaustive;
@@ -363,6 +364,7 @@ void GTP::setup_default_parameters() {
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
     cfg_dumbpass = false;
+	cfg_multidepth_search = 0;
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
@@ -399,6 +401,9 @@ const std::string GTP::s_commands[] = {
     "play",
 	"widen_search",
 	"narrow_search",
+	"set_search_width",
+	"set_multidepth_search",
+	"set_opponent",
     "genmove",
     "showboard",
     "undo",
@@ -632,15 +637,97 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         return;
 
     } else if (command.find("widen_search") == 0) {
-		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::widen_search();
+		gtp_printf(id, "");
         return;
 
     } else if (command.find("narrow_search") == 0) {
-		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
 		//game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
+		gtp_printf(id, "");
         return;
+
+	} else if (command.find("set_search_width") == 0) {
+		std::istringstream cmdstream(command);
+		std::string tmp;
+		int desired_search_width; // Smaller values are narrower search. Accepted values range from "0" (default unmodified LZ search) to "10" (searches the top ~330 moves).
+								  // 0 = Default unmodified search. Identical to stock LZ. Only sends visits to LZ's most optimal move choice.
+								  // 1 =  LZ explores its top TWO move choices at all times, instead of only its single most favorite move choice.
+								  // 2 =  Explores its top 3-4 move choices
+								  // 3 =  Explores its top 6 move choices
+								  // 4 =  Explores its top ~12 move choices
+								  // 5 =  Explores its top ~20 move choices
+								  // 6 =  Explores its top ~32 move choices
+								  // 7 =  Explores its top ~60 move choices
+								  // 8 =  Explores its top ~100 move choices
+								  // 9 =  Explores its top ~180 move choices
+								  // 10 = Explores its top ~333 move choices
+								  // WARNING: Value of 11 is also accepted but is currently untested. "11" may crash the search.
+
+		cmdstream >> tmp;   // eat set_search_width
+		cmdstream >> desired_search_width;
+		//desired_search_width = (desired_search_width - 1); // This switches the input to a 0 to 9 scale. // NOT NEEDED SINCE ` GRAVE/TILDE KEY SENDS "0" FROM LIZZIE NOW.
+		if ((desired_search_width >= 0) && (desired_search_width <= 11)) {
+			UCTNode::set_search_width(desired_search_width);
+		} else {
+			UCTNode::set_search_width(0);
+		}
+		gtp_printf(id, "");
+		return;
+
+	} else if (command.find("set_multidepth_search") == 0) { // Disabled by default with a value of "0".
+
+		// Normally, we would only force the widened search to explore alternative moves at the root node, which is 0 moves deep.
+		// "set_multidepth_search <number>" changes this by forcing the modified tree search to also explore wider variations BELOW the current root node, as well.
+		// IMPORTANT NOTE:  LZ will no longer report accurate winrates for moves if multidepth search is enabled by setting a value greater than "0".
+		// Still, some may find a use for this command if inaccurate or sometimes bogus winrates are not a concern.
+
+		// Multidepth search is often more useful when used with the "set_opponent <color>" GTP command. See "set_opponent <color>" further below.
+		
+		std::istringstream cmdstream(command);
+		std::string tmp;
+		int desired_multidepth_search;
+
+		cmdstream >> tmp;   // eat set_multidepth_search
+		cmdstream >> desired_multidepth_search;
+
+		if ((desired_multidepth_search >= 0) && (desired_multidepth_search <= 100)) { // Lazy way to ensure it's a valid integer/number.
+			cfg_multidepth_search = desired_multidepth_search;
+		} else {
+			cfg_multidepth_search = 0;
+		}
+		gtp_printf(id, "");
+		return;
+
+	} else if (command.find("set_opponent") == 0) {
+		std::istringstream cmdstream(command);
+		std::string tmp;
+		std::string opponent_color;
+
+		cmdstream >> tmp;   // eat set_opponent
+		cmdstream >> opponent_color;
+
+
+		if ((opponent_color == "black") || (opponent_color == "b")) {
+			cfg_opponent = 0;
+		}
+		else if ((opponent_color == "white") || (opponent_color == "w")) {
+			cfg_opponent = 1;
+		}
+		else if (opponent_color == "none") {
+			cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
+		}
+		else {
+			cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
+		}
+		gtp_printf(id, "");
+		return;
+
+
+
+
+
+
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {

@@ -58,6 +58,7 @@ std::random_device rd;
 
 std::mt19937 gen(rd());
 
+std::uniform_int_distribution<> dis2(1, 2);
 std::uniform_int_distribution<> dis4(1, 4);
 std::uniform_int_distribution<> dis6(1, 6);
 std::uniform_int_distribution<> dis8(1, 8);
@@ -351,12 +352,22 @@ float UCTNode::get_search_width() {
 	return m_search_width;
 }
 
+void UCTNode::set_search_width(int desired_search_width) {
+	if (desired_search_width == 0) {
+		m_search_width = 1.0f;
+	} else {
+		m_search_width = (1.0f * pow(0.558f, static_cast<float>(desired_search_width)));
+	}
+	return;
+}
+
 void UCTNode::widen_search() {
 	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
 	if (m_search_width < 0.003) {
 		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
 		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
 		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
+		// Update3: All of the above comments about clamping may be irrelevant due to new, safer visit-spreading implementation.
 	}
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
@@ -469,16 +480,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     
-    while ((moves_searched < random_search_count) && (search_width < 0.9)) {
+    while ((moves_searched < random_search_count) && (search_width < 0.9f)) {
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
             }
-            if (!is_root) {
-                continue;
-            }
+            //if (!is_root) {
+            //    continue;
+            //}
 
-			if (is_opponent_move && (cfg_opponent != -1)) {
+			if (is_opponent_move && (cfg_opponent != -1)) { // If we set white or black as the opponent, then we will will only conduct wide searches when it's OUR turn to play.
+															// On the opponent's turns, we will conduct unmodified, optimal LZ searches on their turns.
+															// Setting an opponent color while using "multidepth" also prevents wide search on their turns to move at any depth in the search tree.
+				continue;
+			}
+			
+			if (depth > cfg_multidepth_search) {
+				continue;
+			}
+
+			if ((depth >= 2) && (dis2(gen) != 1)) { // While multidepth is enabled:
+													//		1) We still force 50% of all "wide search visits" to be spent at root level (depth=0).
+													//		2) If we also have an opponent set and it's their turn to play a move on the board, 50% of "wide search visits" are spent at depth=1 instead of root, since depth=1 is our next move to play.
+													//		3) The remaining 50% of "wide search visits" are spread amongst top LZ move choices at *all* depths allowed by the user's multidepth setting, instead of only at root.
+													// IMPORTANT NOTE: Enabling multidepth WILL cause LZ to generate inaccurate or bogus winrate values, and therefore is limited in its usefulness.
 				continue;
 			}
 
