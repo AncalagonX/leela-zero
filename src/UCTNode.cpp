@@ -297,6 +297,21 @@ float UCTNode::get_eval_lcb(int color) const {
     return mean - z * stddev;
 }
 
+float UCTNode::get_eval_ucb(int color) const {
+	// Lower confidence bound of winrate.
+	auto visits = get_visits();
+	if (visits < 2) {
+		// Return large negative value if not enough visits.
+		return -1e6f + visits;
+	}
+	auto mean = get_raw_eval(color);
+
+	auto stddev = std::sqrt(get_eval_variance(1.0f) / visits);
+	auto z = cached_t_quantile(visits - 1);
+
+	return mean + z * stddev;
+}
+
 float UCTNode::get_raw_eval(int tomove, int virtual_loss) const {
     auto visits = get_visits() + virtual_loss;
     assert(visits > 0);

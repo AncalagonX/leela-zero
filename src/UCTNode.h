@@ -93,6 +93,7 @@ public:
     void virtual_loss_undo();
     void update(float eval);
     float get_eval_lcb(int color) const;
+	float get_eval_ucb(int color) const;
 
     // Defined in UCTNodeRoot.cpp, only to be called on m_root in UCTSearch
     void randomize_first_proportionally();

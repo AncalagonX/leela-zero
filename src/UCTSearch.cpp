@@ -311,7 +311,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
             move.c_str(),
             node->get_visits(),
             node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
-            std::max(0.0f, node->get_eval_lcb(color) * 100.0f), // New Ttl output (newer than the OLDER line below)
+            std::max(0.0f, node->get_eval_ucb(color) * 100.0f), // New Ttl output (newer than the OLDER line below)
             //std::max(0.0f, node->get_lcb(color) * 100.0f), // OLDER New Ttl output
             node->get_policy() * 100.0f,
             //node->get_lcb_binomial(color) * 100.0f, // Roy7's output
@@ -354,9 +354,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         auto pv = move + (rest_of_pv.empty() ? "" : " " + rest_of_pv);
         //auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; //Default LZ
 		//auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
-        auto move_eval = std::max(0.0f, node->get_eval_lcb(color) * 100.0f); // NEW, Ttl's output, gives LCB in place of winrate
+        auto move_eval = std::max(0.0f, node->get_eval_ucb(color) * 100.0f); // NEW, Ttl's output, gives LCB in place of winrate
         auto policy = node->get_policy();
-        auto lcb = node->get_eval_lcb(color);
+        auto lcb = node->get_eval_ucb(color);
         auto visits = node->get_visits();
         // Need at least 2 visits for valid LCB.
         auto lcb_ratio_exceeded = visits > 2 &&
@@ -681,7 +681,7 @@ size_t UCTSearch::prune_noncontenders(int color, int elapsed_centis, int time_fo
         if (node->valid()) {
             const auto visits = node->get_visits();
             if (visits > 0) {
-                lcb_max = std::max(lcb_max, node->get_eval_lcb(color));
+                lcb_max = std::max(lcb_max, node->get_eval_ucb(color));
             }
             Nfirst = std::max(Nfirst, visits);
         }
