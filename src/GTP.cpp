@@ -103,6 +103,7 @@ bool cfg_quiet;
 std::string cfg_options_str;
 bool cfg_benchmark;
 bool cfg_cpu_only;
+bool want_to_reset_nncache;
 AnalyzeTags cfg_analyze_tags;
 
 /* Parses tags for the lz-analyze GTP command and friends */
@@ -368,6 +369,7 @@ void GTP::setup_default_parameters() {
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
+	want_to_reset_nncache = false;
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
 #else
@@ -650,14 +652,9 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         return;
 
 	} else if (command.find("reset_nncache") == 0) {
-		//s_network->nncache_clear();
-		/**
-		//GameState::game_history.clear();
-		game.KoState::init_game(19, (cfg_manual_komi / 10.0f));
-		//game.KoState::reset_game();
-		game.init_game(19, (cfg_manual_komi / 10.0f));
-		//game.KoState::m_ko_hash_history.clear();
-		**/
+		s_network->nncache_clear();
+		want_to_reset_nncache = true;
+		gtp_printf(id, "");
 		return;
 
 	} else if (command.find("set_search_width") == 0) {

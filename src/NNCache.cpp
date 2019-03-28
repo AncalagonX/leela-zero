@@ -42,6 +42,11 @@ const size_t NNCache::ENTRY_SIZE;
 
 NNCache::NNCache(int size) : m_size(size) {}
 
+NNCache& NNCache::get_NNCache(void) {
+	static NNCache cache;
+	return cache;
+}
+
 bool NNCache::lookup(std::uint64_t hash, Netresult & result) {
     std::lock_guard<std::mutex> lock(m_mutex);
     ++m_lookups;

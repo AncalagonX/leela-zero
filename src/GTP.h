@@ -108,6 +108,7 @@ extern int cfg_multidepth_search;
 extern std::vector<int> cfg_gpus;
 extern bool cfg_sgemm_exhaustive;
 extern bool cfg_tune_only;
+extern bool want_to_reset_nncache;
 #ifdef USE_HALF
 enum class precision_t {
     AUTO, SINGLE, HALF

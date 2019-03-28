@@ -217,6 +217,22 @@ void UCTNode::prepare_root_node(Network & network, int color,
         update(root_eval);
         root_eval = (color == FastBoard::BLACK ? root_eval : 1.0f - root_eval);
     }
+
+	bool local_want_to_reset_nncache = want_to_reset_nncache;
+
+	want_to_reset_nncache = false;
+
+	if (local_want_to_reset_nncache == true) {
+		//local_want_to_reset_nncache = false;
+		NNCache::get_NNCache().clear();
+		m_visits = 0;
+		m_blackevals = 0.0;
+		m_min_psa_ratio_children = 2.0;
+		m_children.clear();
+		create_children(network, nodes, root_state, root_eval);
+		root_eval = (color == FastBoard::BLACK ? root_eval : 1.0f - root_eval);
+	}
+
     Utils::myprintf("NN eval=%f\n", root_eval);
 
     // There are a lot of special cases where code assumes
@@ -226,6 +242,13 @@ void UCTNode::prepare_root_node(Network & network, int color,
     // Remove illegal moves, so the root move list is correct.
     // This also removes a lot of special cases.
     kill_superkos(root_state);
+
+	if (local_want_to_reset_nncache == true) {
+		//GameState tmpstate = root_state;
+		//tmpstate.play_move(get_first_child()->get_move());
+		NNCache::get_NNCache().clear();
+		local_want_to_reset_nncache = false;
+	}
 
     if (cfg_noise) {
         // Adjust the Dirichlet noise's alpha constant to the board size
