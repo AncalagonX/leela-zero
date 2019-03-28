@@ -401,6 +401,7 @@ const std::string GTP::s_commands[] = {
     "play",
 	"widen_search",
 	"narrow_search",
+	"reset_nncache",
 	"set_search_width",
 	"set_multidepth_search",
 	"set_opponent",
@@ -646,6 +647,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 		//game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
 		gtp_printf(id, "");
         return;
+
+	} else if (command.find("reset_nncache") == 0) {
+		//s_network->nncache_clear();
+		/**
+		//GameState::game_history.clear();
+		game.KoState::init_game(19, (cfg_manual_komi / 10.0f));
+		//game.KoState::reset_game();
+		game.init_game(19, (cfg_manual_komi / 10.0f));
+		//game.KoState::m_ko_hash_history.clear();
+		**/
+		return;
 
 	} else if (command.find("set_search_width") == 0) {
 		std::istringstream cmdstream(command);
