@@ -362,7 +362,7 @@ void GTP::setup_default_parameters() {
     cfg_ci_alpha = 1e-5f;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
-    cfg_kgs_cleanup_moves = 10;
+    cfg_kgs_cleanup_moves = 5;
     kgs_cleanup_counter = 0;
     cfg_random_temp = 1.0f;
     cfg_winrate_target = 55;

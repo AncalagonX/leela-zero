@@ -65,6 +65,7 @@ public:
 	UCTNode* uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth);
 
     size_t count_nodes_and_clear_expand_state();
+	bool is_pondering_now;
     bool first_visit() const;
     bool has_children() const;
     bool expandable(const float min_psa_ratio = 0.0f) const;

@@ -56,6 +56,7 @@ using namespace Utils;
 using namespace boost::math;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
+bool is_pondering_now;
 
 class OutputAnalysisData {
 public:
@@ -859,6 +860,7 @@ std::string UCTSearch::explain_last_think() const {
 }
 
 void UCTSearch::ponder() {
+	is_pondering_now = true;
     auto disable_reuse = cfg_analyze_tags.has_move_restrictions();
     if (disable_reuse) {
         m_last_rootstate.reset(nullptr);
@@ -927,6 +929,7 @@ void UCTSearch::ponder() {
     dump_stats(m_rootstate, *m_root);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
+	is_pondering_now = false;
 
     // Copy the root state. Use to check for tree re-use in future calls.
     if (!disable_reuse) {
