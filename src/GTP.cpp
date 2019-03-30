@@ -77,6 +77,7 @@ int cfg_random_cnt;
 int cfg_random_min_visits;
 float cfg_random_temp;
 int cfg_winrate_target;
+int cfg_opponent_color;
 std::uint64_t cfg_rng_seed;
 bool cfg_dumbpass;
 #ifdef USE_OPENCL
@@ -334,8 +335,9 @@ void GTP::setup_default_parameters() {
     cfg_timemanage = TimeManagement::AUTO;
 	cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
-	//m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
-	m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
+	//m_search_width = 0.311f; // Searches approximately a width of approx. 2-4 moves initially
+	//m_search_width = 1.000f; // Default LZ search when this equals 1.0
+	m_search_width = 0.950f;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -359,7 +361,8 @@ void GTP::setup_default_parameters() {
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
-    cfg_winrate_target = 100;
+    cfg_winrate_target = 55;
+	cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
     cfg_dumbpass = false;
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;

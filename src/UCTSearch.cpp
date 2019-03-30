@@ -861,6 +861,8 @@ void UCTSearch::ponder() {
 
     update_root();
 
+	cfg_opponent_color = m_rootstate.board.get_to_move();
+
     m_root->prepare_root_node(m_network, m_rootstate.board.get_to_move(),
                               m_nodes, m_rootstate);
 

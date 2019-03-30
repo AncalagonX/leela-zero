@@ -410,7 +410,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
-	if (color_to_move == 1) {
+	if (color_to_move == cfg_opponent_color) {
 		is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
 	}
 
@@ -458,22 +458,26 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     float search_width = get_search_width();
-    int number_of_moves_to_search = 1 + static_cast<int>(0.96f / search_width);
+    int number_of_moves_to_search = static_cast<int>(0.96f / search_width);
     int moves_searched = 0;
     int most_root_visits_second_root_visits_ratio = static_cast<int>(most_root_visits_seen_so_far / (second_most_root_visits_seen_so_far + 1));
     std::uniform_int_distribution<> dis_moves(0, number_of_moves_to_search);
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     int random_search_count = dis_moves(gen);
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
+	int randomX_100 = dis100(gen);
+
+	/**
     if ((random_search_count == 0)
         && (most_root_visits_second_root_visits_ratio >= 2)) {
         
         random_search_count = dis_moves(gen);
     }
+	**/
 
 
     
-    while ((moves_searched < random_search_count) && (search_width < 0.9)) {
+    while ((moves_searched < random_search_count) && (randomX_100 <= 50)) {
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
@@ -495,7 +499,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto psa = child.get_policy();
             const auto denom = 1.0 + child.get_visits();
             const auto puct = cfg_puct * psa * (numerator / denom);
-            const auto value = winrate + puct;
+			auto value = winrate + puct;
+
+			if (!is_opponent_move) {
+				value = (1 - abs(winrate_target_value - winrate)) + puct;
+			}
+
             assert(value > std::numeric_limits<double>::lowest());
 
             if (value < best_value2) {
@@ -514,94 +523,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-    /**
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
-
-		auto winrate = fpu_eval;
-		//auto lcb_winrate = fpu_eval; // Commented out Roy7's LCB stuff
-        if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
-            // Someone else is expanding this node, never select it
-            // if we can avoid so, because we'd block on it.
-            winrate = -1.0f - fpu_reduction;
-        } else if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-			//lcb_winrate = child.get_lcb_binomial(color); // Commenting out Roy7's LCB code
-        }
-		float search_width = get_search_width();
-
-        auto psa = child.get_policy();
-        auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
-		
-		if (psa > best_psa) {
-			best_psa = psa;
-		}
-				
-		auto value = winrate + puct;
-
-        assert(value > std::numeric_limits<double>::lowest());
-
-		// int randomX = dis8(gen); // UNUSED NOW
-		randomX = dis100(gen);
-		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = static_cast<int>(child.get_visits());
-		int int_parent_visits = static_cast<int>(parentvisits);
-		
-		if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
-            second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
-			most_root_visits_seen_so_far = int_child_visits;
-		}
-
-		if (is_root && depth == 0 && (int_m_visits > m_visits_tracked_here)) {
-			m_visits_tracked_here = int_m_visits;
-		}
-
-
-        // The following code forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
-        
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && (static_cast<int>(int_child_visits / 100) > (static_cast<int>((search_width * int_m_visits) / 100)))) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && (static_cast<int>(int_child_visits / 100) > (static_cast<int>((search_width * most_root_visits_seen_so_far) / 100)))) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && ((1.0f * int_child_visits / most_root_visits_seen_so_far) > search_width)) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-
-
-        if (value > best_value2) {
-			best_value2 = value;
-            best = &child;
-        }
-		if (winrate > best_winrate2) {
-			best_winrate2 = winrate;
-		}
-        randomX = dis100(gen);
-    }
-    **/
-
-
-
+	randomX_100 = dis100(gen);
     assert(best != nullptr);
     best->inflate();
     return best->get();
