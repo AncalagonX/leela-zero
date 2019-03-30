@@ -409,7 +409,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
 
 	if (movenum_now >= 150) {
-		auto winrate_target_value = 0.01f * (cfg_winrate_target+5); // Converts user input into float between 1.0f and 0.0f
+		winrate_target_value = 0.01f * (cfg_winrate_target+5); // Converts user input into float between 1.0f and 0.0f
 	}
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
