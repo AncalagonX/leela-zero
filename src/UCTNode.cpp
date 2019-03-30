@@ -474,7 +474,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         if (value > best_value) {
-			if (winrate > best_winrate && int_m_visits > 800) {
+			if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 800)) {
 				best_winrate = winrate;
 			}
             best_value = value;
