@@ -574,6 +574,22 @@ public:
             }
         }
 
+        // Need at least 2 visits for LCB.
+        if (m_lcb_min_visits < 2) {
+            m_lcb_min_visits = 2;
+        }
+
+        // Calculate the lower confidence bound for each node.
+        if ((a_visit > m_lcb_min_visits) && (b_visit > m_lcb_min_visits)) {
+            auto a_lcb = a.get_eval_lcb(m_color);
+            auto b_lcb = b.get_eval_lcb(m_color);
+
+            // Sort on lower confidence bounds
+            if (a_lcb != b_lcb) {
+                return a_lcb < b_lcb;
+            }
+        }
+
         // if visits are not same, sort on visits
         if (a_visit != b_visit) {
             return a_visit < b_visit;
