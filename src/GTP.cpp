@@ -667,23 +667,27 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 return;
             }
             who = tags.who();
-        } else {
-            /* genmove command */
-            cmdstream >> tmp;
-            if (tmp == "w" || tmp == "white") {
-                who = FastBoard::WHITE;
-            } else if (tmp == "b" || tmp == "black") {
-                who = FastBoard::BLACK;
-            } else {
-                gtp_fail_printf(id, "syntax error");
-                return;
-            }
-            if (analysis_output) {
-                // Start of multi-line response
-                cfg_analyze_interval_centis = interval;
-                if (id != -1) gtp_printf_raw("=%d\n", id);
-                else gtp_printf_raw("=\n");
-            }
+		}
+		else {
+			/* genmove command */
+			cmdstream >> tmp;
+			if (tmp == "w" || tmp == "white") {
+				who = FastBoard::WHITE;
+			}
+			else if (tmp == "b" || tmp == "black") {
+				who = FastBoard::BLACK;
+			}
+			else {
+				gtp_fail_printf(id, "syntax error");
+				return;
+			}
+		}
+        if (analysis_output) {
+            // Start of multi-line response
+            cfg_analyze_tags = tags;
+            if (id != -1) gtp_printf_raw("=%d\n", id);
+            else gtp_printf_raw("=\n");
+        }
             // start thinking
             {
                 game.set_to_move(who);
