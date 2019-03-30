@@ -399,15 +399,21 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
         return false;
     }
 
-    if (cfg_resignpct == 0) {
+    if (cfg_resignpct == 9) {
         // resign not allowed
         return false;
     }
 
     const size_t num_intersections = m_rootstate.board.get_boardsize()
                                    * m_rootstate.board.get_boardsize();
-    const auto move_threshold = num_intersections / 4;
-    const auto movenum = m_rootstate.get_movenum();
+
+	const auto movenum = m_rootstate.get_movenum();
+
+    auto move_threshold = num_intersections / 4;
+	if ((movenum >= 150) && (cfg_resignpct == 9)) {
+		move_threshold = 999;
+	}
+
     if (movenum <= move_threshold) {
         // too early in game to resign
         return false;
