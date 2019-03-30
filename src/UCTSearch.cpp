@@ -783,7 +783,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
         // output some stats every few seconds
         // check if we should still search
-        if (!cfg_quiet && elapsed_centis - last_update > 250) {
+        if (!cfg_quiet && elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
             myprintf("%s\n", get_analysis().c_str());
         }
@@ -871,6 +871,7 @@ void UCTSearch::ponder() {
     }
     Time start;
     auto keeprunning = true;
+	auto last_update = 0;
     auto last_output = 0;
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
@@ -886,6 +887,21 @@ void UCTSearch::ponder() {
                 output_analysis(m_rootstate, *m_root);
             }
         }
+		Time elapsed;
+		int elapsed_centis = Time::timediff_centis(start, elapsed);
+
+		if (cfg_analyze_tags.interval_centis() &&
+			elapsed_centis - last_output > cfg_analyze_tags.interval_centis()) {
+			last_output = elapsed_centis;
+			output_analysis(m_rootstate, *m_root);
+		}
+
+		// output some stats every few seconds
+		// check if we should still search
+		if (!cfg_quiet && elapsed_centis - last_update > 100) {
+			last_update = elapsed_centis;
+			myprintf("Pondering: %s\n", get_analysis().c_str());
+		}
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
     } while (!Utils::input_pending() && keeprunning);
