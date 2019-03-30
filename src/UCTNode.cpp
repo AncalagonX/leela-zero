@@ -108,11 +108,13 @@ bool UCTNode::create_children(Network & network,
         &state, Network::Ensemble::RANDOM_SYMMETRY);
 
     // DCNN returns winrate as side to move
-    m_net_eval = raw_netlist.winrate;
+    const auto stm_eval = raw_netlist.winrate;
     const auto to_move = state.board.get_to_move();
     // our search functions evaluate from black's point of view
     if (to_move == FastBoard::WHITE) {
-        m_net_eval = 1.0f - m_net_eval;
+        m_net_eval = 1.0f - stm_eval;
+    } else {
+        m_net_eval = stm_eval;
     }
     eval = m_net_eval;
 
@@ -128,42 +130,29 @@ bool UCTNode::create_children(Network & network,
             legal_sum += raw_netlist.policy[i];
         }
     }
-    // nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS); // ORIGINAL LINE. I commented it out for the below "double pass pathology" PR.
-    // legal_sum += raw_netlist.policy_pass; // ORIGINAL LINE. I commented it out for the below "double pass pathology" PR.
 
-	// Add pass move. BUT don't do this if the following conditions
-	// all obtain (see issue #2273, "Double-passing pathology"):
-	//   - The move played in order to reach this node was a pass.
-	//     (So another pass would end the game.)
-	//   - The NN's evaluation of the current node is very good
-	//     for the player whose move it is. (Say, 0.75 or better.)
-	//     (So we don't want to end the game unless we win.)
-	//   - Ending the game now would actually lose the game for
-	//     the player whose move it is.
-	//     (So we don't want to end the game.)
-	//   - We do have at least five other legal moves.
-	//     (So it's not likely that all our available moves
-	//     are actually disastrous.)
-	//   - The "dumbpass" option is not turned on.
-	//     (Because, as per GCP's comment at
-	//     https://github.com/leela-zero/leela-zero/issues/2273#issuecomment-472398802 ,
-	//     enabling this heuristic is un-Zero-like and enabling
-	//     dumbpass is meant to suppress any such things that
-	//     affect passing.)
-	// The magic numbers 0.75 and 5 are somewhat arbitrary and it seems
-	// unlikely that their values make much difference.
-	// This check prevents some serious evaluation errors but has a cost:
-	// we make extra calls to final_score() at some nodes. But this is done
-	// only at nodes where the other player just passed despite having a
-	// really bad position; the cost should not be large.
-	if (state.get_passes() == 0
-		|| (to_move == FastBoard::WHITE ? 1.0f - m_net_eval : m_net_eval) < 0.75
-		|| nodelist.size() < 5
-		|| cfg_dumbpass
-		|| (to_move == FastBoard::WHITE ? -state.final_score() : state.final_score()) > 0) {
-		nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
-		legal_sum += raw_netlist.policy_pass;
-	}
+    // Always try passes if we're not trying to be clever.
+    auto allow_pass = cfg_dumbpass;
+
+    // Less than 20 available intersections in a 19x19 game.
+    if (nodelist.size() <= std::max(5, BOARD_SIZE)) {
+        allow_pass = true;
+    }
+
+    // If we're clever, only try passing if we're winning on the
+    // net score and on the board count.
+    if (!allow_pass && stm_eval > 0.8f) {
+        const auto relative_score =
+            (to_move == FastBoard::BLACK ? 1 : -1) * state.final_score();
+        if (relative_score >= 0) {
+            allow_pass = true;
+        }
+    }
+
+    if (allow_pass) {
+        nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
+        legal_sum += raw_netlist.policy_pass;
+    }
 
     if (legal_sum > std::numeric_limits<float>::min()) {
         // re-normalize after removing illegal moves.
@@ -535,6 +524,22 @@ public:
 		int a_visit = a.get_visits();
 		int b_visit = b.get_visits();
 
+
+        // Need at least 2 visits for LCB.
+        if (m_lcb_min_visits < 2) {
+            m_lcb_min_visits = 2;
+        }
+
+        // Calculate the lower confidence bound for each node.
+        if ((a_visit > m_lcb_min_visits) && (b_visit > m_lcb_min_visits)) {
+            auto a_lcb = a.get_eval_lcb(m_color);
+            auto b_lcb = b.get_eval_lcb(m_color);
+
+            // Sort on lower confidence bounds
+            if (a_lcb != b_lcb) {
+                return a_lcb < b_lcb;
+            }
+        }
 
         // Need at least 2 visits for LCB.
         if (m_lcb_min_visits < 2) {
