@@ -325,20 +325,6 @@ float UCTNode::get_net_eval(int tomove) const {
     return m_net_eval;
 }
 
-/***************************************
-// COMMENTING OUT ROY7'S LCB CODE BELOW:
-
-// Use CI_ALPHA / 2 if calculating double sided bounds.
-float UCTNode::get_lcb_binomial(int color) const {
-    return get_visits() ? binomial_distribution<>::find_lower_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 0.0f;
-}
-
-// Use CI_ALPHA / 2 if calculating double sided bounds.
-float UCTNode::get_ucb_binomial(int color) const {
-    return get_visits() ? binomial_distribution<>::find_upper_bound_on_p( get_visits(), get_raw_eval(color) * get_visits(), CI_ALPHA) : 1.0f;
-}
-
-***************************************/
 
 double UCTNode::get_blackevals() const {
     return m_blackevals;
@@ -354,25 +340,22 @@ float UCTNode::get_search_width() {
 
 void UCTNode::set_search_width(int desired_search_width) {
 	if (desired_search_width == 0) {
-		m_search_width = 1.0f;
+		m_search_width = 1.0f; // If someone asks for a search width of "0", that means default LZ search, so set m_search_width to 1.0
 	} else {
 		m_search_width = (1.0f * pow(0.558f, static_cast<float>(desired_search_width)));
 	}
 	return;
 }
 
-void UCTNode::widen_search() {
+void UCTNode::widen_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
 	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
 	if (m_search_width < 0.003) {
-		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
-		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
-		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
-		// Update3: All of the above comments about clamping may be irrelevant due to new, safer visit-spreading implementation.
+		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless.
 	}
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-void UCTNode::narrow_search() {
+void UCTNode::narrow_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
 	m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
 	if (m_search_width > 1.0) {
 		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
@@ -418,10 +401,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 	
 	
-	if (color_to_move == cfg_opponent) { // This sets which color is considered to be LZ's opponent using the --opponent flag.
-							  // BLACK = 0, WHITE = 1
-							  // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
-		is_opponent_move = !is_opponent_move; // Opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+	if (color_to_move == cfg_opponent) { // This sets which color is considered to be LZ's opponent using the --opponent flag or GTP command.
+							             // BLACK = 0, WHITE = 1
+							             // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
+		is_opponent_move = !is_opponent_move; // This corrects "is_opponent_move" depth detection when it's the opponent's turn to play.
 	}
 
     for (auto& child : m_children) {
@@ -535,98 +518,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         moves_searched++;
     }
 
-
-
-
-
-    /**
-
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
-
-		auto winrate = fpu_eval;
-		//auto lcb_winrate = fpu_eval; // Commented out Roy7's LCB stuff
-        if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
-            // Someone else is expanding this node, never select it
-            // if we can avoid so, because we'd block on it.
-            winrate = -1.0f - fpu_reduction;
-        } else if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-			//lcb_winrate = child.get_lcb_binomial(color); // Commenting out Roy7's LCB code
-        }
-		float search_width = get_search_width();
-
-        auto psa = child.get_policy();
-        auto denom = 1.0 + child.get_visits();
-        auto puct = cfg_puct * psa * (numerator / denom);
-		
-		if (psa > best_psa) {
-			best_psa = psa;
-		}
-				
-		auto value = winrate + puct;
-
-        assert(value > std::numeric_limits<double>::lowest());
-
-		// int randomX = dis8(gen); // UNUSED NOW
-		randomX = dis100(gen);
-		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = static_cast<int>(child.get_visits());
-		int int_parent_visits = static_cast<int>(parentvisits);
-		
-		if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
-            second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
-			most_root_visits_seen_so_far = int_child_visits;
-		}
-
-		if (is_root && depth == 0 && (int_m_visits > m_visits_tracked_here)) {
-			m_visits_tracked_here = int_m_visits;
-		}
-
-
-        // The following code forces LZ to limit max child visits per root node to a certain ratio of total visits so far. LZ still chooses moves according to its regular "value = winrate + puct" calculation--we simply force it to spend visits on a wider selection of its top move choices.
-        
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && (static_cast<int>(int_child_visits / 100) > (static_cast<int>((search_width * int_m_visits) / 100)))) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && (static_cast<int>(int_child_visits / 100) > (static_cast<int>((search_width * most_root_visits_seen_so_far) / 100)))) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-        if (is_root
-            && (depth == 0)
-            && (search_width < 0.9)
-            && ((1.0f * int_child_visits / most_root_visits_seen_so_far) > search_width)) {
-            randomX = dis100(gen);
-            continue;
-        }
-
-
-
-        if (value > best_value2) {
-			best_value2 = value;
-            best = &child;
-        }
-		if (winrate > best_winrate2) {
-			best_winrate2 = winrate;
-		}
-        randomX = dis100(gen);
-    }
-    **/
-
-
-
     assert(best != nullptr);
     best->inflate();
     return best->get();
@@ -638,17 +529,12 @@ public:
     NodeComp(int color, float lcb_min_visits) : m_color(color),
         m_lcb_min_visits(lcb_min_visits){};
 
-    // WARNING : on very unusual cases this can be called on multithread
-    // contexts (e.g., UCTSearch::get_pv()) so beware of race conditions
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-        // Calculate the lower confidence bound for each node.
-		int a_visit = a.get_visits(); // new Ttl
-		int b_visit = b.get_visits(); // new Ttl
+        
+		int a_visit = a.get_visits();
+		int b_visit = b.get_visits();
 
-        /***************************************/
-        // COMMENTING OUT ROY7'S LCB CODE BELOW:
-		// EDIT: UNCOMMENTED IT NOW, BECAUSE NEW CODE ROLLED IN.
 
         // Need at least 2 visits for LCB.
         if (m_lcb_min_visits < 2) {
@@ -665,10 +551,6 @@ public:
                 return a_lcb < b_lcb;
             }
         }
-
-		/***************************************/
-
-        // THE FOLLOWING COMPARISONS ARE DEFAULT FOR ROY7'S AND TTL'S LCB BRANCHES. IT'S PROBABLY ALSO THE DEFAULT LZ COMPARISONS.
 
         // if visits are not same, sort on visits
         if (a_visit != b_visit) {
