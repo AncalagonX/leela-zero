@@ -408,8 +408,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
 
+	if (movenum_now < 150) {
+		winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
+	}
 	if (movenum_now >= 150) {
-		winrate_target_value = 0.01f * (cfg_winrate_target+5); // Converts user input into float between 1.0f and 0.0f
+		winrate_target_value = 0.01f * (cfg_winrate_target + 5); // Converts user input into float between 1.0f and 0.0f
 	}
 	if (movenum_now >= 200) {
 		winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
@@ -470,7 +473,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int most_root_visits_second_root_visits_ratio = static_cast<int>(most_root_visits_seen_so_far / (second_most_root_visits_seen_so_far + 1));
     std::uniform_int_distribution<> dis_moves(0, number_of_moves_to_search);
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
-    int random_search_count = dis_moves(gen);
+    //int random_search_count = dis_moves(gen);
+	int random_search_count = 1; // Searches top 1-2 moves on Tiebot's turn.
+	if (is_opponent_move && is_pondering_now) {
+		random_search_count = 3; // Searches top 3-4 moves when pondering on opponent's turn.
+	}
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
 	int randomX_100 = dis100(gen);
 
@@ -484,7 +491,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     
-    while ((moves_searched < random_search_count) && (randomX_100 <= 25)) {
+    while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false)) { // Wide search loop for Tiebot's turn.
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
@@ -525,6 +532,51 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         best_value_next = std::numeric_limits<double>::lowest();
         moves_searched++;
     }
+
+
+
+
+	while ((moves_searched < random_search_count) && (is_pondering_now == true)) { // Wide search loop for pondering on opponent's turn.
+		for (auto& child : m_children) {
+			if (!child.active()) {
+				continue;
+			}
+			if (!is_root) {
+				continue;
+			}
+
+			auto winrate = fpu_eval;
+			if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+				// Someone else is expanding this node, never select it
+				// if we can avoid so, because we'd block on it.
+				winrate = -1.0f - fpu_reduction;
+			}
+			else if (child.get_visits() > 0) {
+				winrate = child.get_eval(color);
+			}
+
+			const auto psa = child.get_policy();
+			const auto denom = 1.0 + child.get_visits();
+			const auto puct = cfg_puct * psa * (numerator / denom);
+			auto value = winrate + puct;
+
+			if (!is_opponent_move) {
+				value = (1 - abs(winrate_target_value - winrate)) + puct;
+			}
+
+			assert(value > std::numeric_limits<double>::lowest());
+
+			if (value < best_value2) {
+				if (value > best_value_next) {
+					best_value_next = value;
+					best = &child;
+				}
+			}
+		}
+		best_value2 = best_value_next;
+		best_value_next = std::numeric_limits<double>::lowest();
+		moves_searched++;
+	}
 
 
 
