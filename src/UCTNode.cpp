@@ -406,7 +406,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
-    const auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+    auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+
+	if (movenum_now >= 150) {
+		auto winrate_target_value = 0.01f * (cfg_winrate_target+5); // Converts user input into float between 1.0f and 0.0f
+	}
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
@@ -477,7 +481,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     
-    while ((moves_searched < random_search_count) && (randomX_100 <= 50)) {
+    while ((moves_searched < random_search_count) && (randomX_100 <= 25)) {
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;

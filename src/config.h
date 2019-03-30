@@ -112,10 +112,10 @@ static constexpr auto KOMI = 7.5f;
  */
 //#define USE_TUNER
 
-static constexpr auto PROGRAM_NAME = "Leela Zero";
-static constexpr auto PROGRAM_VERSION = "0.16";
-//static constexpr auto PROGRAM_NAME = ". --- Note: No handicap allowed. Komi MUST be 7.5! --- Leela Zero-";
-//static constexpr auto PROGRAM_VERSION = " 0.16.4 - Using LZ_213 [40x256] weights first created on 2019-03-18.";
+//static constexpr auto PROGRAM_NAME = "Leela Zero";
+//static constexpr auto PROGRAM_VERSION = "0.16";
+static constexpr auto PROGRAM_NAME = ". --- Note: No handicap allowed. Komi MUST be 7.5! --- DEADLOCK-";
+static constexpr auto PROGRAM_VERSION = " version 713G4M3.1 - I will try to win by EXACTLY 0.5 points. Good luck.";
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes
