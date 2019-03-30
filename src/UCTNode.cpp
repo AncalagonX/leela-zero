@@ -558,31 +558,26 @@ public:
 
         ***************************************/
 
-        // Calculate the lower confidence bound for each node.
-        if (a_visit && b_visit) { // new Ttl
-            auto a_lcb = a.get_lcb(m_color); // new Ttl
-            auto b_lcb = b.get_lcb(m_color); // new Ttl
 
-            // Sort on lower confidence bounds // new Ttl
-            if (a_lcb != b_lcb) { // new Ttl
-                return a_lcb < b_lcb; // new Ttl
-            } // new Ttl
-}
 
-        // THE FOLLOWING COMPARISONS ARE DEFAULT FOR ROY7'S AND TTL'S LCB BRANCHES. IT'S PROBABLY ALSO THE DEFAULT LZ COMPARISONS.
+		if (a_visit != b_visit) {
+			return a_visit < b_visit;
+		}
 
-        // if visits are not same, sort on visits
-        if (a_visit != b_visit) {
-            return a_visit < b_visit;
-        }
+		// neither has visits, sort on policy prior
+		if (a_visit == 0) {
+			return a.get_policy() < b.get_policy();
+		}
 
-        // neither has visits, sort on policy prior
-        if (a_visit == 0) {
-            return a.get_policy() < b.get_policy();
-        }
+		// both have same non-zero number of visits
+		auto a_lcb = a.get_lcb(m_color); // new Ttl
+		auto b_lcb = b.get_lcb(m_color); // new Ttl
+		if (a_lcb != b_lcb) { // new Ttl
+			return a_lcb < b_lcb; // new Ttl
+		} // new Ttl
 
-        // both have same non-zero number of visits
-        return a.get_eval(m_color) < b.get_eval(m_color);
+		// both have same non-zero number of visits and same lcb somehow
+		return a.get_eval(m_color) < b.get_eval(m_color);        
     }
 private:
     int m_color;
