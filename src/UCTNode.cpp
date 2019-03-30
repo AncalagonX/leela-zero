@@ -71,6 +71,7 @@ std::uniform_int_distribution<> dis100(1, 100);
 
 int visit_limit_tracking = 1; // This is necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 int m_visits_tracked_here = 0;
+bool winrate_too_low = false;
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -401,12 +402,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     auto best_value_next = std::numeric_limits<double>::lowest();
 	auto best_winrate = std::numeric_limits<double>::lowest();
     auto best_winrate2 = std::numeric_limits<double>::lowest();
+	auto best_lcb = std::numeric_limits<double>::lowest();
 	auto best_psa = std::numeric_limits<double>::lowest();
 	int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+	auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
 
 	if (movenum_now < 150) {
 		winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
@@ -420,38 +423,50 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
-	if (color_to_move == cfg_opponent_color) {
+	if (is_pondering_now) {
 		is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
 	}
 
-    for (auto& child : m_children) {
-        if (!child.active()) {
-            continue;
-        }
+	for (auto& child : m_children) {
+		if (!child.active()) {
+			continue;
+		}
 
-        auto winrate = fpu_eval;
-        if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
-            // Someone else is expanding this node, never select it
-            // if we can avoid so, because we'd block on it.
-            winrate = -1.0f - fpu_reduction;
-        }
-        else if (child.get_visits() > 0) {
-            winrate = child.get_eval(color);
-        }
-        const auto psa = child.get_policy();
-        const auto denom = 1.0 + child.get_visits();
-        const auto puct = cfg_puct * psa * (numerator / denom);
-        auto value = winrate + puct;
+		auto winrate = fpu_eval;
+		auto lcb = 0.0f;
+		if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+			// Someone else is expanding this node, never select it
+			// if we can avoid so, because we'd block on it.
+			winrate = -1.0f - fpu_reduction;
+		}
+		else if (child.get_visits() > 0) {
+			winrate = child.get_eval(color);
+			lcb = child.get_lcb(color);
 
-        if (!is_opponent_move) {
-            value = (1 - abs(winrate_target_value - winrate)) + puct;
-        }
+		}
+		const auto psa = child.get_policy();
+		const auto denom = 1.0 + child.get_visits();
+		const auto puct = cfg_puct * psa * (numerator / denom);
+
+		int int_m_visits = static_cast<int>(m_visits);
+		int int_child_visits = static_cast<int>(child.get_visits());
+		int int_parent_visits = static_cast<int>(parentvisits);
+
+		auto value = winrate + puct;
+
+		if (is_root && !is_opponent_move) {
+			if (best_winrate < (0.95f * raw_winrate_target_value)) {
+				winrate_too_low = true;
+			} else if (best_winrate > (1.05f * raw_winrate_target_value)) {
+				winrate_too_low = false;
+			}
+		}
+
+		if (!is_opponent_move && !winrate_too_low) {
+			value = (1 - abs(winrate_target_value - winrate)) + puct;
+		}
 
         assert(value > std::numeric_limits<double>::lowest());
-
-        int int_m_visits = static_cast<int>(m_visits);
-        int int_child_visits = static_cast<int>(child.get_visits());
-        int int_parent_visits = static_cast<int>(parentvisits);
 
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
@@ -459,6 +474,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         if (value > best_value) {
+			if (winrate > best_winrate && int_m_visits > 800) {
+				best_winrate = winrate;
+			}
             best_value = value;
             best_value2 = value;
             best = &child;
@@ -491,7 +509,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     
-    while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false)) { // Wide search loop for Tiebot's turn.
+    while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false) && (winrate_too_low == false)) { // Wide search loop for Tiebot's turn.
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
@@ -515,7 +533,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto puct = cfg_puct * psa * (numerator / denom);
 			auto value = winrate + puct;
 
-			if (!is_opponent_move) {
+			if (!is_opponent_move && !winrate_too_low) {
 				value = (1 - abs(winrate_target_value - winrate)) + puct;
 			}
 
@@ -536,7 +554,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-	while ((moves_searched < random_search_count) && (is_pondering_now == true)) { // Wide search loop for pondering on opponent's turn.
+	while ((moves_searched < random_search_count) && (is_pondering_now == true) && (winrate_too_low == false)) { // Wide search loop for pondering on opponent's turn.
 		for (auto& child : m_children) {
 			if (!child.active()) {
 				continue;
@@ -560,7 +578,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 			const auto puct = cfg_puct * psa * (numerator / denom);
 			auto value = winrate + puct;
 
-			if (!is_opponent_move) {
+			if (!is_opponent_move && !winrate_too_low) {
 				value = (1 - abs(winrate_target_value - winrate)) + puct;
 			}
 
