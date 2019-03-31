@@ -352,7 +352,7 @@ void UCTNode::narrow_search() { // This function is no longer used. UCTNode::set
 	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth, GameState& state) {
 	//LOCK(get_mutex(), lock);
 	wait_expanded();
 
@@ -386,6 +386,21 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
+	std::string move_4a = "O6";
+	std::string move_4b = "O6";
+	std::string move_4c = "O6";
+	std::string move_4d = "O6";
+
+	//std::string move_4b = "O14";
+	//std::string move_4c = "F14";
+	//std::string move_4d = "F6";
+
+
+	int vertex_to_search_for_4a = (state.board.text_to_move(move_4a));
+	int vertex_to_search_for_4b = (state.board.text_to_move(move_4b));
+	int vertex_to_search_for_4c = (state.board.text_to_move(move_4c));
+	int vertex_to_search_for_4d = (state.board.text_to_move(move_4d));
+
 	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
 	
@@ -409,11 +424,97 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
+			/****************************
+			if (!is_opponent_move) {
+				if (get_move() == vertex_to_search_for_4a) {
+					winrate = winrate * 10.0f;
+				}
+				
+				if (get_move() == vertex_to_search_for_4b) {
+					winrate = winrate * 10.0f;
+				}
+				if (get_move() == vertex_to_search_for_4c) {
+					winrate = winrate * 10.0f;
+				}
+				if (get_move() == vertex_to_search_for_4d) {
+					winrate = winrate * 10.0f;
+				}
+				
+			}
+			****************************/
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
-        const auto value = winrate + puct;
+        auto value = winrate + puct;
+
+		/**
+		if (!is_opponent_move && (get_move() == vertex_to_search_for_4a)) {
+			best = &child;
+			assert(best != nullptr);
+			best->inflate();
+			return best->get();
+		}
+		**/
+
+		/****************************
+		if (!is_opponent_move && (get_move() != vertex_to_search_for_4a)) {
+			value = (((winrate) / (4.0f * (depth + 1))) + puct);
+		}
+
+		if (!is_opponent_move && (get_move() == vertex_to_search_for_4a)) {
+			value = (10.0f * winrate) + puct;
+			//value = (winrate + puct) * (child.get_move() == (get_move() + 19) % 361);
+		}
+		****************************/
+
+		if (!is_opponent_move && (color_to_move != cfg_opponent) && (child.get_move() == vertex_to_search_for_4a)) {
+			continue;
+		}
+
+
+		if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+			value = (puct) + ((winrate + puct) * ((get_move() == vertex_to_search_for_4a) / (depth + 1)));
+		}
+
+		/**
+		if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+			if (child.get_move() == vertex_to_search_for_4a) {
+				value = (winrate + puct);
+			}
+		}
+		**/
+
+		/**
+		if (!is_opponent_move && (get_move() != vertex_to_search_for_4b)) {
+			value = (((winrate) / (4.0f * (depth + 1))) + puct);
+		}
+
+		if (!is_opponent_move && (get_move() == vertex_to_search_for_4b)) {
+			value = (10.0f * winrate) + puct;
+			//value = (winrate + puct) * (child.get_move() == (get_move() + 19) % 361);
+		}
+
+		if (!is_opponent_move && (get_move() != vertex_to_search_for_4c)) {
+			value = (((winrate) / (4.0f * (depth + 1))) + puct);
+		}
+
+		if (!is_opponent_move && (get_move() == vertex_to_search_for_4c)) {
+			value = (10.0f * winrate) + puct;
+			//value = (winrate + puct) * (child.get_move() == (get_move() + 19) % 361);
+		}
+
+		if (!is_opponent_move && (get_move() != vertex_to_search_for_4d)) {
+			value = (((winrate) / (4.0f * (depth + 1))) + puct);
+		}
+
+		if (!is_opponent_move && (get_move() == vertex_to_search_for_4a)) {
+			value = (10.0f * winrate) + puct;
+			//value = (winrate + puct) * (child.get_move() == (get_move() + 19) % 361);
+		}
+		**/
+
+
         assert(value > std::numeric_limits<double>::lowest());
 
         int int_m_visits = static_cast<int>(m_visits);
@@ -492,7 +593,26 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto psa = child.get_policy();
             const auto denom = 1.0 + child.get_visits();
             const auto puct = cfg_puct * psa * (numerator / denom);
-            const auto value = winrate + puct;
+            auto value = winrate + puct;
+
+			if (!is_opponent_move && (color_to_move != cfg_opponent) && (child.get_move() == vertex_to_search_for_4a)) {
+				continue;
+			}
+
+
+			if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+				value = ((winrate + puct) * ((get_move() == vertex_to_search_for_4a) / (depth + 1))) + puct;
+			}
+
+
+			/**
+			if (!is_opponent_move && (get_move() == vertex_to_search_for_4a)) {
+				best = &child;
+				assert(best != nullptr);
+				best->inflate();
+				return best->get();
+			}
+			**/
             assert(value > std::numeric_limits<double>::lowest());
 
             if (value < best_value2) {
