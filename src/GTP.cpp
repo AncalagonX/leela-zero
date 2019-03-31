@@ -338,8 +338,8 @@ void GTP::setup_default_parameters() {
 	cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
 	//m_search_width = 0.311f; // Searches approximately a width of approx. 2-4 moves initially
-	//m_search_width = 1.000f; // Default LZ search when this equals 1.0
-	m_search_width = 0.950f;
+	m_search_width = 1.000f; // Default LZ search when this equals 1.0
+	//m_search_width = 0.950f;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
