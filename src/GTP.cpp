@@ -365,7 +365,7 @@ void GTP::setup_default_parameters() {
     cfg_kgs_cleanup_moves = 5;
     kgs_cleanup_counter = 0;
     cfg_random_temp = 1.0f;
-    cfg_winrate_target = 55;
+    cfg_winrate_target = 65;
 	cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
     cfg_dumbpass = false;
     cfg_logfile_handle = nullptr;
@@ -581,7 +581,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 Training::clear_training();
                 game.init_game(tmp, old_komi);
                 gtp_printf(id, "");
-				game.set_komi((cfg_manual_komi / 10.0f));
+				//game.set_komi((cfg_manual_komi / 10.0f));
             }
         } else {
             gtp_fail_printf(id, "syntax not understood");
@@ -608,7 +608,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         if (!cmdstream.fail()) {
             if (komi != old_komi) {
                 game.set_komi(komi);
-				game.set_komi((cfg_manual_komi / 10.0f));
+				//game.set_komi((cfg_manual_komi / 10.0f));
             }
             gtp_printf(id, "");
         } else {
@@ -617,7 +617,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("play") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         std::string color, vertex;
@@ -645,12 +645,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("narrow_search") == 0) {
 		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
 		UCTNode::narrow_search();
-		//game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
+		////game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
         return;
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
 
         std::istringstream cmdstream(command);
@@ -734,7 +734,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         cfg_analyze_tags = {};
         return;
     } else if (command.find("lz-analyze") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -802,7 +802,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("undo") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         if (game.undo_move()) {
             gtp_printf(id, "");
         } else {
@@ -887,7 +887,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("auto") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         do {
             int move = search->think(game.get_to_move(), UCTSearch::NORMAL);
             game.play_move(move);
@@ -897,7 +897,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("go") == 0 && command.size() < 6) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         int move = search->think(game.get_to_move());
         game.play_move(move);
 
@@ -939,7 +939,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "");
         return;
     } else if (command.find("fixed_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -984,7 +984,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf_raw("\n");
         return;
     } else if (command.find("place_free_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -1002,7 +1002,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("set_free_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -1027,7 +1027,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("loadsgf") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+		//game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp, filename;
         int movenum;
