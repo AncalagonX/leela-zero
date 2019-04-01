@@ -460,17 +460,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 		auto value = winrate + puct;
 
-		/**
-		if (is_root && !is_opponent_move) {
-			if (best_winrate < (0.95f * raw_winrate_target_value)) {
-				winrate_too_low = true;
-			} else if (best_winrate > (1.05f * raw_winrate_target_value)) {
-				winrate_too_low = false;
-			}
-		}
-		**/
-
-		if (!is_opponent_move) {
+		if (!is_opponent_move && (winrate >= winrate_target_value)) {
 			value = (1 - abs(winrate_target_value - winrate)) + puct;
 		}
 
