@@ -783,8 +783,8 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 // If not, play another non-pass move if possible.
                 // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
                 if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
+					kgs_cleanup_counter++;
                     move = search->think(who, UCTSearch::NOPASS);
-                    kgs_cleanup_counter++;
                 }
                 game.play_move(move);
 
