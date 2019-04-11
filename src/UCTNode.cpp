@@ -532,7 +532,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto puct = cfg_puct * psa * (numerator / denom);
 			auto value = winrate + puct;
 
-			if (!is_opponent_move && (winrate >= 0.01) && (winrate >= winrate_target_value)) {
+			if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.5 * winrate_target_value))) {
 				continue;
 			}
 
