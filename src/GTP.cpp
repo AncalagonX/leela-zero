@@ -765,13 +765,15 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
-                int move = search->think(who);
+                int move;
                 // Check if we've already played the configured number of non-pass moves.
                 // If not, play another non-pass move if possible.
                 // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
                 if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
                     move = search->think(who, UCTSearch::NOPASS);
                     kgs_cleanup_counter++;
+                } else {
+                    move = search->think(who);
                 }
                 game.play_move(move);
 
