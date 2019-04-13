@@ -62,10 +62,10 @@ public:
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color);
     UCTNode& get_best_root_child(int color);
-	UCTNode* uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth);
+    UCTNode* uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth);
 
     size_t count_nodes_and_clear_expand_state();
-	bool is_pondering_now;
+    bool is_pondering_now;
     bool first_visit() const;
     bool has_children() const;
     bool expandable(const float min_psa_ratio = 0.0f) const;
@@ -83,12 +83,12 @@ public:
     float get_raw_eval(int tomove, int virtual_loss = 0) const;
     float get_net_eval(int tomove) const;
     //float get_lcb_binomial(int color) const; // Commented out Roy7's old LCB/UCB code
-	//float get_ucb_binomial(int color) const; // Commented out Roy7's old LCB/UCB code
+    //float get_ucb_binomial(int color) const; // Commented out Roy7's old LCB/UCB code
 
-	//static float m_search_width;
-	static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
-	static void widen_search(); // Called from GTP.cpp as a gtp command
-	static void narrow_search(); // Called from GTP.cpp as a gtp command
+    //static float m_search_width;
+    static float get_search_width(); // VARIABLE "m_search_width" IS INITIALIZED AS EXTERN IN GTP.CPP AND GTP.H
+    static void widen_search(); // Called from GTP.cpp as a gtp command
+    static void narrow_search(); // Called from GTP.cpp as a gtp command
 
     void virtual_loss();
     void virtual_loss_undo();

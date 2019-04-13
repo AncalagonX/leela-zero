@@ -335,11 +335,11 @@ void GTP::setup_default_parameters() {
     cfg_max_tree_size = UCTSearch::DEFAULT_MAX_MEMORY;
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
-	cfg_manual_komi = 75;
+    cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
-	//m_search_width = 0.311f; // Searches approximately a width of approx. 2-4 moves initially
-	m_search_width = 1.000f; // Default LZ search when this equals 1.0
-	//m_search_width = 0.950f;
+    //m_search_width = 0.311f; // Searches approximately a width of approx. 2-4 moves initially
+    m_search_width = 1.000f; // Default LZ search when this equals 1.0
+    //m_search_width = 0.950f;
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -366,7 +366,7 @@ void GTP::setup_default_parameters() {
     kgs_cleanup_counter = 0;
     cfg_random_temp = 1.0f;
     cfg_winrate_target = 65;
-	cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
+    cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
     cfg_dumbpass = false;
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
@@ -402,8 +402,8 @@ const std::string GTP::s_commands[] = {
     "clear_board",
     "komi",
     "play",
-	"widen_search",
-	"narrow_search",
+    "widen_search",
+    "narrow_search",
     "genmove",
     "showboard",
     "undo",
@@ -437,7 +437,7 @@ const std::string GTP::s_options[] = {
     "option name Percentage of memory for cache type spin default 10 min 1 max 99",
     "option name Visits type spin default 0 min 0 max 1000000000",
     "option name Playouts type spin default 0 min 0 max 1000000000",
-	"option name setkomi type spin default 75 min -1000 max 1000",
+    "option name setkomi type spin default 75 min -1000 max 1000",
     "option name Lagbuffer type spin default 0 min 0 max 3000",
     "option name Resign Percentage type spin default -1 min -1 max 30",
     "option name Pondering type check default true",
@@ -581,7 +581,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 Training::clear_training();
                 game.init_game(tmp, old_komi);
                 gtp_printf(id, "");
-				//game.set_komi((cfg_manual_komi / 10.0f));
+                //game.set_komi((cfg_manual_komi / 10.0f));
             }
         } else {
             gtp_fail_printf(id, "syntax not understood");
@@ -608,7 +608,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         if (!cmdstream.fail()) {
             if (komi != old_komi) {
                 game.set_komi(komi);
-				//game.set_komi((cfg_manual_komi / 10.0f));
+                //game.set_komi((cfg_manual_komi / 10.0f));
             }
             gtp_printf(id, "");
         } else {
@@ -617,7 +617,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("play") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         std::string color, vertex;
@@ -638,19 +638,19 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         return;
 
     } else if (command.find("widen_search") == 0) {
-		//m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
-		UCTNode::widen_search();
+        //m_search_width = (0.9 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
+        UCTNode::widen_search();
         return;
 
     } else if (command.find("narrow_search") == 0) {
-		//m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
-		UCTNode::narrow_search();
-		////game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
+        //m_search_width = (1.11 * m_search_width); // Not used. Instead, this is performed with the below command in UCTNode.cpp.
+        UCTNode::narrow_search();
+        ////game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
         return;
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
 
         std::istringstream cmdstream(command);
@@ -667,21 +667,21 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 return;
             }
             who = tags.who();
-		}
-		else {
-			/* genmove command */
-			cmdstream >> tmp;
-			if (tmp == "w" || tmp == "white") {
-				who = FastBoard::WHITE;
-			}
-			else if (tmp == "b" || tmp == "black") {
-				who = FastBoard::BLACK;
-			}
-			else {
-				gtp_fail_printf(id, "syntax error");
-				return;
-			}
-		}
+        }
+        else {
+            /* genmove command */
+            cmdstream >> tmp;
+            if (tmp == "w" || tmp == "white") {
+                who = FastBoard::WHITE;
+            }
+            else if (tmp == "b" || tmp == "black") {
+                who = FastBoard::BLACK;
+            }
+            else {
+                gtp_fail_printf(id, "syntax error");
+                return;
+            }
+        }
         if (analysis_output) {
             // Start of multi-line response
             cfg_analyze_tags = tags;
@@ -691,22 +691,22 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             // start thinking
             {
                 game.set_to_move(who);
-				
-				if (game.get_handicap() >= 2) {
-					int move = FastBoard::RESIGN;
-					game.play_move(move);
-					std::string vertex = game.move_to_text(move);
-					gtp_printf(id, "%s", vertex.c_str());
-					return;
-				}
+                
+                if (game.get_handicap() >= 2) {
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return;
+                }
 
-				if (game.get_komi() >= 7.1f || game.get_komi() <= 6.9f) {
-					int move = FastBoard::RESIGN;
-					game.play_move(move);
-					std::string vertex = game.move_to_text(move);
-					gtp_printf(id, "%s", vertex.c_str());
-					return;
-				}
+                if (game.get_komi() >= 7.1f || game.get_komi() <= 6.9f) {
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return;
+                }
 
                 // Outputs winrate and pvs for lz-genmove_analyze
                 int move = search->think(who);
@@ -734,7 +734,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         cfg_analyze_tags = {};
         return;
     } else if (command.find("lz-analyze") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -783,7 +783,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 // If not, play another non-pass move if possible.
                 // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
                 if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
-					kgs_cleanup_counter++;
+                    kgs_cleanup_counter++;
                     move = search->think(who, UCTSearch::NOPASS);
                 }
                 game.play_move(move);
@@ -802,7 +802,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("undo") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         if (game.undo_move()) {
             gtp_printf(id, "");
         } else {
@@ -887,7 +887,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("auto") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         do {
             int move = search->think(game.get_to_move(), UCTSearch::NORMAL);
             game.play_move(move);
@@ -897,7 +897,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("go") == 0 && command.size() < 6) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         int move = search->think(game.get_to_move());
         game.play_move(move);
 
@@ -939,7 +939,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "");
         return;
     } else if (command.find("fixed_handicap") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -984,7 +984,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf_raw("\n");
         return;
     } else if (command.find("place_free_handicap") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -1002,7 +1002,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("set_free_handicap") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -1027,7 +1027,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("loadsgf") == 0) {
-		//game.set_komi((cfg_manual_komi / 10.0f));
+        //game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp, filename;
         int movenum;
@@ -1402,7 +1402,7 @@ void GTP::execute_setoption(UCTSearch & search,
         std::istringstream valuestream(value);
         int manual_komi;
         valuestream >> manual_komi;
-		cfg_manual_komi = manual_komi;
+        cfg_manual_komi = manual_komi;
         gtp_printf(id, "");
     } else if (name == "visits") {
         std::istringstream valuestream(value);
@@ -1427,18 +1427,18 @@ void GTP::execute_setoption(UCTSearch & search,
         cfg_max_playouts = playouts;
 
         // 0 may be specified to mean "no limit"
-		if (cfg_max_playouts == 0) {
-			cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
-		}
-		/********************************
-		// REMOVE PREVIOUS BRACKET IF UNCOMMENTING THE FOLLOWING BLOCK:
+        if (cfg_max_playouts == 0) {
+            cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
+        }
+        /********************************
+        // REMOVE PREVIOUS BRACKET IF UNCOMMENTING THE FOLLOWING BLOCK:
         } else if (cfg_allow_pondering) {
             // Limiting playouts while pondering is still enabled
             // makes no sense.
             gtp_fail_printf(id, "incorrect value");
             return;
         }
-		**/
+        **/
 
         // Note that if the playouts are changed but no
         // explicit command to set memory usage is given,

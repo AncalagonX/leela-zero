@@ -220,8 +220,8 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
-	const auto color_to_move = m_rootstate.get_to_move();
-	const auto movenum_now = m_rootstate.get_movenum();
+    const auto color_to_move = m_rootstate.get_to_move();
+    const auto movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -242,8 +242,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
-	auto depth =
-		int(currstate.get_movenum() - m_rootstate.get_movenum());
+    auto depth =
+        int(currstate.get_movenum() - m_rootstate.get_movenum());
 
     if (node->has_children() && !result.valid()) {
         auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
@@ -321,9 +321,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
             && sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
             continue;
         }
-		if (node->get_visits() <= 4) {
-			continue;
-		}
+        if (node->get_visits() <= 4) {
+            continue;
+        }
 
         auto move = state.move_to_text(node->get_move());
         auto tmpstate = FastState{state};
@@ -331,16 +331,16 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         auto rest_of_pv = get_pv(tmpstate, *node);
         auto pv = move + (rest_of_pv.empty() ? "" : " " + rest_of_pv);
         //auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; //Default LZ
-		//auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
+        //auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
         auto move_eval = std::max(0.0f, node->get_lcb(color) * 100.0f); // NEW, Ttl's output, gives LCB in place of winrate
         auto policy = node->get_policy();
         // Store data in array
         sortable_data.emplace_back(move, node->get_visits(),
                                    move_eval, policy, pv); // NEW Original
-		//sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
-		// UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
-		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
-		//sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
+        //sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
+        // UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
+        //sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
+        //sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
     }
     // Sort array to decide order
     std::stable_sort(rbegin(sortable_data), rend(sortable_data));
@@ -407,12 +407,12 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     const size_t num_intersections = m_rootstate.board.get_boardsize()
                                    * m_rootstate.board.get_boardsize();
 
-	const auto movenum = m_rootstate.get_movenum();
+    const auto movenum = m_rootstate.get_movenum();
 
     auto move_threshold = num_intersections / 4;
-	if ((movenum >= 150) && (cfg_resignpct == 9)) {
-		move_threshold = 999;
-	}
+    if ((movenum >= 150) && (cfg_resignpct == 9)) {
+        move_threshold = 999;
+    }
 
     if (movenum <= move_threshold) {
         // too early in game to resign
@@ -720,14 +720,14 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 }
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
-	if (is_pondering_now) {
-		return (int(0.05 * (m_playouts)) >= m_maxplayouts)
-			|| (int(0.05 * (m_root->get_visits())) >= m_maxvisits)
-			|| elapsed_centis >= time_for_move;
-	}
-	return m_playouts >= m_maxplayouts
-		|| m_root->get_visits() >= m_maxvisits
-		|| elapsed_centis >= time_for_move;
+    if (is_pondering_now) {
+        return (int(0.05 * (m_playouts)) >= m_maxplayouts)
+            || (int(0.05 * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    return m_playouts >= m_maxplayouts
+        || m_root->get_visits() >= m_maxvisits
+        || elapsed_centis >= time_for_move;
 }
 
 void UCTWorker::operator()() {
@@ -866,7 +866,7 @@ std::string UCTSearch::explain_last_think() const {
 }
 
 void UCTSearch::ponder() {
-	is_pondering_now = true;
+    is_pondering_now = true;
     auto disable_reuse = cfg_analyze_tags.has_move_restrictions();
     if (disable_reuse) {
         m_last_rootstate.reset(nullptr);
@@ -874,7 +874,7 @@ void UCTSearch::ponder() {
 
     update_root();
 
-	cfg_opponent_color = m_rootstate.board.get_to_move();
+    cfg_opponent_color = m_rootstate.board.get_to_move();
 
     m_root->prepare_root_node(m_network, m_rootstate.board.get_to_move(),
                               m_nodes, m_rootstate);
@@ -886,7 +886,7 @@ void UCTSearch::ponder() {
     }
     Time start;
     auto keeprunning = true;
-	auto last_update = 0;
+    auto last_update = 0;
     auto last_output = 0;
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
@@ -902,21 +902,21 @@ void UCTSearch::ponder() {
                 output_analysis(m_rootstate, *m_root);
             }
         }
-		Time elapsed;
-		int elapsed_centis = Time::timediff_centis(start, elapsed);
+        Time elapsed;
+        int elapsed_centis = Time::timediff_centis(start, elapsed);
 
-		if (cfg_analyze_tags.interval_centis() &&
-			elapsed_centis - last_output > cfg_analyze_tags.interval_centis()) {
-			last_output = elapsed_centis;
-			output_analysis(m_rootstate, *m_root);
-		}
+        if (cfg_analyze_tags.interval_centis() &&
+            elapsed_centis - last_output > cfg_analyze_tags.interval_centis()) {
+            last_output = elapsed_centis;
+            output_analysis(m_rootstate, *m_root);
+        }
 
-		// output some stats every few seconds
-		// check if we should still search
-		if (!cfg_quiet && elapsed_centis - last_update > 100) {
-			last_update = elapsed_centis;
-			myprintf("Pondering: %s\n", get_analysis().c_str());
-		}
+        // output some stats every few seconds
+        // check if we should still search
+        if (!cfg_quiet && elapsed_centis - last_update > 100) {
+            last_update = elapsed_centis;
+            myprintf("Pondering: %s\n", get_analysis().c_str());
+        }
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
     } while (!Utils::input_pending() && keeprunning);
@@ -935,7 +935,7 @@ void UCTSearch::ponder() {
     dump_stats(m_rootstate, *m_root);
 
     myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
-	is_pondering_now = false;
+    is_pondering_now = false;
 
     // Copy the root state. Use to check for tree re-use in future calls.
     if (!disable_reuse) {

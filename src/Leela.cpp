@@ -83,7 +83,7 @@ static void calculate_thread_count_cpu(boost::program_options::variables_map & v
 #ifdef USE_OPENCL
 static void calculate_thread_count_gpu(boost::program_options::variables_map & vm) {
     auto cfg_max_threads = size_t{MAX_CPUS};
-	//size_t cfg_max_threads = 64;
+    //size_t cfg_max_threads = 64;
 
     // Default thread count : GPU case
     // 1) if no args are given, use batch size of 5 and thread count of (batch size) * (number of gpus) * 2
@@ -147,7 +147,7 @@ static void parse_commandline(int argc, char *argv[]) {
                        "Requires --noponder.")
         ("visits,v", po::value<int>(),
                      "Weaken engine by limiting the number of visits.")
-		("setkomi", po::value<int>()->default_value(cfg_manual_komi),
+        ("setkomi", po::value<int>()->default_value(cfg_manual_komi),
                         "Safety margin for time usage in centiseconds.")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
@@ -396,14 +396,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("playouts")) {
         cfg_max_playouts = vm["playouts"].as<int>();
-		/**
+        /**
         if (!vm.count("noponder")) {
             printf("Nonsensical options: Playouts are restricted but "
                    "thinking on the opponent's time is still allowed. "
                    "Add --noponder if you want a weakened engine.\n");
             exit(EXIT_FAILURE);
         }
-		**/
+        **/
 
         // 0 may be specified to mean "no limit"
         if (cfg_max_playouts == 0) {
@@ -470,14 +470,14 @@ static void parse_commandline(int argc, char *argv[]) {
             cfg_noise ? TimeManagement::NO_PRUNING : TimeManagement::ON;
     }
 
-	if (vm.count("setkomi")) {
-		int manual_komi = vm["setkomi"].as<int>();
-		if (manual_komi != cfg_manual_komi) {
-			myprintf("Using komi of %.2fs.\n",
-				(manual_komi / 10.0f));
-			cfg_manual_komi = manual_komi;
-		}
-	}
+    if (vm.count("setkomi")) {
+        int manual_komi = vm["setkomi"].as<int>();
+        if (manual_komi != cfg_manual_komi) {
+            myprintf("Using komi of %.2fs.\n",
+                (manual_komi / 10.0f));
+            cfg_manual_komi = manual_komi;
+        }
+    }
 
     if (vm.count("lagbuffer")) {
         int lagbuffer = vm["lagbuffer"].as<int>();

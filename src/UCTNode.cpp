@@ -77,9 +77,9 @@ UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
 
 bool UCTNode::first_visit() const {
-	if (m_visits == 0) {
-		m_visits_tracked_here = 0;
-	}
+    if (m_visits == 0) {
+        m_visits_tracked_here = 0;
+    }
     return m_visits == 0;
 }
 
@@ -131,39 +131,39 @@ bool UCTNode::create_children(Network & network,
     // nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS); // ORIGINAL LINE. I commented it out for the below "double pass pathology" PR.
     // legal_sum += raw_netlist.policy_pass; // ORIGINAL LINE. I commented it out for the below "double pass pathology" PR.
 
-	// Add pass move. BUT don't do this if the following conditions
-	// all obtain (see issue #2273, "Double-passing pathology"):
-	//   - The move played in order to reach this node was a pass.
-	//     (So another pass would end the game.)
-	//   - The NN's evaluation of the current node is very good
-	//     for the player whose move it is. (Say, 0.75 or better.)
-	//     (So we don't want to end the game unless we win.)
-	//   - Ending the game now would actually lose the game for
-	//     the player whose move it is.
-	//     (So we don't want to end the game.)
-	//   - We do have at least five other legal moves.
-	//     (So it's not likely that all our available moves
-	//     are actually disastrous.)
-	//   - The "dumbpass" option is not turned on.
-	//     (Because, as per GCP's comment at
-	//     https://github.com/leela-zero/leela-zero/issues/2273#issuecomment-472398802 ,
-	//     enabling this heuristic is un-Zero-like and enabling
-	//     dumbpass is meant to suppress any such things that
-	//     affect passing.)
-	// The magic numbers 0.75 and 5 are somewhat arbitrary and it seems
-	// unlikely that their values make much difference.
-	// This check prevents some serious evaluation errors but has a cost:
-	// we make extra calls to final_score() at some nodes. But this is done
-	// only at nodes where the other player just passed despite having a
-	// really bad position; the cost should not be large.
-	if (state.get_passes() == 0
-		|| (to_move == FastBoard::WHITE ? 1.0f - m_net_eval : m_net_eval) < 0.75
-		|| nodelist.size() < 5
-		|| cfg_dumbpass
-		|| (to_move == FastBoard::WHITE ? -state.final_score() : state.final_score()) > 0) {
-		nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
-		legal_sum += raw_netlist.policy_pass;
-	}
+    // Add pass move. BUT don't do this if the following conditions
+    // all obtain (see issue #2273, "Double-passing pathology"):
+    //   - The move played in order to reach this node was a pass.
+    //     (So another pass would end the game.)
+    //   - The NN's evaluation of the current node is very good
+    //     for the player whose move it is. (Say, 0.75 or better.)
+    //     (So we don't want to end the game unless we win.)
+    //   - Ending the game now would actually lose the game for
+    //     the player whose move it is.
+    //     (So we don't want to end the game.)
+    //   - We do have at least five other legal moves.
+    //     (So it's not likely that all our available moves
+    //     are actually disastrous.)
+    //   - The "dumbpass" option is not turned on.
+    //     (Because, as per GCP's comment at
+    //     https://github.com/leela-zero/leela-zero/issues/2273#issuecomment-472398802 ,
+    //     enabling this heuristic is un-Zero-like and enabling
+    //     dumbpass is meant to suppress any such things that
+    //     affect passing.)
+    // The magic numbers 0.75 and 5 are somewhat arbitrary and it seems
+    // unlikely that their values make much difference.
+    // This check prevents some serious evaluation errors but has a cost:
+    // we make extra calls to final_score() at some nodes. But this is done
+    // only at nodes where the other player just passed despite having a
+    // really bad position; the cost should not be large.
+    if (state.get_passes() == 0
+        || (to_move == FastBoard::WHITE ? 1.0f - m_net_eval : m_net_eval) < 0.75
+        || nodelist.size() < 5
+        || cfg_dumbpass
+        || (to_move == FastBoard::WHITE ? -state.final_score() : state.final_score()) > 0) {
+        nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
+        legal_sum += raw_netlist.policy_pass;
+    }
 
     if (legal_sum > std::numeric_limits<float>::min()) {
         // re-normalize after removing illegal moves.
@@ -352,30 +352,30 @@ void UCTNode::accumulate_eval(float eval) {
 }
 
 float UCTNode::get_search_width() {
-	return m_search_width;
+    return m_search_width;
 }
 
 void UCTNode::widen_search() {
-	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
-	if (m_search_width < 0.003) {
-		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
-		// Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
-		// Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
-	}
-	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
+    m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
+    if (m_search_width < 0.003) {
+        m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless, but I'll clamp at 100x less than that for now just in case.
+        // Update: 0.0000276 crashed leelaz.exe, so I will clamp at 0.00278 which is slightly higher than theoretical minimum.
+        // Update2: 0.00278 also crashed, so I'll try clamping at 0.003 instead.
+    }
+    visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 void UCTNode::narrow_search() {
-	m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
-	if (m_search_width > 1.0) {
-		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
-	}
-	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
+    m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
+    if (m_search_width > 1.0) {
+        m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+    }
+    visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
-	//LOCK(get_mutex(), lock);
-	wait_expanded();
+    //LOCK(get_mutex(), lock);
+    wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -395,74 +395,74 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     // Estimated eval for unknown nodes = original parent NN eval - reduction
     const auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
-	auto best = static_cast<UCTNodePointer*>(nullptr);
+    auto best = static_cast<UCTNodePointer*>(nullptr);
     auto second_best = static_cast<UCTNodePointer*>(nullptr);
-	auto best_value = std::numeric_limits<double>::lowest();
+    auto best_value = std::numeric_limits<double>::lowest();
     auto best_value2 = std::numeric_limits<double>::lowest();
     auto best_value_next = std::numeric_limits<double>::lowest();
-	auto best_winrate = std::numeric_limits<double>::lowest();
+    auto best_winrate = std::numeric_limits<double>::lowest();
     auto best_winrate2 = std::numeric_limits<double>::lowest();
-	auto best_lcb = std::numeric_limits<double>::lowest();
-	auto best_psa = std::numeric_limits<double>::lowest();
-	int most_root_visits_seen_so_far = 1;
+    auto best_lcb = std::numeric_limits<double>::lowest();
+    auto best_psa = std::numeric_limits<double>::lowest();
+    int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
-	auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+    auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
 
-	if (movenum_now < 100) {
-		winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
-	}
-	/**/
-	if (movenum_now >= 100) {
-		winrate_target_value = 0.01f * (cfg_winrate_target + 5); // Converts user input into float between 1.0f and 0.0f
-	}
+    if (movenum_now < 100) {
+        winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
+    }
+    /**/
+    if (movenum_now >= 100) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 5); // Converts user input into float between 1.0f and 0.0f
+    }
 
-	if (movenum_now >= 150) {
-		winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
-	}
-	/**/
-	if (movenum_now >= 200) {
-		winrate_target_value = 0.01f * (cfg_winrate_target + 15); // Converts user input into float between 1.0f and 0.0f
-	}
+    if (movenum_now >= 150) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+    }
+    /**/
+    if (movenum_now >= 200) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 15); // Converts user input into float between 1.0f and 0.0f
+    }
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
-	if (is_pondering_now) {
-		is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
-	}
+    if (is_pondering_now) {
+        is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+    }
 
-	for (auto& child : m_children) {
-		if (!child.active()) {
-			continue;
-		}
+    for (auto& child : m_children) {
+        if (!child.active()) {
+            continue;
+        }
 
-		auto winrate = fpu_eval;
-		auto lcb = 0.0f;
-		if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
-			// Someone else is expanding this node, never select it
-			// if we can avoid so, because we'd block on it.
-			winrate = -1.0f - fpu_reduction;
-		}
-		else if (child.get_visits() > 0) {
-			winrate = child.get_eval(color);
-			lcb = child.get_lcb(color);
+        auto winrate = fpu_eval;
+        auto lcb = 0.0f;
+        if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+            // Someone else is expanding this node, never select it
+            // if we can avoid so, because we'd block on it.
+            winrate = -1.0f - fpu_reduction;
+        }
+        else if (child.get_visits() > 0) {
+            winrate = child.get_eval(color);
+            lcb = child.get_lcb(color);
 
-		}
-		const auto psa = child.get_policy();
-		const auto denom = 1.0 + child.get_visits();
-		const auto puct = cfg_puct * psa * (numerator / denom);
+        }
+        const auto psa = child.get_policy();
+        const auto denom = 1.0 + child.get_visits();
+        const auto puct = cfg_puct * psa * (numerator / denom);
 
-		int int_m_visits = static_cast<int>(m_visits);
-		int int_child_visits = static_cast<int>(child.get_visits());
-		int int_parent_visits = static_cast<int>(parentvisits);
+        int int_m_visits = static_cast<int>(m_visits);
+        int int_child_visits = static_cast<int>(child.get_visits());
+        int int_parent_visits = static_cast<int>(parentvisits);
 
-		auto value = winrate + puct;
+        auto value = winrate + puct;
 
-		if (!is_opponent_move && (winrate >= winrate_target_value)) {
-			value = (1 - abs(winrate_target_value - winrate)) + puct;
-		}
+        if (!is_opponent_move && (winrate >= winrate_target_value)) {
+            value = (1 - abs(winrate_target_value - winrate)) + puct;
+        }
 
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -472,9 +472,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         if (value > best_value) {
-			if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 800)) {
-				best_winrate = winrate;
-			}
+            if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 800)) {
+                best_winrate = winrate;
+            }
             best_value = value;
             best_value2 = value;
             best = &child;
@@ -490,25 +490,25 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     std::uniform_int_distribution<> dis_moves(0, number_of_moves_to_search);
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     //int random_search_count = dis_moves(gen);
-	int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
-	if (!is_opponent_move) {
-		random_search_count = 1; // Searches top 3-4 moves when pondering on opponent's turn.
-	}
+    int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
+    if (!is_opponent_move) {
+        random_search_count = 1; // Searches top 3-4 moves when pondering on opponent's turn.
+    }
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
-	int randomX_100 = dis100(gen);
+    int randomX_100 = dis100(gen);
 
-	/**
+    /**
     if ((random_search_count == 0)
         && (most_root_visits_second_root_visits_ratio >= 2)) {
         
         random_search_count = dis_moves(gen);
     }
-	**/
+    **/
 
 
     
     //while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false)) { // Wide search loop for Tiebot's turn.
-	while ((moves_searched < random_search_count) && (randomX_100 <= 10)) { // Wide search loop for Tiebot's turn.
+    while ((moves_searched < random_search_count) && (randomX_100 <= 10)) { // Wide search loop for Tiebot's turn.
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
@@ -530,15 +530,15 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto psa = child.get_policy();
             const auto denom = 1.0 + child.get_visits();
             const auto puct = cfg_puct * psa * (numerator / denom);
-			auto value = winrate + puct;
+            auto value = winrate + puct;
 
-			if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.5 * winrate_target_value))) {
-				continue;
-			}
+            if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.5 * winrate_target_value))) {
+                continue;
+            }
 
-			if (!is_opponent_move) {
-				value = (1 - abs(winrate_target_value - winrate)) + puct;
-			}
+            if (!is_opponent_move) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
 
             assert(value > std::numeric_limits<double>::lowest());
 
@@ -557,54 +557,54 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-	while ((moves_searched < random_search_count) && (is_pondering_now == true)) { // Wide search loop for pondering on opponent's turn.
-		for (auto& child : m_children) {
-			if (!child.active()) {
-				continue;
-			}
-			if (!is_root) {
-				continue;
-			}
+    while ((moves_searched < random_search_count) && (is_pondering_now == true)) { // Wide search loop for pondering on opponent's turn.
+        for (auto& child : m_children) {
+            if (!child.active()) {
+                continue;
+            }
+            if (!is_root) {
+                continue;
+            }
 
-			auto winrate = fpu_eval;
-			if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
-				// Someone else is expanding this node, never select it
-				// if we can avoid so, because we'd block on it.
-				winrate = -1.0f - fpu_reduction;
-			}
-			else if (child.get_visits() > 0) {
-				winrate = child.get_eval(color);
-			}
+            auto winrate = fpu_eval;
+            if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+                // Someone else is expanding this node, never select it
+                // if we can avoid so, because we'd block on it.
+                winrate = -1.0f - fpu_reduction;
+            }
+            else if (child.get_visits() > 0) {
+                winrate = child.get_eval(color);
+            }
 
-			const auto psa = child.get_policy();
-			const auto denom = 1.0 + child.get_visits();
-			const auto puct = cfg_puct * psa * (numerator / denom);
-			auto value = winrate + puct;
+            const auto psa = child.get_policy();
+            const auto denom = 1.0 + child.get_visits();
+            const auto puct = cfg_puct * psa * (numerator / denom);
+            auto value = winrate + puct;
 
-			if (!is_opponent_move) {
-				value = (1 - abs(winrate_target_value - winrate)) + puct;
-			}
+            if (!is_opponent_move) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
 
-			assert(value > std::numeric_limits<double>::lowest());
+            assert(value > std::numeric_limits<double>::lowest());
 
-			if (value < best_value2) {
-				if (value > best_value_next) {
-					best_value_next = value;
-					best = &child;
-				}
-			}
-		}
-		best_value2 = best_value_next;
-		best_value_next = std::numeric_limits<double>::lowest();
-		moves_searched++;
-	}
-
-
+            if (value < best_value2) {
+                if (value > best_value_next) {
+                    best_value_next = value;
+                    best = &child;
+                }
+            }
+        }
+        best_value2 = best_value_next;
+        best_value_next = std::numeric_limits<double>::lowest();
+        moves_searched++;
+    }
 
 
 
 
-	randomX_100 = dis100(gen);
+
+
+    randomX_100 = dis100(gen);
     assert(best != nullptr);
     best->inflate();
     return best->get();
@@ -620,8 +620,8 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
         // Calculate the lower confidence bound for each node.
-		int a_visit = a.get_visits(); // new Ttl
-		int b_visit = b.get_visits(); // new Ttl
+        int a_visit = a.get_visits(); // new Ttl
+        int b_visit = b.get_visits(); // new Ttl
 
         /***************************************
         // COMMENTING OUT ROY7'S LCB CODE BELOW:
@@ -640,24 +640,24 @@ public:
 
 
 
-		if (a_visit != b_visit) {
-			return a_visit < b_visit;
-		}
+        if (a_visit != b_visit) {
+            return a_visit < b_visit;
+        }
 
-		// neither has visits, sort on policy prior
-		if (a_visit == 0) {
-			return a.get_policy() < b.get_policy();
-		}
+        // neither has visits, sort on policy prior
+        if (a_visit == 0) {
+            return a.get_policy() < b.get_policy();
+        }
 
-		// both have same non-zero number of visits
-		auto a_lcb = a.get_lcb(m_color); // new Ttl
-		auto b_lcb = b.get_lcb(m_color); // new Ttl
-		if (a_lcb != b_lcb) { // new Ttl
-			return a_lcb < b_lcb; // new Ttl
-		} // new Ttl
+        // both have same non-zero number of visits
+        auto a_lcb = a.get_lcb(m_color); // new Ttl
+        auto b_lcb = b.get_lcb(m_color); // new Ttl
+        if (a_lcb != b_lcb) { // new Ttl
+            return a_lcb < b_lcb; // new Ttl
+        } // new Ttl
 
-		// both have same non-zero number of visits and same lcb somehow
-		return a.get_eval(m_color) < b.get_eval(m_color);        
+        // both have same non-zero number of visits and same lcb somehow
+        return a.get_eval(m_color) < b.get_eval(m_color);        
     }
 private:
     int m_color;
