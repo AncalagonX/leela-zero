@@ -331,15 +331,15 @@ void GTP::setup_default_parameters() {
     cfg_max_memory = UCTSearch::DEFAULT_MAX_MEMORY;
     cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
-	cfg_opponent = -1;
+    cfg_opponent = -1;
     // This will be overwriiten in initialize() after network size is known.
     cfg_max_tree_size = UCTSearch::DEFAULT_MAX_MEMORY;
     cfg_max_cache_ratio_percent = 10;
     cfg_timemanage = TimeManagement::AUTO;
-	cfg_manual_komi = 75;
+    cfg_manual_komi = 75;
     cfg_lagbuffer_cs = 100;
-	//m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
-	m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
+    //m_search_width = 0.311; // Searches approximately a width of approx. 2-4 moves initially
+    m_search_width = 1.000; // Searches approximately a width of approx. 2-4 moves initially
     cfg_weightsfile = leelaz_file("best-network");
 #ifdef USE_OPENCL
     cfg_gpus = { };
@@ -365,11 +365,11 @@ void GTP::setup_default_parameters() {
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
     cfg_dumbpass = false;
-	cfg_multidepth_search = 0;
+    cfg_multidepth_search = 0;
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
-	want_to_reset_nncache = false;
+    want_to_reset_nncache = false;
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
 #else
@@ -401,12 +401,12 @@ const std::string GTP::s_commands[] = {
     "clear_board",
     "komi",
     "play",
-	"widen_search",
-	"narrow_search",
-	"reset_nncache",
-	"set_search_width",
-	"set_multidepth_search",
-	"set_opponent",
+    "widen_search",
+    "narrow_search",
+    "reset_nncache",
+    "set_search_width",
+    "set_multidepth_search",
+    "set_opponent",
     "genmove",
     "showboard",
     "undo",
@@ -440,7 +440,7 @@ const std::string GTP::s_options[] = {
     "option name Percentage of memory for cache type spin default 10 min 1 max 99",
     "option name Visits type spin default 0 min 0 max 1000000000",
     "option name Playouts type spin default 0 min 0 max 1000000000",
-	"option name setkomi type spin default 75 min -1000 max 1000",
+    "option name setkomi type spin default 75 min -1000 max 1000",
     "option name Lagbuffer type spin default 0 min 0 max 3000",
     "option name Resign Percentage type spin default -1 min -1 max 30",
     "option name Pondering type check default true",
@@ -584,7 +584,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                 Training::clear_training();
                 game.init_game(tmp, old_komi);
                 gtp_printf(id, "");
-				game.set_komi((cfg_manual_komi / 10.0f));
+                game.set_komi((cfg_manual_komi / 10.0f));
             }
         } else {
             gtp_fail_printf(id, "syntax not understood");
@@ -611,7 +611,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         if (!cmdstream.fail()) {
             if (komi != old_komi) {
                 game.set_komi(komi);
-				game.set_komi((cfg_manual_komi / 10.0f));
+                game.set_komi((cfg_manual_komi / 10.0f));
             }
             gtp_printf(id, "");
         } else {
@@ -620,7 +620,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("play") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         std::string color, vertex;
@@ -641,97 +641,97 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         return;
 
     } else if (command.find("widen_search") == 0) {
-		UCTNode::widen_search();
-		gtp_printf(id, "");
+        UCTNode::widen_search();
+        gtp_printf(id, "");
         return;
 
     } else if (command.find("narrow_search") == 0) {
-		UCTNode::narrow_search();
-		//game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
-		gtp_printf(id, "");
+        UCTNode::narrow_search();
+        //game.set_komi((cfg_manual_komi / 10.0f)); // Shouldn't need this anymore since I have this command spammed everywhere else already, like in "genmove" below.
+        gtp_printf(id, "");
         return;
 
-	} else if (command.find("reset_nncache") == 0) {
-		s_network->nncache_clear();
-		want_to_reset_nncache = true;
-		gtp_printf(id, "");
-		return;
+    } else if (command.find("reset_nncache") == 0) {
+        s_network->nncache_clear();
+        want_to_reset_nncache = true;
+        gtp_printf(id, "");
+        return;
 
-	} else if (command.find("set_search_width") == 0) {
-		std::istringstream cmdstream(command);
-		std::string tmp;
-		int desired_search_width; // Smaller values are narrower search. Accepted values range from "0" (default unmodified LZ search) to "10" (searches the top ~330 moves).
-								  // 0 = Default unmodified search. Identical to stock LZ. Only sends visits to LZ's most optimal move choice.
-								  // 1 =  LZ explores its top TWO move choices at all times, instead of only its single most favorite move choice.
-								  // 2 =  Explores its top 3-4 move choices
-								  // 3 =  Explores its top 6 move choices
-								  // 4 =  Explores its top ~12 move choices
-								  // 5 =  Explores its top ~20 move choices
-								  // 6 =  Explores its top ~32 move choices
-								  // 7 =  Explores its top ~60 move choices
-								  // 8 =  Explores its top ~100 move choices
-								  // 9 =  Explores its top ~180 move choices
-								  // 10 = Explores its top ~333 move choices
-								  // WARNING: Value of 11 is also accepted but is currently untested. "11" may crash the search.
+    } else if (command.find("set_search_width") == 0) {
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        int desired_search_width; // Smaller values are narrower search. Accepted values range from "0" (default unmodified LZ search) to "10" (searches the top ~330 moves).
+                                  // 0 = Default unmodified search. Identical to stock LZ. Only sends visits to LZ's most optimal move choice.
+                                  // 1 =  LZ explores its top TWO move choices at all times, instead of only its single most favorite move choice.
+                                  // 2 =  Explores its top 3-4 move choices
+                                  // 3 =  Explores its top 6 move choices
+                                  // 4 =  Explores its top ~12 move choices
+                                  // 5 =  Explores its top ~20 move choices
+                                  // 6 =  Explores its top ~32 move choices
+                                  // 7 =  Explores its top ~60 move choices
+                                  // 8 =  Explores its top ~100 move choices
+                                  // 9 =  Explores its top ~180 move choices
+                                  // 10 = Explores its top ~333 move choices
+                                  // WARNING: Value of 11 is also accepted but is currently untested. "11" may crash the search.
 
-		cmdstream >> tmp;   // eat set_search_width
-		cmdstream >> desired_search_width;
-		//desired_search_width = (desired_search_width - 1); // This switches the input to a 0 to 9 scale. // NOT NEEDED SINCE ` GRAVE/TILDE KEY SENDS "0" FROM LIZZIE NOW.
-		if ((desired_search_width >= 0) && (desired_search_width <= 11)) {
-			UCTNode::set_search_width(desired_search_width);
-		} else {
-			UCTNode::set_search_width(0);
-		}
-		gtp_printf(id, "");
-		return;
+        cmdstream >> tmp;   // eat set_search_width
+        cmdstream >> desired_search_width;
+        //desired_search_width = (desired_search_width - 1); // This switches the input to a 0 to 9 scale. // NOT NEEDED SINCE ` GRAVE/TILDE KEY SENDS "0" FROM LIZZIE NOW.
+        if ((desired_search_width >= 0) && (desired_search_width <= 11)) {
+            UCTNode::set_search_width(desired_search_width);
+        } else {
+            UCTNode::set_search_width(0);
+        }
+        gtp_printf(id, "");
+        return;
 
-	} else if (command.find("set_multidepth_search") == 0) { // Disabled by default with a value of "0".
+    } else if (command.find("set_multidepth_search") == 0) { // Disabled by default with a value of "0".
 
-		// Normally, we would only force the widened search to explore alternative moves at the root node, which is 0 moves deep.
-		// "set_multidepth_search <number>" changes this by forcing the modified tree search to also explore wider variations BELOW the current root node, as well.
-		// IMPORTANT NOTE:  LZ will no longer report accurate winrates for moves if multidepth search is enabled by setting a value greater than "0".
-		// Still, some may find a use for this command if inaccurate or sometimes bogus winrates are not a concern.
+        // Normally, we would only force the widened search to explore alternative moves at the root node, which is 0 moves deep.
+        // "set_multidepth_search <number>" changes this by forcing the modified tree search to also explore wider variations BELOW the current root node, as well.
+        // IMPORTANT NOTE:  LZ will no longer report accurate winrates for moves if multidepth search is enabled by setting a value greater than "0".
+        // Still, some may find a use for this command if inaccurate or sometimes bogus winrates are not a concern.
 
-		// Multidepth search is often more useful when used with the "set_opponent <color>" GTP command. See "set_opponent <color>" further below.
-		
-		std::istringstream cmdstream(command);
-		std::string tmp;
-		int desired_multidepth_search;
+        // Multidepth search is often more useful when used with the "set_opponent <color>" GTP command. See "set_opponent <color>" further below.
+        
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        int desired_multidepth_search;
 
-		cmdstream >> tmp;   // eat set_multidepth_search
-		cmdstream >> desired_multidepth_search;
+        cmdstream >> tmp;   // eat set_multidepth_search
+        cmdstream >> desired_multidepth_search;
 
-		if ((desired_multidepth_search >= 0) && (desired_multidepth_search <= 100)) { // Lazy way to ensure it's a valid integer/number.
-			cfg_multidepth_search = desired_multidepth_search;
-		} else {
-			cfg_multidepth_search = 0;
-		}
-		gtp_printf(id, "");
-		return;
+        if ((desired_multidepth_search >= 0) && (desired_multidepth_search <= 100)) { // Lazy way to ensure it's a valid integer/number.
+            cfg_multidepth_search = desired_multidepth_search;
+        } else {
+            cfg_multidepth_search = 0;
+        }
+        gtp_printf(id, "");
+        return;
 
-	} else if (command.find("set_opponent") == 0) {
-		std::istringstream cmdstream(command);
-		std::string tmp;
-		std::string opponent_color;
+    } else if (command.find("set_opponent") == 0) {
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        std::string opponent_color;
 
-		cmdstream >> tmp;   // eat set_opponent
-		cmdstream >> opponent_color;
+        cmdstream >> tmp;   // eat set_opponent
+        cmdstream >> opponent_color;
 
 
-		if ((opponent_color == "black") || (opponent_color == "b")) {
-			cfg_opponent = 0;
-		}
-		else if ((opponent_color == "white") || (opponent_color == "w")) {
-			cfg_opponent = 1;
-		}
-		else if (opponent_color == "none") {
-			cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
-		}
-		else {
-			cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
-		}
-		gtp_printf(id, "");
-		return;
+        if ((opponent_color == "black") || (opponent_color == "b")) {
+            cfg_opponent = 0;
+        }
+        else if ((opponent_color == "white") || (opponent_color == "w")) {
+            cfg_opponent = 1;
+        }
+        else if (opponent_color == "none") {
+            cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
+        }
+        else {
+            cfg_opponent = -1; // invalid value, indicating neither side is the "opponent"
+        }
+        gtp_printf(id, "");
+        return;
 
 
 
@@ -741,7 +741,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         auto analysis_output = command.find("lz-genmove_analyze") == 0;
 
         std::istringstream cmdstream(command);
@@ -806,7 +806,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         cfg_analyze_tags = {};
         return;
     } else if (command.find("lz-analyze") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -867,7 +867,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("undo") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         if (game.undo_move()) {
             gtp_printf(id, "");
         } else {
@@ -951,7 +951,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("auto") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         do {
             int move = search->think(game.get_to_move(), UCTSearch::NORMAL);
             game.play_move(move);
@@ -961,7 +961,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("go") == 0 && command.size() < 6) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         int move = search->think(game.get_to_move());
         game.play_move(move);
 
@@ -1003,7 +1003,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "");
         return;
     } else if (command.find("fixed_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -1048,7 +1048,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf_raw("\n");
         return;
     } else if (command.find("place_free_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
         int stones;
@@ -1066,7 +1066,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("set_free_handicap") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp;
 
@@ -1091,7 +1091,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("loadsgf") == 0) {
-		game.set_komi((cfg_manual_komi / 10.0f));
+        game.set_komi((cfg_manual_komi / 10.0f));
         std::istringstream cmdstream(command);
         std::string tmp, filename;
         int movenum;
@@ -1466,7 +1466,7 @@ void GTP::execute_setoption(UCTSearch & search,
         std::istringstream valuestream(value);
         int manual_komi;
         valuestream >> manual_komi;
-		cfg_manual_komi = manual_komi;
+        cfg_manual_komi = manual_komi;
         gtp_printf(id, "");
     } else if (name == "visits") {
         std::istringstream valuestream(value);

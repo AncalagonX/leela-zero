@@ -83,7 +83,7 @@ static void calculate_thread_count_cpu(boost::program_options::variables_map & v
 #ifdef USE_OPENCL
 static void calculate_thread_count_gpu(boost::program_options::variables_map & vm) {
     auto cfg_max_threads = size_t{MAX_CPUS};
-	//size_t cfg_max_threads = 64;
+    //size_t cfg_max_threads = 64;
 
     // Default thread count : GPU case
     // 1) if no args are given, use batch size of 5 and thread count of (batch size) * (number of gpus) * 2
@@ -147,9 +147,9 @@ static void parse_commandline(int argc, char *argv[]) {
                        "Requires --noponder.")
         ("visits,v", po::value<int>(),
                      "Weaken engine by limiting the number of visits.")
-		("setkomi", po::value<int>()->default_value(cfg_manual_komi),
+        ("setkomi", po::value<int>()->default_value(cfg_manual_komi),
                         "Safety margin for time usage in centiseconds.")
-		("opponent", po::value<std::string>()->default_value("none"),
+        ("opponent", po::value<std::string>()->default_value("none"),
                        "[black|white|none] Declares which color should be considered LZ's opponent.\n"
                        "This changes some custom search functionality.\n")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
@@ -450,37 +450,37 @@ static void parse_commandline(int argc, char *argv[]) {
             cfg_noise ? TimeManagement::NO_PRUNING : TimeManagement::ON;
     }
 
-	/**
-	("opponent", po::value<std::string>()->default_value("none"),
-		"[black|white|none] Declares which color should be considered LZ's opponent.\n"
-		"This changes some custom search functionality.\n")
-	**/
+    /**
+    ("opponent", po::value<std::string>()->default_value("none"),
+        "[black|white|none] Declares which color should be considered LZ's opponent.\n"
+        "This changes some custom search functionality.\n")
+    **/
 
-	if (vm.count("opponent")) {
-		auto opp = vm["opponent"].as<std::string>();
-		if (opp == "black") {
-			cfg_opponent = 0;
-		}
-		else if (opp == "white") {
-			cfg_opponent = 1;
-		}
-		else if (opp == "none") {
-			cfg_opponent = -1; // invalid value
-		}
-		else {
-			printf("Invalid color value.\n");
-			exit(EXIT_FAILURE);
-		}
-	}
+    if (vm.count("opponent")) {
+        auto opp = vm["opponent"].as<std::string>();
+        if (opp == "black") {
+            cfg_opponent = 0;
+        }
+        else if (opp == "white") {
+            cfg_opponent = 1;
+        }
+        else if (opp == "none") {
+            cfg_opponent = -1; // invalid value
+        }
+        else {
+            printf("Invalid color value.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 
-	if (vm.count("setkomi")) {
-		int manual_komi = vm["setkomi"].as<int>();
-		if (manual_komi != cfg_manual_komi) {
-			myprintf("Using komi of %.2fs.\n",
-				(manual_komi / 10.0f));
-			cfg_manual_komi = manual_komi;
-		}
-	}
+    if (vm.count("setkomi")) {
+        int manual_komi = vm["setkomi"].as<int>();
+        if (manual_komi != cfg_manual_komi) {
+            myprintf("Using komi of %.2fs.\n",
+                (manual_komi / 10.0f));
+            cfg_manual_komi = manual_komi;
+        }
+    }
 
     if (vm.count("lagbuffer")) {
         int lagbuffer = vm["lagbuffer"].as<int>();

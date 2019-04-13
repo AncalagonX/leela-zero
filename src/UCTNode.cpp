@@ -77,9 +77,9 @@ UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
 
 bool UCTNode::first_visit() const {
-	if (m_visits == 0) {
-		m_visits_tracked_here = 0;
-	}
+    if (m_visits == 0) {
+        m_visits_tracked_here = 0;
+    }
     return m_visits == 0;
 }
 
@@ -324,37 +324,37 @@ void UCTNode::accumulate_eval(float eval) {
 }
 
 float UCTNode::get_search_width() {
-	return m_search_width;
+    return m_search_width;
 }
 
 void UCTNode::set_search_width(int desired_search_width) {
-	if (desired_search_width == 0) {
-		m_search_width = 1.0f; // If someone asks for a search width of "0", that means default LZ search, so set m_search_width to 1.0
-	} else {
-		m_search_width = (1.0f * pow(0.558f, static_cast<float>(desired_search_width)));
-	}
-	return;
+    if (desired_search_width == 0) {
+        m_search_width = 1.0f; // If someone asks for a search width of "0", that means default LZ search, so set m_search_width to 1.0
+    } else {
+        m_search_width = (1.0f * pow(0.558f, static_cast<float>(desired_search_width)));
+    }
+    return;
 }
 
 void UCTNode::widen_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
-	m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
-	if (m_search_width < 0.003) {
-		m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless.
-	}
-	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
+    m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
+    if (m_search_width < 0.003) {
+        m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless.
+    }
+    visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 void UCTNode::narrow_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
-	m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
-	if (m_search_width > 1.0) {
-		m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
-	}
-	visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
+    m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
+    if (m_search_width > 1.0) {
+        m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
+    }
+    visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
-	//LOCK(get_mutex(), lock);
-	wait_expanded();
+    //LOCK(get_mutex(), lock);
+    wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
     auto total_visited_policy = 0.0f;
@@ -374,27 +374,27 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     // Estimated eval for unknown nodes = original parent NN eval - reduction
     const auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
-	auto best = static_cast<UCTNodePointer*>(nullptr);
+    auto best = static_cast<UCTNodePointer*>(nullptr);
     auto second_best = static_cast<UCTNodePointer*>(nullptr);
-	auto best_value = std::numeric_limits<double>::lowest();
+    auto best_value = std::numeric_limits<double>::lowest();
     auto best_value2 = std::numeric_limits<double>::lowest();
     auto best_value_next = std::numeric_limits<double>::lowest();
-	auto best_winrate = std::numeric_limits<double>::lowest();
+    auto best_winrate = std::numeric_limits<double>::lowest();
     auto best_winrate2 = std::numeric_limits<double>::lowest();
-	auto best_psa = std::numeric_limits<double>::lowest();
-	int most_root_visits_seen_so_far = 1;
+    auto best_psa = std::numeric_limits<double>::lowest();
+    int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int randomX = dis100(gen);
 
-	bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
+    bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
-	
-	
-	if (color_to_move == cfg_opponent) { // This sets which color is considered to be LZ's opponent using the --opponent flag or GTP command.
-							             // BLACK = 0, WHITE = 1
-							             // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
-		is_opponent_move = !is_opponent_move; // This corrects "is_opponent_move" depth detection when it's the opponent's turn to play.
-	}
+    
+    
+    if (color_to_move == cfg_opponent) { // This sets which color is considered to be LZ's opponent using the --opponent flag or GTP command.
+                                         // BLACK = 0, WHITE = 1
+                                         // When opponent's turn to play at any depth in the search tree, then "is_opponent_move" will be set to true.
+        is_opponent_move = !is_opponent_move; // This corrects "is_opponent_move" depth detection when it's the opponent's turn to play.
+    }
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -443,7 +443,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int random_search_count = dis_moves(gen);
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
 
-	// The following short if statement tries to keep LZ from sending too many visits to its favorite move.
+    // The following short if statement tries to keep LZ from sending too many visits to its favorite move.
     if ((random_search_count == 0)
         && (most_root_visits_second_root_visits_ratio >= 2)) {
         
@@ -461,23 +461,23 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             //    continue;
             //}
 
-			if (is_opponent_move && (cfg_opponent != -1)) { // If we set white or black as the opponent, then we will will only conduct wide searches when it's OUR turn to play.
-															// On the opponent's turns, we will conduct unmodified, optimal LZ searches on their turns.
-															// Setting an opponent color while using "multidepth" also prevents wide search on their turns to move at any depth in the search tree.
-				continue;
-			}
-			
-			if (depth > cfg_multidepth_search) {
-				continue;
-			}
+            if (is_opponent_move && (cfg_opponent != -1)) { // If we set white or black as the opponent, then we will will only conduct wide searches when it's OUR turn to play.
+                                                            // On the opponent's turns, we will conduct unmodified, optimal LZ searches on their turns.
+                                                            // Setting an opponent color while using "multidepth" also prevents wide search on their turns to move at any depth in the search tree.
+                continue;
+            }
+            
+            if (depth > cfg_multidepth_search) {
+                continue;
+            }
 
-			if ((depth >= 2) && (dis2(gen) != 1)) { // While multidepth is enabled:
-													//		1) We still force 50% of all "wide search visits" to be spent at root level (depth=0).
-													//		2) If we also have an opponent set and it's their turn to play a move on the board, 50% of "wide search visits" are spent at depth=1 instead of root, since depth=1 is our next move to play.
-													//		3) The remaining 50% of "wide search visits" are spread amongst top LZ move choices at *all* depths allowed by the user's multidepth setting, instead of only at root.
-													// IMPORTANT NOTE: Enabling multidepth WILL cause LZ to generate inaccurate or bogus winrate values, and therefore is limited in its usefulness.
-				continue;
-			}
+            if ((depth >= 2) && (dis2(gen) != 1)) { // While multidepth is enabled:
+                                                    //		1) We still force 50% of all "wide search visits" to be spent at root level (depth=0).
+                                                    //		2) If we also have an opponent set and it's their turn to play a move on the board, 50% of "wide search visits" are spent at depth=1 instead of root, since depth=1 is our next move to play.
+                                                    //		3) The remaining 50% of "wide search visits" are spread amongst top LZ move choices at *all* depths allowed by the user's multidepth setting, instead of only at root.
+                                                    // IMPORTANT NOTE: Enabling multidepth WILL cause LZ to generate inaccurate or bogus winrate values, and therefore is limited in its usefulness.
+                continue;
+            }
 
             auto winrate = fpu_eval;
             if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
@@ -521,8 +521,8 @@ public:
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
         
-		int a_visit = a.get_visits();
-		int b_visit = b.get_visits();
+        int a_visit = a.get_visits();
+        int b_visit = b.get_visits();
 
 
         // Need at least 2 visits for LCB.
