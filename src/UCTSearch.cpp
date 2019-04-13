@@ -231,8 +231,8 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
-	const auto color_to_move = m_rootstate.get_to_move();
-	const auto movenum_now = m_rootstate.get_movenum();
+    const auto color_to_move = m_rootstate.get_to_move();
+    const auto movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -253,8 +253,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
-	auto depth =
-		int(currstate.get_movenum() - m_rootstate.get_movenum());
+    auto depth =
+        int(currstate.get_movenum() - m_rootstate.get_movenum());
 
     if (node->has_children() && !result.valid()) {
         auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
@@ -343,9 +343,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
             && sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
             continue;
         }
-		if (node->get_visits() <= 4) {
-			continue;
-		}
+        if (node->get_visits() <= 4) {
+            continue;
+        }
 
         auto move = state.move_to_text(node->get_move());
         auto tmpstate = FastState{state};
@@ -353,7 +353,7 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         auto rest_of_pv = get_pv(tmpstate, *node);
         auto pv = move + (rest_of_pv.empty() ? "" : " " + rest_of_pv);
         //auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; //Default LZ
-		//auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
+        //auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
         auto move_eval = std::max(0.0f, node->get_eval_lcb(color) * 100.0f); // NEW, Ttl's output, gives LCB in place of winrate
         auto policy = node->get_policy();
         auto lcb = node->get_eval_lcb(color);
@@ -366,10 +366,10 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
                                    move_eval, policy, pv, lcb, lcb_ratio_exceeded); // NEW Original after Ttl patch
         //sortable_data.emplace_back(move, node->get_visits(),
         //                           move_eval, policy, pv); // Old Original
-		//sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
-		// UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
-		//sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
-		//sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
+        //sortable_data.emplace_back(move, node->get_visits(), move_eval, pv); // ORIGINAL displays visits
+        // UPDATE sortable_data.emplace_back(move, node->get_visits(), move_lcb_eval, pv); // NEW, this should show LCB in place of winrate
+        //sortable_data.emplace_back(move, lcb_move_eval_spread, move_eval, pv); // NEW, this should show lcb_move_eval_spread instead of visits
+        //sortable_data.emplace_back(move, visits_div_by_lcb_spread, move_eval, pv); // NEW, this should show (visits / lcb_move_eval_spread) instead of visits
     }
     // Sort array to decide order
     std::stable_sort(rbegin(sortable_data), rend(sortable_data));
