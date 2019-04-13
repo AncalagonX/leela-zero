@@ -376,14 +376,23 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto second_best = static_cast<UCTNodePointer*>(nullptr);
+    auto best_child_lcb = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
     auto best_value2 = std::numeric_limits<double>::lowest();
     auto best_value_next = std::numeric_limits<double>::lowest();
+    auto best_lcb = std::numeric_limits<double>::lowest(); // best LCB seen ever (at root currently)
+    auto best_value_lcb = std::numeric_limits<double>::lowest(); // LCB of best_value move (at root currently)
     auto best_winrate = std::numeric_limits<double>::lowest();
     auto best_winrate2 = std::numeric_limits<double>::lowest();
     auto best_psa = std::numeric_limits<double>::lowest();
+    int best_child_visits = 0;
+    int depth_of_best_child_visits = 0;
+    int best_lcb_child_visits = 0;
+    int depth_of_best_lcb_child_visits = 0;
     int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
+    int most_child_visits_seen_so_far = 2;
+    int depth_of_most_child_visits_seen_so_far = 0;
     int randomX = dis100(gen);
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
@@ -402,6 +411,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         auto winrate = fpu_eval;
+        auto lcb = 0.0f;
         if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
@@ -409,6 +419,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
+            lcb = child.get_eval_lcb(color);
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
@@ -420,6 +431,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         int int_child_visits = static_cast<int>(child.get_visits());
         int int_parent_visits = static_cast<int>(parentvisits);
 
+        if (int_child_visits > most_child_visits_seen_so_far) {
+            most_child_visits_seen_so_far = int_child_visits;
+        }
+
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
@@ -428,8 +443,32 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (value > best_value) {
             best_value = value;
             best_value2 = value;
+            //if (is_root) {
+            best_value_lcb = lcb;
+            best_child_visits = int_child_visits;
+            depth_of_best_child_visits = depth;
+            //}
             best = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
         }
+        //if (is_root && lcb > best_lcb) {
+        if ((lcb > best_lcb)
+        //&& (depth == depth_of_best_child_visits)
+        && (int_child_visits > 2)
+        && (int_child_visits >= (cfg_lcb_min_visit_ratio * best_child_visits))) {
+            best_lcb = lcb;
+            best_lcb_child_visits = int_child_visits;
+            //best_value2 = value; // SAVE FOR LATER FOR WIDE SEARCH LCB, MAYBE.
+            best_child_lcb = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
+        }
+    }
+
+    if ((best_lcb > best_value_lcb)
+    && ((best_lcb_child_visits) < best_child_visits)) {
+    //&& (best_lcb_child_visits > 2)
+    //&& (best_lcb_child_visits >= (cfg_lcb_min_visit_ratio * most_child_visits_seen_so_far))) {
+        assert(best_child_lcb != nullptr);
+        best_child_lcb->inflate();
+        return best_child_lcb->get();
     }
 
 
