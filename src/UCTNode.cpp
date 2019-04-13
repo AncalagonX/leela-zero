@@ -331,21 +331,21 @@ void UCTNode::set_search_width(int desired_search_width) {
     if (desired_search_width == 0) {
         m_search_width = 1.0f; // If someone asks for a search width of "0", that means default LZ search, so set m_search_width to 1.0
     } else {
-        m_search_width = (1.0f * pow(0.558f, static_cast<float>(desired_search_width)));
+        m_search_width = (1.0f * pow(0.553f, static_cast<float>(desired_search_width)));
     }
     return;
 }
 
 void UCTNode::widen_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
-    m_search_width = (0.558 * m_search_width); // Smaller values cause the search to WIDEN
-    if (m_search_width < 0.003) {
-        m_search_width = 0.003; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless.
+    m_search_width = (0.553 * m_search_width); // Smaller values cause the search to WIDEN (old value 0.558)
+    if (m_search_width < 0.00270) {
+        m_search_width = 0.00270; // Numbers smaller than (1 / 362) = 0.00276 are theoretically meaningless.
     }
     visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
 void UCTNode::narrow_search() { // This function is no longer used. UCTNode::set_search_width(desired_search_width) is used instead now.
-    m_search_width = (1.788 * m_search_width); // Larger values cause search to NARROW
+    m_search_width = (1.803 * m_search_width); // Larger values cause search to NARROW (old value 1.788)
     if (m_search_width > 1.0) {
         m_search_width = 1.0; // Numbers larger than 1.0 are meaningless. Clamp to max narrowness of 1.0, which should be identical to traditional LZ search.
     }
@@ -428,7 +428,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (value > best_value) {
             best_value = value;
             best_value2 = value;
-            best = &child;
+            best = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
         }
     }
 
@@ -471,8 +471,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 continue;
             }
 
-            if ((depth >= 2) && (dis2(gen) != 1)) { // While multidepth is enabled:
-                                                    //		1) We still force 50% of all "wide search visits" to be spent at root level (depth=0).
+            if ((depth >= 2) && (dis4(gen) == 4)) { // While multidepth is enabled:
+                                                    //		1) We still force 25% of all "wide search visits" to be spent at root level (depth=0).
                                                     //		2) If we also have an opponent set and it's their turn to play a move on the board, 50% of "wide search visits" are spent at depth=1 instead of root, since depth=1 is our next move to play.
                                                     //		3) The remaining 50% of "wide search visits" are spread amongst top LZ move choices at *all* depths allowed by the user's multidepth setting, instead of only at root.
                                                     // IMPORTANT NOTE: Enabling multidepth WILL cause LZ to generate inaccurate or bogus winrate values, and therefore is limited in its usefulness.
