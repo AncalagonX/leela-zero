@@ -692,7 +692,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             {
                 game.set_to_move(who);
                 
-                if (game.get_handicap() >= 2) {
+                if (game.get_handicap() >= 10) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
@@ -700,7 +700,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                     return;
                 }
 
-                if (game.get_komi() >= 7.1f || game.get_komi() <= 6.9f) {
+                if (game.get_komi() >= 7.6f || game.get_komi() <= -0.4f) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
@@ -778,13 +778,15 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
-                int move = search->think(who);
+                int move;
                 // Check if we've already played the configured number of non-pass moves.
                 // If not, play another non-pass move if possible.
                 // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
                 if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
                     kgs_cleanup_counter++;
                     move = search->think(who, UCTSearch::NOPASS);
+                } else {
+                    move = search->think(who);
                 }
                 game.play_move(move);
 

@@ -114,8 +114,8 @@ static constexpr auto KOMI = 7.5f;
 
 //static constexpr auto PROGRAM_NAME = "Leela Zero";
 //static constexpr auto PROGRAM_VERSION = "0.16";
-static constexpr auto PROGRAM_NAME = ". --- Note: No handicap allowed. Komi MUST be 7.0 exactly! --- TieBot-";
-static constexpr auto PROGRAM_VERSION = " version 713G4M3.6 - I always try to force our game to a perfect jigo.";
+static constexpr auto PROGRAM_NAME = "...";
+static constexpr auto PROGRAM_VERSION = "My job is to try to win the game.";
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes
