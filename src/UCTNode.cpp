@@ -386,9 +386,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     auto best_winrate2 = std::numeric_limits<double>::lowest();
     auto best_psa = std::numeric_limits<double>::lowest();
     int best_child_visits = 0;
-    int depth_of_best_child_visits = 0;
+    int depth_of_best_child_visits = -1; // Set to -1 as an invalid value by default
     int best_lcb_child_visits = 0;
-    int depth_of_best_lcb_child_visits = 0;
+    int depth_of_best_lcb_child_visits = -1; // Set to -1 as an invalid value by default
     int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
     int most_child_visits_seen_so_far = 2;
@@ -443,22 +443,22 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (value > best_value) {
             best_value = value;
             best_value2 = value;
-            //if (is_root) {
-            best_value_lcb = lcb;
-            best_child_visits = int_child_visits;
-            depth_of_best_child_visits = depth;
-            //}
+            if (is_root) {
+                best_value_lcb = lcb;
+                best_child_visits = int_child_visits;
+                depth_of_best_child_visits = depth;
+            }
             best = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
         }
-        //if (is_root && lcb > best_lcb) {
-        if ((lcb > best_lcb)
+        if ((is_root && lcb > best_lcb)
+        //if ((lcb > best_lcb)
         //&& (depth == depth_of_best_child_visits)
         && (int_child_visits > 2)
         && (int_child_visits >= (cfg_lcb_min_visit_ratio * best_child_visits))) {
             best_lcb = lcb;
             best_lcb_child_visits = int_child_visits;
             //best_value2 = value; // SAVE FOR LATER FOR WIDE SEARCH LCB, MAYBE.
-            best_child_lcb = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
+            best_child_lcb = &child;
         }
     }
 
