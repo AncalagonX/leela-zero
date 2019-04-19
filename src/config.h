@@ -114,8 +114,8 @@ static constexpr auto KOMI = 7.5f;
 
 //static constexpr auto PROGRAM_NAME = "Leela Zero";
 //static constexpr auto PROGRAM_VERSION = "0.16";
-static constexpr auto PROGRAM_NAME = "-v7. --- Note: No handicap allowed. Komi MUST be 7.0 exactly! --";
-static constexpr auto PROGRAM_VERSION = "- I will keep our game score perfectly tied on every move. Don't worry if you make a mistake. --- Tip: Capture all dead stones BEFORE you pass to make scoring go faster. Have fun!";
+static constexpr auto PROGRAM_NAME = "-v7. --- Note: No handicap allowed. Komi MUST be 7.5 exactly! --";
+static constexpr auto PROGRAM_VERSION = "- I will try win the game, while passing as much as possible. --- DO NOT PASS until the game is finished. Take every advantage you can get when the bot passes.";
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes
