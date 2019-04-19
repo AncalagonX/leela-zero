@@ -700,7 +700,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                     return;
                 }
 
-                if (game.get_komi() >= 7.6f || game.get_komi() <= 6.9f) {
+                if (game.get_komi() >= 7.1f || game.get_komi() <= 6.9f) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
