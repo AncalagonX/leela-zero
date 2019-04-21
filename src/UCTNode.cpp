@@ -509,7 +509,21 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
-        /**
+        if (!is_opponent_move
+            && (is_root)
+            && (child.get_move() == -1)
+            && (int_child_visits <= (100 + static_cast<int>(0.05f * most_root_visits_seen_so_far)))) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            best = &child;
+            assert(best != nullptr);
+            best->inflate();
+            return best->get();
+        }
+
+
+
         
 
         if (!is_opponent_move
@@ -525,12 +539,25 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
-        **/
-
         if (!is_opponent_move
         && (is_root)
         && (child.get_move() == -1)) {
         //&& (int_child_visits >= 400)) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            if (winrate >= winrate_target_value) {
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+        }
+
+        if (!is_opponent_move
+            && (depth == 1)
+            && (child.get_move() == -1)
+            && (int_child_visits <= (1 + static_cast<int>(0.15f * int_m_visits)))) {
             if (value > best_value) {
                 best_value = value;
             }
