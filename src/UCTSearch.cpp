@@ -246,7 +246,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         int(currstate.get_movenum() - m_rootstate.get_movenum());
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, is_pondering_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -284,6 +284,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
         if (++movecount > 2 && !node->get_visits()) break;
+        if (node->get_visits() < 10) break;
 
         auto move = state.move_to_text(node->get_move());
         auto tmpstate = FastState{state};
