@@ -452,7 +452,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
-        const auto puct = cfg_puct * psa * (numerator / denom);
+        auto puct = cfg_puct * psa * (numerator / denom);
 
         int int_m_visits = static_cast<int>(m_visits);
         int int_child_visits = static_cast<int>(child.get_visits());
@@ -460,9 +460,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         auto value = winrate + puct;
 
+        /**
+
         if (!is_opponent_move && (winrate >= winrate_target_value)) {
             value = (1 - abs(winrate_target_value - winrate)) + puct;
         }
+
+        **/
 
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -470,6 +474,64 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
         }
+
+        if ((get_move() == -1
+        && (child.get_move() == -1)
+        && (movenum_now <= 150))) {
+            continue;
+        }
+
+        
+        /**
+        if (!is_opponent_move
+            && (child.get_move() == -1)
+            && (int_child_visits == 0)) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            best = &child;
+            assert(best != nullptr);
+            best->inflate();
+            return best->get();
+        }
+        **/
+        
+
+        if (!is_opponent_move
+        && is_root
+        && (child.get_move() == -1)
+        && (int_child_visits <= 400)) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            best = &child;
+            assert(best != nullptr);
+            best->inflate();
+            return best->get();
+        }
+
+        if (!is_opponent_move
+            && is_root
+            && (child.get_move() == -1)) {
+            //&& (int_child_visits >= 400)) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            if (winrate >= winrate_target_value) {
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+        }
+
+        /*****************
+        ******* COPIED FROM VERTEX BRANCH CODE
+        if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+            value = (puct)+((winrate + puct) * ((get_move() == vertex_to_search_for_4a) / (depth + 1)));
+        }
+
+        *****************/
 
         if (value > best_value) {
             if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 100)) {
@@ -532,13 +594,19 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto puct = cfg_puct * psa * (numerator / denom);
             auto value = winrate + puct;
 
+            /**
+
             if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.25 * winrate_target_value))) {
                 continue;
             }
 
+            
+
             if (!is_opponent_move) {
                 value = (1 - abs(winrate_target_value - winrate)) + puct;
             }
+
+            **/
 
             assert(value > std::numeric_limits<double>::lowest());
 
@@ -581,9 +649,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto puct = cfg_puct * psa * (numerator / denom);
             auto value = winrate + puct;
 
+            /**
+
             if (!is_opponent_move) {
                 value = (1 - abs(winrate_target_value - winrate)) + puct;
             }
+            **/
 
             assert(value > std::numeric_limits<double>::lowest());
 

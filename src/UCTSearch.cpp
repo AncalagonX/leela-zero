@@ -513,7 +513,7 @@ int UCTSearch::get_best_move(passflag_t passflag) {
             // removal, kgs-genmove_cleanup and the NOPASS mode must be used.
 
             // Do we lose by passing?
-            if (relative_score < 0.0f) {
+            if (relative_score < 0.5f) {
                 myprintf("Passing loses :-(\n");
                 // Find a valid non-pass move.
                 UCTNode * nopass = m_root->get_nopass_child(m_rootstate);
