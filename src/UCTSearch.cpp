@@ -246,7 +246,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         int(currstate.get_movenum() - m_rootstate.get_movenum());
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, is_pondering_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -480,11 +480,11 @@ int UCTSearch::get_best_move(passflag_t passflag) {
 
             if (nopass != nullptr) {
                 myprintf("Preferring not to pass.\n");
-                bestmove = nopass->get_move();
+                //bestmove = nopass->get_move();
                 if (nopass->first_visit()) {
-                    besteval = 1.0f;
+                    //besteval = 1.0f;
                 } else {
-                    besteval = nopass->get_raw_eval(color);
+                    //besteval = nopass->get_raw_eval(color);
                 }
             } else {
                 myprintf("Pass is the only acceptable move.\n");
@@ -519,11 +519,11 @@ int UCTSearch::get_best_move(passflag_t passflag) {
                 UCTNode * nopass = m_root->get_nopass_child(m_rootstate);
                 if (nopass != nullptr) {
                     myprintf("Avoiding pass because it loses.\n");
-                    bestmove = nopass->get_move();
+                    //bestmove = nopass->get_move();
                     if (nopass->first_visit()) {
-                        besteval = 1.0f;
+                        //besteval = 1.0f;
                     } else {
-                        besteval = nopass->get_raw_eval(color);
+                        //besteval = nopass->get_raw_eval(color);
                     }
                 } else {
                     myprintf("No alternative to passing.\n");

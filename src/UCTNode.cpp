@@ -373,7 +373,7 @@ void UCTNode::narrow_search() {
     visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth, bool is_pondering_now) {
     //LOCK(get_mutex(), lock);
     wait_expanded();
 
@@ -495,10 +495,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
         **/
-        
 
         if (!is_opponent_move
-        && is_root
+        && (is_root)
         && (child.get_move() == -1)
         && (int_child_visits <= 400)) {
             if (value > best_value) {
@@ -509,11 +508,25 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best->inflate();
             return best->get();
         }
+        
 
         if (!is_opponent_move
-            && is_root
-            && (child.get_move() == -1)) {
-            //&& (int_child_visits >= 400)) {
+        && (depth == 1)
+        && (child.get_move() == -1)
+        && (int_child_visits <= 100)) {
+            if (value > best_value) {
+                best_value = value;
+            }
+            best = &child;
+            assert(best != nullptr);
+            best->inflate();
+            return best->get();
+        }
+
+        if (!is_opponent_move
+        && (depth <= 1)
+        && (child.get_move() == -1)) {
+        //&& (int_child_visits >= 400)) {
             if (value > best_value) {
                 best_value = value;
             }
