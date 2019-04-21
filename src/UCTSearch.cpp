@@ -284,6 +284,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
         if (++movecount > 2 && !node->get_visits()) break;
+        if (node->get_visits() < 10) break;
 
         auto move = state.move_to_text(node->get_move());
         auto tmpstate = FastState{state};
