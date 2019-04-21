@@ -499,7 +499,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (!is_opponent_move
         && (is_root)
         && (child.get_move() == -1)
-        && (int_child_visits <= 400)) {
+        && (int_child_visits <= 100)) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -508,12 +508,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best->inflate();
             return best->get();
         }
+
+        /**
         
 
         if (!is_opponent_move
         && (depth == 1)
         && (child.get_move() == -1)
-        && (int_child_visits <= 10)) {
+        && (int_child_visits <= 1)) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -523,8 +525,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
+        **/
+
         if (!is_opponent_move
-        && (depth <= 1)
+        && (is_root)
         && (child.get_move() == -1)) {
         //&& (int_child_visits >= 400)) {
             if (value > best_value) {
@@ -583,7 +587,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     
     //while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false)) { // Wide search loop for Tiebot's turn.
-    while ((moves_searched < random_search_count) && (randomX_100 <= 10)) { // Wide search loop for Tiebot's turn.
+    while ((moves_searched < random_search_count) && (randomX_100 <= 5)) { // Wide search loop for Tiebot's turn.
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;

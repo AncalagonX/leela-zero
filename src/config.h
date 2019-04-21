@@ -114,7 +114,7 @@ static constexpr auto KOMI = 7.5f;
 
 //static constexpr auto PROGRAM_NAME = "Leela Zero";
 //static constexpr auto PROGRAM_VERSION = "0.16";
-static constexpr auto PROGRAM_NAME = "-v8. --- Note: Free games only. Komi MUST be 7.0 or 7.5 exactly! --";
+static constexpr auto PROGRAM_NAME = "-v9. --- Note: Free games only. Komi MUST be 7.0 or 7.5 exactly! --";
 static constexpr auto PROGRAM_VERSION = "- I will pass whenever it is needed to make the score even. --- DO NOT PASS until the game is finished, unless you wish to end the game early. Play your best! :)";
 
 /*
