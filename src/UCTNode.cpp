@@ -512,7 +512,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (!is_opponent_move
             && (is_root)
             && (child.get_move() == -1)
-            && (int_child_visits <= (100 + static_cast<int>(0.05f * most_root_visits_seen_so_far)))) {
+            && (int_child_visits <= (100 + (100 * static_cast<int>(0.01 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -540,7 +540,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         if (!is_opponent_move
-        && (is_root)
+        && (depth <= 1)
         && (child.get_move() == -1)) {
         //&& (int_child_visits >= 400)) {
             if (value > best_value) {
@@ -597,7 +597,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     //int random_search_count = dis_moves(gen);
     int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
-    if (!is_opponent_move) {
+    if (is_pondering_now) {
         random_search_count = 1; // Searches top 3-4 moves when pondering on opponent's turn.
     }
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
