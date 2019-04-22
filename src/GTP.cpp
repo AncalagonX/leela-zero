@@ -414,10 +414,11 @@ const std::string GTP::s_commands[] = {
     "fixed_handicap",
     "last_move",
     "move_history",
-    "place_free_handicap",
-    "set_free_handicap",
+    //"place_free_handicap",
+    //"set_free_handicap",
     "loadsgf",
     "printsgf",
+    //"kgs-chat",
     "kgs-genmove_cleanup",
     "kgs-time_settings",
     "kgs-game_over",
@@ -1059,6 +1060,9 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("kgs-chat") == 0) {
+
+        /***************
+
         // kgs-chat (game|private) Name Message
         std::istringstream cmdstream(command);
         std::string tmp;
@@ -1072,6 +1076,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
         return;
+
+        ***************/
+
+        chat_kgs(game, id, command);
+        return;
+
     } else if (command.find("kgs-game_over") == 0) {
         // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
         kgs_cleanup_counter = 0;
@@ -1480,5 +1490,54 @@ void GTP::execute_setoption(UCTSearch & search,
     } else {
         gtp_fail_printf(id, "Unknown option");
     }
+    return;
+}
+
+void GTP::chat_kgs(GameState & game, int id, std::string command)
+{
+    // kgs-chat (game|private) Name Message
+    std::istringstream cmdstream(command);
+    std::string tmp;
+
+    cmdstream >> tmp; // eat kgs-chat
+    cmdstream >> tmp; // eat game|private
+    if (tmp == "private")
+    {
+        cmdstream >> tmp; // eat player name
+        cmdstream >> tmp; // eat message
+        if (tmp == "wr")
+        {
+            std::string outkgschat = "I would have played something else.";
+            gtp_printf(id, outkgschat.c_str());
+            gtp_printf(id, "end answer from lz");
+            do {
+                cmdstream >> tmp; // eat message
+            } while (!cmdstream.fail());
+            return;
+        }
+
+    }
+    if (tmp == "game")
+    {
+        cmdstream >> tmp; // eat player name
+        cmdstream >> tmp; // eat message
+        if (tmp == "wr")
+        {
+            std::string outkgschat = "I would have played something else.";
+            gtp_printf(id, outkgschat.c_str());
+            gtp_printf(id, "end answer from lz");
+            do {
+                cmdstream >> tmp; // eat message
+            } while (!cmdstream.fail());
+            return;
+        }
+
+    }
+    do {
+        cmdstream >> tmp; // eat message
+    } while (!cmdstream.fail());
+
+    gtp_printf(id, "Unknown command, i know only 'wr' (=winrate) and 'bm' (=list of bad moves (value, better move)) ");
+    gtp_printf(id, "end answer from lz");
     return;
 }

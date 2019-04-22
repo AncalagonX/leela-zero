@@ -145,6 +145,7 @@ public:
     static std::unique_ptr<Network> s_network;
     static void initialize(std::unique_ptr<Network>&& network);
     static void execute(GameState & game, const std::string& xinput);
+    static void chat_kgs(GameState & game, int id, std::string command);
     static void setup_default_parameters();
 private:
     static constexpr int GTP_VERSION = 2;
