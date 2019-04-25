@@ -490,9 +490,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     std::uniform_int_distribution<> dis_moves(0, number_of_moves_to_search);
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     //int random_search_count = dis_moves(gen);
-    int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
+    int random_search_count = 1; // Searches top 1-2 moves on Tiebot's turn.
     if (!is_opponent_move && is_pondering_now) {
-        random_search_count = 1; // Searches top 3-4 moves when pondering on opponent's turn.
+        random_search_count = 0; // Searches top 3-4 moves when pondering on opponent's turn.
     }
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
     int randomX_100 = dis100(gen);
@@ -508,7 +508,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     
     //while ((moves_searched < random_search_count) && (randomX_100 <= 25) && (is_pondering_now == false)) { // Wide search loop for Tiebot's turn.
-    while ((moves_searched < random_search_count) && (randomX_100 <= 10)) { // Wide search loop for Tiebot's turn.
+    while ((moves_searched < random_search_count) && (randomX_100 <= 5)) { // Wide search loop for Tiebot's turn.
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
@@ -532,7 +532,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             const auto puct = cfg_puct * psa * (numerator / denom);
             auto value = winrate + puct;
 
-            if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.25 * winrate_target_value))) {
+            if (!is_opponent_move && (winrate >= 0.01) && (winrate >= (1.05 * winrate_target_value))) {
                 continue;
             }
 
