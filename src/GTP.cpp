@@ -99,6 +99,7 @@ float cfg_max_komi;
 float cfg_min_komi;
 std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
+float cfg_ponder_factor;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -374,6 +375,7 @@ void GTP::setup_default_parameters() {
     cfg_min_komi = -999.0f;
     cfg_custom_engine_name = "";
     cfg_custom_engine_version = "";
+    cfg_ponder_factor = 1.0f;
 
 
 #ifdef USE_CPU_ONLY

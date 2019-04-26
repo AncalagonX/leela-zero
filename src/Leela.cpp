@@ -209,6 +209,8 @@ static void parse_commandline(int argc, char *argv[]) {
             "Resign immediately if komi is lower than this.")
         ("enginename", po::value<std::string>()->default_value(cfg_custom_engine_name), "Custom engine name.")
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
+        ("ponderfactor", po::value<float>()->default_value(cfg_ponder_factor),
+            "Multiplies visit/playout limit during pondering by this amount.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -347,6 +349,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("engineversion")) {
         cfg_custom_engine_version = vm["engineversion"].as<std::string>();
+    }
+
+    if (vm.count("ponderfactor")) {
+        cfg_ponder_factor = vm["ponderfactor"].as<float>();
+        if (cfg_ponder_factor <= 0) {
+            cfg_ponder_factor = 1.0f;
+            cfg_allow_pondering = false;
+        }
     }
 
 
