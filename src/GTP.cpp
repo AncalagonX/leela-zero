@@ -828,7 +828,6 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         game.display_state();
         return;
     } else if (command.find("final_score") == 0) {
-        kgs_cleanup_counter = 0; // Reset if both players go to scoring
         float ftmp = game.final_score();
         /* white wins */
         if (ftmp < -0.1) {
@@ -840,6 +839,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         }
         return;
     } else if (command.find("final_status_list") == 0) {
+        kgs_cleanup_counter = 0; // Reset if both players go to scoring
         if (command.find("alive") != std::string::npos) {
             std::string livelist = get_life_list(game, true);
             gtp_printf(id, livelist.c_str());
