@@ -207,6 +207,8 @@ static void parse_commandline(int argc, char *argv[]) {
             "Resign immediately if komi is higher than this.")
         ("minkomi", po::value<float>()->default_value(cfg_min_komi),
             "Resign immediately if komi is lower than this.")
+        ("enginename", po::value<std::string>()->default_value(cfg_custom_engine_name), "Custom engine name.")
+        ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -337,6 +339,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("minkomi")) {
         cfg_min_komi = vm["minkomi"].as<float>();
+    }
+
+    if (vm.count("enginename")) {
+        cfg_custom_engine_name = vm["enginename"].as<std::string>();
+    }
+
+    if (vm.count("engineversion")) {
+        cfg_custom_engine_version = vm["engineversion"].as<std::string>();
     }
 
 

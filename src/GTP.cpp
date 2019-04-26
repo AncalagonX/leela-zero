@@ -97,6 +97,8 @@ std::string cfg_sentinel_file;
 int cfg_max_handicap;
 float cfg_max_komi;
 float cfg_min_komi;
+std::string cfg_custom_engine_name;
+std::string cfg_custom_engine_version;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -370,6 +372,8 @@ void GTP::setup_default_parameters() {
     cfg_max_handicap = 999;
     cfg_max_komi = 999.0f;
     cfg_min_komi = -999.0f;
+    cfg_custom_engine_name = "";
+    cfg_custom_engine_version = "";
 
 
 #ifdef USE_CPU_ONLY
@@ -533,10 +537,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "%d", GTP_VERSION);
         return;
     } else if (command == "name") {
-        gtp_printf(id, PROGRAM_NAME);
+        //gtp_printf(id, PROGRAM_NAME);
+        gtp_printf(id, cfg_custom_engine_name.c_str());
         return;
     } else if (command == "version") {
-        gtp_printf(id, PROGRAM_VERSION);
+        //gtp_printf(id, PROGRAM_VERSION);
+        gtp_printf(id, cfg_custom_engine_version.c_str());
         return;
     } else if (command == "quit") {
         gtp_printf(id, "");
