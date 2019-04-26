@@ -118,6 +118,9 @@ extern float cfg_ci_alpha;
 extern float cfg_lcb_min_visit_ratio;
 extern std::string cfg_logfile;
 extern std::string cfg_weightsfile;
+
+extern std::string cfg_sentinel_file;
+
 extern FILE* cfg_logfile_handle;
 extern bool cfg_quiet;
 extern std::string cfg_options_str;

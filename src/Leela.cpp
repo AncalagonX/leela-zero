@@ -195,6 +195,11 @@ static void parse_commandline(int argc, char *argv[]) {
             po::value<float>()->default_value(cfg_random_temp),
             "Temperature to use for random move selection.")
         ;
+
+    po::options_description bot_commands_desc("Bot options");
+    bot_commands_desc.add_options()
+        ("sentinel", po::value<std::string>()->default_value(cfg_sentinel_file), "LZ will exit if this file exists.")
+        ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
     tuner_desc.add_options()
@@ -222,6 +227,7 @@ static void parse_commandline(int argc, char *argv[]) {
        .add(gpu_desc)
 #endif
        .add(selfplay_desc)
+       .add(bot_commands_desc)
 #ifdef USE_TUNER
        .add(tuner_desc);
 #else
@@ -304,6 +310,11 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("gtp")) {
         cfg_gtp_mode = true;
+    }
+
+    if (vm.count("sentinel")) {
+        cfg_sentinel_file = vm["sentinel"].as<std::string>();
+        myprintf("Leela Zero will exit if sentinel file detected: %s.\n", cfg_sentinel_file.c_str());
     }
 
 #ifdef USE_OPENCL
