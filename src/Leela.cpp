@@ -213,6 +213,8 @@ static void parse_commandline(int argc, char *argv[]) {
             "Multiplies visit/playout limit during pondering by this amount.")
         ("minoutputvisits", po::value<int>()->default_value(cfg_min_output_visits),
             "Only output GTP stats for moves that received this many visits.")
+        ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
+            "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -363,6 +365,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("minoutputvisits")) {
         cfg_min_output_visits = vm["minoutputvisits"].as<int>();
+    }
+
+    if (vm.count("kgscleanupmoves")) {
+        cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
     }
 
 

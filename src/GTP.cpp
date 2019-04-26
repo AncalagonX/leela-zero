@@ -101,6 +101,8 @@ std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
 float cfg_ponder_factor;
 int cfg_min_output_visits;
+int cfg_kgs_cleanup_moves;
+int kgs_cleanup_counter;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -378,6 +380,8 @@ void GTP::setup_default_parameters() {
     cfg_custom_engine_version = "";
     cfg_ponder_factor = 1.0f;
     cfg_min_output_visits = 1;
+    cfg_kgs_cleanup_moves = 5;
+    kgs_cleanup_counter = 0;
 
 
 #ifdef USE_CPU_ONLY
@@ -620,6 +624,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
         assert(UCTNodePointer::get_tree_size() == 0);
+        kgs_cleanup_counter = 0; // Reset on new game
         gtp_printf(id, "");
         return;
     } else if (command.find("komi") == 0) {
@@ -785,8 +790,17 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             }
             game.set_passes(0);
             {
-                game.set_to_move(who);
-                int move = search->think(who, UCTSearch::NOPASS);
+                int move;
+                // Check if we've already played the configured number of non-pass moves.
+                // If not, play another non-pass move if possible.
+                // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
+                if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
+                    kgs_cleanup_counter++;
+                    move = search->think(who, UCTSearch::NOPASS);
+                }
+                else {
+                    move = search->think(who);
+                }
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
@@ -814,6 +828,7 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         game.display_state();
         return;
     } else if (command.find("final_score") == 0) {
+        kgs_cleanup_counter = 0; // Reset if both players go to scoring
         float ftmp = game.final_score();
         /* white wins */
         if (ftmp < -0.1) {
@@ -1068,7 +1083,8 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
         return;
     } else if (command.find("kgs-game_over") == 0) {
-        // Do nothing. Particularly, don't ponder.
+        // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
+        kgs_cleanup_counter = 0;
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);

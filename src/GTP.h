@@ -127,6 +127,8 @@ extern std::string cfg_custom_engine_name;
 extern std::string cfg_custom_engine_version;
 extern float cfg_ponder_factor;
 extern int cfg_min_output_visits;
+extern int cfg_kgs_cleanup_moves;
+extern int kgs_cleanup_counter;
 
 extern FILE* cfg_logfile_handle;
 extern bool cfg_quiet;
