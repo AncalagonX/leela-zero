@@ -296,6 +296,7 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
         if (++movecount > 2 && !node->get_visits()) break;
+        if (node->get_visits() < cfg_min_output_visits) break;
 
         auto move = state.move_to_text(node->get_move());
         auto tmpstate = FastState{state};
@@ -333,6 +334,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         // requested explicitly.
         if (!node->get_visits()
             && sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
+            continue;
+        }
+        if (node->get_visits() < cfg_min_output_visits) {
             continue;
         }
         auto move = state.move_to_text(node->get_move());

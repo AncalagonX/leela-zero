@@ -211,6 +211,8 @@ static void parse_commandline(int argc, char *argv[]) {
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ("ponderfactor", po::value<float>()->default_value(cfg_ponder_factor),
             "Multiplies visit/playout limit during pondering by this amount.")
+        ("minoutputvisits", po::value<int>()->default_value(cfg_min_output_visits),
+            "Only output GTP stats for moves that received this many visits.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -357,6 +359,10 @@ static void parse_commandline(int argc, char *argv[]) {
             cfg_ponder_factor = 1.0f;
             cfg_allow_pondering = false;
         }
+    }
+
+    if (vm.count("minoutputvisits")) {
+        cfg_min_output_visits = vm["minoutputvisits"].as<int>();
     }
 
 

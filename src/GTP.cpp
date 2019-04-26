@@ -100,6 +100,7 @@ float cfg_min_komi;
 std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
 float cfg_ponder_factor;
+int cfg_min_output_visits;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -376,6 +377,7 @@ void GTP::setup_default_parameters() {
     cfg_custom_engine_name = "";
     cfg_custom_engine_version = "";
     cfg_ponder_factor = 1.0f;
+    cfg_min_output_visits = 1;
 
 
 #ifdef USE_CPU_ONLY
