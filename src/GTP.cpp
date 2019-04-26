@@ -42,6 +42,7 @@
 #include <string>
 #include <vector>
 #include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include "GTP.h"
 #include "FastBoard.h"
@@ -97,6 +98,10 @@ float cfg_softmax_temp;
 float cfg_fpu_reduction;
 float cfg_fpu_root_reduction;
 float cfg_ci_alpha;
+float cfg_lcb_min_visit_ratio;
+
+std::string cfg_sentinel_file;
+
 std::string cfg_weightsfile;
 std::string cfg_logfile;
 FILE* cfg_logfile_handle;
@@ -371,6 +376,9 @@ void GTP::setup_default_parameters() {
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
+
+    cfg_sentinel_file = "sentinel.quit";
+
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
 #else
@@ -566,6 +574,10 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, outtmp.c_str());
         return;
     } else if (command.find("boardsize") == 0) {
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         std::istringstream cmdstream(command);
         std::string stmp;
         int tmp;
@@ -589,6 +601,10 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
         return;
     } else if (command.find("clear_board") == 0) {
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         Training::clear_training();
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
@@ -1075,6 +1091,10 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("kgs-game_over") == 0) {
         // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
         kgs_cleanup_counter = 0;
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         gtp_printf(id, "");
         return;
     } else if (command.find("kgs-time_settings") == 0) {
