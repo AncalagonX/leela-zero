@@ -203,6 +203,10 @@ static void parse_commandline(int argc, char *argv[]) {
             po::value<int>()->default_value(cfg_max_handicap),
             "Resign immediately if higher handicap is detected.\n"
             "If set to 0, KGS will change all handicap challenge requests to 0 handicap.")
+        ("maxkomi", po::value<float>()->default_value(cfg_max_komi),
+            "Resign immediately if komi is higher than this.")
+        ("minkomi", po::value<float>()->default_value(cfg_min_komi),
+            "Resign immediately if komi is lower than this.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -325,6 +329,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("maxhandicap")) {
         cfg_max_handicap = vm["maxhandicap"].as<int>();
+    }
+
+    if (vm.count("maxkomi")) {
+        cfg_max_komi = vm["maxkomi"].as<float>();
+    }
+
+    if (vm.count("minkomi")) {
+        cfg_min_komi = vm["minkomi"].as<float>();
     }
 
 

@@ -121,6 +121,8 @@ extern std::string cfg_weightsfile;
 
 extern std::string cfg_sentinel_file;
 extern int cfg_max_handicap;
+extern float cfg_max_komi;
+extern float cfg_min_komi;
 
 extern FILE* cfg_logfile_handle;
 extern bool cfg_quiet;

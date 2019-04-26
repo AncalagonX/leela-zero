@@ -95,6 +95,8 @@ float cfg_lcb_min_visit_ratio;
 
 std::string cfg_sentinel_file;
 int cfg_max_handicap;
+float cfg_max_komi;
+float cfg_min_komi;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -366,6 +368,9 @@ void GTP::setup_default_parameters() {
 
     cfg_sentinel_file = "sentinel.quit";
     cfg_max_handicap = 999;
+    cfg_max_komi = 999.0f;
+    cfg_min_komi = -999.0f;
+
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -687,6 +692,14 @@ void GTP::execute(GameState & game, const std::string& xinput) {
             game.set_to_move(who);
 
             if (game.get_handicap() > cfg_max_handicap) {
+                int move = FastBoard::RESIGN;
+                game.play_move(move);
+                std::string vertex = game.move_to_text(move);
+                gtp_printf(id, "%s", vertex.c_str());
+                return;
+            }
+
+            if (game.get_komi() > cfg_max_komi || game.get_komi() < cfg_min_komi) {
                 int move = FastBoard::RESIGN;
                 game.play_move(move);
                 std::string vertex = game.move_to_text(move);
