@@ -199,6 +199,10 @@ static void parse_commandline(int argc, char *argv[]) {
     po::options_description bot_commands_desc("Bot options");
     bot_commands_desc.add_options()
         ("sentinel", po::value<std::string>()->default_value(cfg_sentinel_file), "LZ will exit if this file exists.")
+        ("maxhandicap",
+            po::value<int>()->default_value(cfg_max_handicap),
+            "Resign immediately if higher handicap is detected.\n"
+            "If set to 0, KGS will change all handicap challenge requests to 0 handicap.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -312,10 +316,18 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_gtp_mode = true;
     }
 
+
+
     if (vm.count("sentinel")) {
         cfg_sentinel_file = vm["sentinel"].as<std::string>();
         myprintf("Leela Zero will exit if sentinel file detected: %s.\n", cfg_sentinel_file.c_str());
     }
+
+    if (vm.count("maxhandicap")) {
+        cfg_max_handicap = vm["maxhandicap"].as<int>();
+    }
+
+
 
 #ifdef USE_OPENCL
     if (vm.count("gpu")) {

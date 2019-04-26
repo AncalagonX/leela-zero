@@ -94,6 +94,7 @@ float cfg_ci_alpha;
 float cfg_lcb_min_visit_ratio;
 
 std::string cfg_sentinel_file;
+int cfg_max_handicap;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -364,6 +365,7 @@ void GTP::setup_default_parameters() {
     cfg_benchmark = false;
 
     cfg_sentinel_file = "sentinel.quit";
+    cfg_max_handicap = 999;
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -542,6 +544,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         cmdstream >> tmp;
 
         for (int i = 0; s_commands[i].size() > 0; i++) {
+            if (cfg_max_handicap == 0) {
+                if (tmp == "place_free_handicap" || tmp == "set_free_handicap") {
+                    gtp_printf(id, "false");
+                    return;
+                }
+            }
             if (tmp == s_commands[i]) {
                 gtp_printf(id, "true");
                 return;
@@ -553,6 +561,11 @@ void GTP::execute(GameState & game, const std::string& xinput) {
     } else if (command.find("list_commands") == 0) {
         std::string outtmp(s_commands[0]);
         for (int i = 1; s_commands[i].size() > 0; i++) {
+            if (cfg_max_handicap == 0) {
+                if (s_commands[i] == "place_free_handicap" || s_commands[i] == "set_free_handicap") {
+                    continue;
+                }
+            }
             outtmp = outtmp + "\n" + s_commands[i];
         }
         gtp_printf(id, outtmp.c_str());
@@ -672,6 +685,15 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         // start thinking
         {
             game.set_to_move(who);
+
+            if (game.get_handicap() > cfg_max_handicap) {
+                int move = FastBoard::RESIGN;
+                game.play_move(move);
+                std::string vertex = game.move_to_text(move);
+                gtp_printf(id, "%s", vertex.c_str());
+                return;
+            }
+
             // Outputs winrate and pvs for lz-genmove_analyze
             int move = search->think(who);
             game.play_move(move);

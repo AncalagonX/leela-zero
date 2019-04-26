@@ -120,6 +120,7 @@ extern std::string cfg_logfile;
 extern std::string cfg_weightsfile;
 
 extern std::string cfg_sentinel_file;
+extern int cfg_max_handicap;
 
 extern FILE* cfg_logfile_handle;
 extern bool cfg_quiet;
