@@ -81,6 +81,9 @@ int kgs_cleanup_counter;
 float cfg_random_temp;
 int cfg_winrate_target;
 int cfg_opponent_color;
+std::string cfg_custom_engine_name;
+std::string cfg_custom_engine_version;
+
 std::uint64_t cfg_rng_seed;
 bool cfg_dumbpass;
 #ifdef USE_OPENCL
@@ -378,6 +381,8 @@ void GTP::setup_default_parameters() {
     cfg_benchmark = false;
 
     cfg_sentinel_file = "sentinel.quit";
+    cfg_custom_engine_name = "";
+    cfg_custom_engine_version = "";
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -542,10 +547,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         gtp_printf(id, "%d", GTP_VERSION);
         return;
     } else if (command == "name") {
-        gtp_printf(id, PROGRAM_NAME);
+        //gtp_printf(id, PROGRAM_NAME);
+        gtp_printf(id, cfg_custom_engine_name.c_str());
         return;
     } else if (command == "version") {
-        gtp_printf(id, PROGRAM_VERSION);
+        //gtp_printf(id, PROGRAM_VERSION);
+        gtp_printf(id, cfg_custom_engine_version.c_str());
         return;
     } else if (command == "quit") {
         gtp_printf(id, "");

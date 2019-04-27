@@ -481,11 +481,11 @@ int UCTSearch::get_best_move(passflag_t passflag) {
 
             if (nopass != nullptr) {
                 myprintf("Preferring not to pass.\n");
-                //bestmove = nopass->get_move();
+                bestmove = nopass->get_move(); // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                 if (nopass->first_visit()) {
-                    //besteval = 1.0f;
+                    besteval = 1.0f; // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                 } else {
-                    //besteval = nopass->get_raw_eval(color);
+                    besteval = nopass->get_raw_eval(color); // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                 }
             } else {
                 myprintf("Pass is the only acceptable move.\n");
@@ -520,11 +520,11 @@ int UCTSearch::get_best_move(passflag_t passflag) {
                 UCTNode * nopass = m_root->get_nopass_child(m_rootstate);
                 if (nopass != nullptr) {
                     myprintf("Avoiding pass because it loses.\n");
-                    //bestmove = nopass->get_move();
+                    bestmove = nopass->get_move(); // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                     if (nopass->first_visit()) {
-                        //besteval = 1.0f;
+                        besteval = 1.0f; // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                     } else {
-                        //besteval = nopass->get_raw_eval(color);
+                        besteval = nopass->get_raw_eval(color); // COMMENT THIS OUT TO REMOVE PASS SAFETY CHECKS
                     }
                 } else {
                     myprintf("No alternative to passing.\n");

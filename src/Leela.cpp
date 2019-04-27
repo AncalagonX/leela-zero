@@ -214,6 +214,8 @@ static void parse_commandline(int argc, char *argv[]) {
     po::options_description bot_commands_desc("Bot options");
     bot_commands_desc.add_options()
         ("sentinel", po::value<std::string>()->default_value(cfg_sentinel_file), "LZ will exit if this file exists.")
+        ("enginename", po::value<std::string>()->default_value(cfg_custom_engine_name), "Custom engine name.")
+        ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -325,6 +327,14 @@ static void parse_commandline(int argc, char *argv[]) {
     if (vm.count("sentinel")) {
         cfg_sentinel_file = vm["sentinel"].as<std::string>();
         myprintf("Leela Zero will exit if sentinel file detected: %s.\n", cfg_sentinel_file.c_str());
+    }
+
+    if (vm.count("enginename")) {
+        cfg_custom_engine_name = vm["enginename"].as<std::string>();
+    }
+
+    if (vm.count("engineversion")) {
+        cfg_custom_engine_version = vm["engineversion"].as<std::string>();
     }
 
 #ifdef USE_OPENCL

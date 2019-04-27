@@ -128,6 +128,8 @@ extern std::string cfg_logfile;
 extern std::string cfg_weightsfile;
 
 extern std::string cfg_sentinel_file;
+extern std::string cfg_custom_engine_name;
+extern std::string cfg_custom_engine_version;
 
 extern FILE* cfg_logfile_handle;
 extern bool cfg_quiet;

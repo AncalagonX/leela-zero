@@ -470,10 +470,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         assert(value > std::numeric_limits<double>::lowest());
 
-        if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
+        if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
         }
+
+        // Ignore considering opponent passing if we just passed
 
         if ((get_move() == -1
         && (child.get_move() == -1)
@@ -481,20 +483,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             continue;
         }
 
-        
-        /**
-        if (!is_opponent_move
-            && (child.get_move() == -1)
-            && (int_child_visits == 0)) {
-            if (value > best_value) {
-                best_value = value;
-            }
-            best = &child;
-            assert(best != nullptr);
-            best->inflate();
-            return best->get();
+        if (is_opponent_move
+        && (child.get_move() == -1)
+        && (movenum_now <= 150)) {
+            continue;
         }
-        **/
+
+        // If root and it's our turn, always send 100 visits into "Pass".
 
         if (!is_opponent_move
         && (is_root)
@@ -509,10 +504,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
+        // If root and it's our turn, always send "Pass" by extra visits equal to:  approximately 5% of highest root move visits so far
+
         if (!is_opponent_move
-            && (is_root)
-            && (child.get_move() == -1)
-            && (int_child_visits <= (100 + (100 * static_cast<int>(0.01 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
+        && (is_root)
+        && (child.get_move() == -1)
+        && (int_child_visits <= (100 + (50 * static_cast<int>(0.02 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -522,14 +519,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
+        /***********
 
-
-        
+        // If depth == 1 and it's our turn, send 1 visit into "Pass".                
 
         if (!is_opponent_move
         && (depth == 1)
         && (child.get_move() == -1)
-        && (int_child_visits <= 1)) {
+        && (int_child_visits < 1)) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -539,10 +536,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             return best->get();
         }
 
+        // If depth == 1 and it's our turn, AND "Pass" is >= winrate_target_value, send approximately 10% of parent's visits into "Pass" (using rounding)
+
         if (!is_opponent_move
-        && (depth <= 1)
-        && (child.get_move() == -1)) {
-        //&& (int_child_visits >= 400)) {
+        && (depth == 1)
+        && (child.get_move() == -1)
+        && (int_child_visits <= static_cast<int>(0.1 * get_visits()))) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -553,11 +552,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 return best->get();
             }
         }
+        ***********/
+
+        // If root and it's our turn, AND "Pass" is >= winrate_target_value, send ALL visits to it.
 
         if (!is_opponent_move
-            && (depth == 1)
-            && (child.get_move() == -1)
-            && (int_child_visits <= (1 + static_cast<int>(0.15f * int_m_visits)))) {
+        && (is_root)
+        && (child.get_move() == -1)) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -578,13 +579,21 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         *****************/
 
         if (value > best_value) {
-            if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 100)) {
+            if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 800)) {
                 best_winrate = winrate;
             }
             best_value = value;
             best_value2 = value;
             best = &child;
         }
+    }
+
+    if ((best_winrate < 0.5)
+    && (best_winrate >= 0.01)) {
+        cfg_timemanage = TimeManagement::OFF;
+    }
+    if (best_winrate >= winrate_target_value) {
+        cfg_timemanage = TimeManagement::FAST;
     }
 
 
@@ -598,7 +607,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     //int random_search_count = dis_moves(gen);
     int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
     if (is_pondering_now) {
-        random_search_count = 1; // Searches top 3-4 moves when pondering on opponent's turn.
+        random_search_count = 0; // Searches top 3-4 moves when pondering on opponent's turn.
     }
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
     int randomX_100 = dis100(gen);
