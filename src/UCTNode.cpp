@@ -271,6 +271,10 @@ int UCTNode::get_visits() const {
     return m_visits;
 }
 
+int UCTNode::get_virtual_loss() const {
+    return m_virtual_loss;
+}
+
 float UCTNode::get_eval_lcb(int color) const {
     // Lower confidence bound of winrate.
     auto visits = get_visits();
@@ -357,20 +361,25 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
-    auto total_visited_policy = 0.0f;
     auto parentvisits = size_t{0};
+    auto max_policy = 0.0f;
+    auto max_unvisited_policy = 0.0f;
     for (const auto& child : m_children) {
         if (child.valid()) {
             parentvisits += child.get_visits();
-            if (child.get_visits() > 0) {
-                total_visited_policy += child.get_policy();
+            max_policy = std::max(max_policy, child.get_policy());
+            if (child.get_visits() == 0 && child.get_virtual_loss() == 0) {
+                max_unvisited_policy = std::max(max_unvisited_policy, child.get_policy());
             }
         }
     }
 
     const auto numerator = std::sqrt(double(parentvisits) *
             std::log(cfg_logpuct * double(parentvisits) + cfg_logconst));
-    const auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction) * std::sqrt(total_visited_policy);
+    const auto policyratio = (max_policy - max_unvisited_policy)
+                            / (max_policy + max_unvisited_policy);
+    const auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction)
+                                * Utils::erfinv_approx(policyratio);
     // Estimated eval for unknown nodes = original parent NN eval - reduction
     const auto fpu_eval = get_net_eval(color) - fpu_reduction;
 
@@ -518,28 +527,12 @@ public:
     NodeComp(int color, float lcb_min_visits) : m_color(color),
         m_lcb_min_visits(lcb_min_visits){};
 
+    // WARNING : on very unusual cases this can be called on multithread
+    // contexts (e.g., UCTSearch::get_pv()) so beware of race conditions
     bool operator()(const UCTNodePointer& a,
                     const UCTNodePointer& b) {
-        
-        int a_visit = a.get_visits();
-        int b_visit = b.get_visits();
-
-
-        // Need at least 2 visits for LCB.
-        if (m_lcb_min_visits < 2) {
-            m_lcb_min_visits = 2;
-        }
-
-        // Calculate the lower confidence bound for each node.
-        if ((a_visit > m_lcb_min_visits) && (b_visit > m_lcb_min_visits)) {
-            auto a_lcb = a.get_eval_lcb(m_color);
-            auto b_lcb = b.get_eval_lcb(m_color);
-
-            // Sort on lower confidence bounds
-            if (a_lcb != b_lcb) {
-                return a_lcb < b_lcb;
-            }
-        }
+        auto a_visit = a.get_visits();
+        auto b_visit = b.get_visits();
 
         // Need at least 2 visits for LCB.
         if (m_lcb_min_visits < 2) {

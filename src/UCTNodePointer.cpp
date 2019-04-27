@@ -131,22 +131,11 @@ int UCTNodePointer::get_visits() const {
     return 0;
 }
 
-/***************************************
-// COMMENTING OUT ROY7'S LCB CODE BELOW:
-
-float UCTNodePointer::get_lcb_binomial(int color) const {
-    assert(is_inflated());
+int UCTNodePointer::get_virtual_loss() const {
     auto v = m_data.load();
-    return read_ptr(v)->get_lcb_binomial(color);
+    if (is_inflated(v)) return read_ptr(v)->get_virtual_loss();
+    return 0;
 }
-
-float UCTNodePointer::get_ucb_binomial(int color) const {
-    assert(is_inflated());
-    auto v = m_data.load();
-    return read_ptr(v)->get_ucb_binomial(color);
-}
-
-***************************************/
 
 float UCTNodePointer::get_policy() const {
     auto v = m_data.load();

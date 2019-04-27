@@ -128,6 +128,7 @@ public:
     // constructing UCTNode
     bool valid() const;
     int get_visits() const;
+    int get_virtual_loss() const;
     float get_lcb_binomial(int color) const;
     float get_ucb_binomial(int color) const;
     float get_policy() const;

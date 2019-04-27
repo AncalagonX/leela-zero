@@ -83,7 +83,6 @@ static void calculate_thread_count_cpu(boost::program_options::variables_map & v
 #ifdef USE_OPENCL
 static void calculate_thread_count_gpu(boost::program_options::variables_map & vm) {
     auto cfg_max_threads = size_t{MAX_CPUS};
-    //size_t cfg_max_threads = 64;
 
     // Default thread count : GPU case
     // 1) if no args are given, use batch size of 5 and thread count of (batch size) * (number of gpus) * 2
@@ -217,6 +216,11 @@ static void parse_commandline(int argc, char *argv[]) {
 #endif
     // These won't be shown, we use them to catch incorrect usage of the
     // command line.
+    po::options_description ignore("Ignored options");
+#ifndef USE_OPENCL
+    ignore.add_options()
+        ("batchsize", po::value<unsigned int>()->default_value(1), "Max batch size.");
+#endif
     po::options_description h_desc("Hidden options");
     h_desc.add_options()
         ("arguments", po::value<std::vector<std::string>>());
@@ -233,7 +237,7 @@ static void parse_commandline(int argc, char *argv[]) {
 #endif
     // Parse both the above, we will check if any of the latter are present.
     po::options_description all;
-    all.add(visible).add(h_desc);
+    all.add(visible).add(ignore).add(h_desc);
     po::positional_options_description p_desc;
     p_desc.add("arguments", -1);
     po::variables_map vm;
