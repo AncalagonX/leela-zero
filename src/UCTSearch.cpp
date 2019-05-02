@@ -56,7 +56,7 @@ using namespace Utils;
 using namespace boost::math;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
-bool is_pondering_now;
+bool is_pondering_now = false;
 
 class OutputAnalysisData {
 public:

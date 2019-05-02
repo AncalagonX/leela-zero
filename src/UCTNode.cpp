@@ -475,6 +475,19 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
+        // Having this "if statement" first ensures default LZ search picks a "best move" in the rare case of failure in the "Pass Bot" sections below.
+        
+        if (value > best_value) {
+            if (!is_opponent_move && !(child.get_move() == -1) && (winrate > best_winrate) && (int_m_visits > 800)) {
+                best_winrate = winrate;
+            }
+            best_value = value;
+            best_value2 = value;
+            best = &child;
+        }
+
+
+
         // Ignore considering opponent passing if we just passed
 
         if ((get_move() == -1
@@ -489,12 +502,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             continue;
         }
 
-        // If root and it's our turn, always send 100 visits into "Pass".
+        // If root and it's our turn, always send 50 visits into "Pass".
 
         if (!is_opponent_move
         && (is_root)
         && (child.get_move() == -1)
-        && (int_child_visits <= 100)) {
+        && (int_child_visits <= 50)) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -509,7 +522,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (!is_opponent_move
         && (is_root)
         && (child.get_move() == -1)
-        && (int_child_visits <= (100 + (50 * static_cast<int>(0.02 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
+        && (int_child_visits <= (50 + (10 * static_cast<int>(0.1 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
             if (value > best_value) {
                 best_value = value;
             }
@@ -562,7 +575,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             if (value > best_value) {
                 best_value = value;
             }
-            if (winrate >= winrate_target_value) {
+            if ((winrate >= winrate_target_value)
+            && (child.get_visits() < (0.80f * int_m_visits))) {
                 best = &child;
                 assert(best != nullptr);
                 best->inflate();
@@ -578,14 +592,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         *****************/
 
-        if (value > best_value) {
-            if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 800)) {
-                best_winrate = winrate;
-            }
-            best_value = value;
-            best_value2 = value;
-            best = &child;
-        }
+        
     }
 
     if ((best_winrate < 0.5)
