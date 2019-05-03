@@ -475,6 +475,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
+        // Ignore considering opponent passing if we just passed (#1)
+
+        if (is_opponent_move
+        && (child.get_move() == -1)
+        && (movenum_now <= 300)) {
+            continue;
+        }
+
         // Having this "if statement" first ensures default LZ search picks a "best move" in the rare case of failure in the "Pass Bot" sections below.
         
         if (value > best_value) {
@@ -488,19 +496,15 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-        // Ignore considering opponent passing if we just passed
-
-        if ((get_move() == -1
-        && (child.get_move() == -1)
-        && (movenum_now <= 150))) {
-            continue;
-        }
+        // Ignore considering opponent passing if we just passed (#2)
 
         if (is_opponent_move
+        && (get_move() == -1)
         && (child.get_move() == -1)
-        && (movenum_now <= 150)) {
+        && (movenum_now <= 300)) {
             continue;
         }
+        
 
         // If root and it's our turn, always send 50 visits into "Pass".
 
