@@ -103,6 +103,7 @@ float cfg_ponder_factor;
 int cfg_min_output_visits;
 int cfg_kgs_cleanup_moves;
 int kgs_cleanup_counter;
+bool cfg_enable_kgs_chat_command;
 
 std::string cfg_weightsfile;
 std::string cfg_logfile;
@@ -382,6 +383,7 @@ void GTP::setup_default_parameters() {
     cfg_min_output_visits = 1;
     cfg_kgs_cleanup_moves = 5;
     kgs_cleanup_counter = 0;
+    cfg_enable_kgs_chat_command = false;
 
 
 #ifdef USE_CPU_ONLY
@@ -433,6 +435,7 @@ const std::string GTP::s_commands[] = {
     "kgs-genmove_cleanup",
     "kgs-time_settings",
     "kgs-game_over",
+    "kgs-chat",
     "heatmap",
     "lz-analyze",
     "lz-genmove_analyze",
@@ -569,6 +572,12 @@ void GTP::execute(GameState & game, const std::string& xinput) {
                     return;
                 }
             }
+            if (cfg_enable_kgs_chat_command == false) {
+                if (tmp == "kgs-chat") {
+                    gtp_printf(id, "false");
+                    return;
+                }
+            }
             if (tmp == s_commands[i]) {
                 gtp_printf(id, "true");
                 return;
@@ -582,6 +591,11 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         for (int i = 1; s_commands[i].size() > 0; i++) {
             if (cfg_max_handicap == 0) {
                 if (s_commands[i] == "place_free_handicap" || s_commands[i] == "set_free_handicap") {
+                    continue;
+                }
+            }
+            if (cfg_enable_kgs_chat_command == false) {
+                if (s_commands[i] == "kgs-chat") {
                     continue;
                 }
             }

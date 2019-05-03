@@ -215,6 +215,7 @@ static void parse_commandline(int argc, char *argv[]) {
             "Only output GTP stats for moves that received this many visits.")
         ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
             "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
+        ("enablekgschatcommand", "Enable GTP support for the \"kgs-chat\" command.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -369,6 +370,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("kgscleanupmoves")) {
         cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
+    }
+
+    if (vm.count("enablekgschatcommand")) {
+        cfg_enable_kgs_chat_command = true;
     }
 
 
