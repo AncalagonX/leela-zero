@@ -93,7 +93,7 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
  * USE_TUNER: Expose some extra command line parameters that allow tuning the
  * search algorithm.
  */
-//#define USE_TUNER
+#define USE_TUNER
 
 static constexpr auto PROGRAM_NAME = "";
 static constexpr auto PROGRAM_VERSION = "";
