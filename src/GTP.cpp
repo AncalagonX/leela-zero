@@ -31,6 +31,8 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <boost/algorithm/string.hpp>
+#include <boost/filesystem.hpp>
 
 #include "FastBoard.h"
 #include "FullBoard.h"
@@ -80,6 +82,14 @@ bool cfg_benchmark;
 bool cfg_cpu_only;
 int cfg_analyze_interval_centis;
 
+std::string cfg_sentinel_file;
+std::string cfg_custom_engine_name;
+std::string cfg_custom_engine_version;
+int cfg_kgs_cleanup_moves;
+int kgs_cleanup_counter;
+
+
+
 std::unique_ptr<Network> GTP::s_network;
 
 void GTP::initialize(std::unique_ptr<Network>&& net) {
@@ -89,7 +99,8 @@ void GTP::initialize(std::unique_ptr<Network>&& net) {
 void GTP::setup_default_parameters() {
     cfg_gtp_mode = false;
     cfg_allow_pondering = true;
-    cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
+    cfg_max_threads = 64;
+    //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
     // If we will be GPU limited, using many threads won't help much.
     // Multi-GPU is a different story, but we will assume that those people
@@ -123,6 +134,13 @@ void GTP::setup_default_parameters() {
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
+
+    cfg_sentinel_file = "sentinel.quit";
+    cfg_custom_engine_name = "";
+    cfg_custom_engine_version = "";
+    cfg_kgs_cleanup_moves = 5;
+    kgs_cleanup_counter = 0;
+
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
 #else
@@ -275,10 +293,12 @@ bool GTP::execute(GameState & game, std::string xinput) {
         gtp_printf(id, "%d", GTP_VERSION);
         return true;
     } else if (command == "name") {
-        gtp_printf(id, PROGRAM_NAME);
+        //gtp_printf(id, PROGRAM_NAME);
+        gtp_printf(id, cfg_custom_engine_name.c_str());
         return true;
     } else if (command == "version") {
-        gtp_printf(id, PROGRAM_VERSION);
+        //gtp_printf(id, PROGRAM_VERSION);
+        gtp_printf(id, cfg_custom_engine_version.c_str());
         return true;
     } else if (command == "quit") {
         gtp_printf(id, "");
@@ -307,6 +327,10 @@ bool GTP::execute(GameState & game, std::string xinput) {
         gtp_printf(id, outtmp.c_str());
         return true;
     } else if (command.find("boardsize") == 0) {
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         std::istringstream cmdstream(command);
         std::string stmp;
         int tmp;
@@ -329,9 +353,14 @@ bool GTP::execute(GameState & game, std::string xinput) {
 
         return true;
     } else if (command.find("clear_board") == 0) {
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         Training::clear_training();
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
+        kgs_cleanup_counter = 0; // Reset on new game
         gtp_printf(id, "");
         return true;
     } else if (command.find("komi") == 0) {
@@ -413,7 +442,19 @@ bool GTP::execute(GameState & game, std::string xinput) {
             {
                 game.set_to_move(who);
                 // Outputs winrate and pvs for lz-genmove_analyze
-                int move = search->think(who);
+
+                int move;
+                // Check if we've already played the configured number of non-pass moves.
+                // If not, play another non-pass move if possible.
+                // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
+                if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
+                    kgs_cleanup_counter++;
+                    move = search->think(who, UCTSearch::NOPASS);
+                }
+                else {
+                    move = search->think(who);
+                }
+
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
@@ -531,6 +572,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         }
         return true;
     } else if (command.find("final_status_list") == 0) {
+        kgs_cleanup_counter = 0; // Reset if both players go to scoring
         if (command.find("alive") != std::string::npos) {
             std::string livelist = get_life_list(game, true);
             gtp_printf(id, livelist.c_str());
@@ -740,7 +782,12 @@ bool GTP::execute(GameState & game, std::string xinput) {
         gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
         return true;
     } else if (command.find("kgs-game_over") == 0) {
-        // Do nothing. Particularly, don't ponder.
+        // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
+        kgs_cleanup_counter = 0;
+        if (boost::filesystem::exists(cfg_sentinel_file)) {
+            gtp_printf(id, "Sentinel file detected. Exiting LZ.");
+            exit(EXIT_SUCCESS);
+        }
         gtp_printf(id, "");
         return true;
     } else if (command.find("kgs-time_settings") == 0) {

@@ -67,6 +67,12 @@ extern bool cfg_benchmark;
 extern bool cfg_cpu_only;
 extern int cfg_analyze_interval_centis;
 
+extern std::string cfg_sentinel_file;
+extern std::string cfg_custom_engine_name;
+extern std::string cfg_custom_engine_version;
+extern int cfg_kgs_cleanup_moves;
+extern int kgs_cleanup_counter;
+
 /*
     A list of all valid GTP2 commands is defined here:
     https://www.lysator.liu.se/~gunnar/gtp/gtp2-spec-draft2/gtp2-spec.html

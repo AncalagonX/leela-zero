@@ -95,8 +95,8 @@ static_assert(MAX_BATCH == 1, "MAX_BATCH != 1 not implemented");
  */
 //#define USE_TUNER
 
-static constexpr auto PROGRAM_NAME = "Leela Zero";
-static constexpr auto PROGRAM_VERSION = "0.15";
+static constexpr auto PROGRAM_NAME = "";
+static constexpr auto PROGRAM_VERSION = "";
 
 /*
  * OpenBLAS limitation: the default configuration on some Linuxes

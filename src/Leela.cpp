@@ -20,6 +20,7 @@
 
 #include <cstdint>
 #include <algorithm>
+#include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <cstdio>
@@ -110,6 +111,11 @@ static void parse_commandline(int argc, char *argv[]) {
         ("randomtemp",
             po::value<float>()->default_value(cfg_random_temp),
             "Temperature to use for random move selection.")
+        ("sentinel", po::value<std::string>()->default_value(cfg_sentinel_file), "LZ will exit if this file exists.")
+        ("enginename", po::value<std::string>()->default_value(cfg_custom_engine_name), "Custom engine name.")
+        ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
+        ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
+            "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -205,13 +211,31 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_gtp_mode = true;
     }
 
+    if (vm.count("sentinel")) {
+        cfg_sentinel_file = vm["sentinel"].as<std::string>();
+        myprintf("Leela Zero will exit if sentinel file detected: %s.\n", cfg_sentinel_file.c_str());
+    }
+
+    if (vm.count("enginename")) {
+        cfg_custom_engine_name = vm["enginename"].as<std::string>();
+    }
+
+    if (vm.count("engineversion")) {
+        cfg_custom_engine_version = vm["engineversion"].as<std::string>();
+    }
+
+    if (vm.count("kgscleanupmoves")) {
+        cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
+    }
+
 #ifdef USE_OPENCL
     if (vm.count("gpu")) {
         cfg_gpus = vm["gpu"].as<std::vector<int> >();
         // if we use OpenCL, we probably need more threads for the max so that we can saturate the GPU.
         cfg_max_threads *= cfg_gpus.size();
         // we can't exceed MAX_CPUS
-        cfg_max_threads = std::min(cfg_max_threads, MAX_CPUS);
+        //cfg_max_threads = std::min(cfg_max_threads, MAX_CPUS);
+        cfg_max_threads = 64;
     }
 
     if (vm.count("full-tuner")) {
