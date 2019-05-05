@@ -312,12 +312,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("playouts")) {
         cfg_max_playouts = vm["playouts"].as<int>();
+        /**
         if (!vm.count("noponder")) {
             printf("Nonsensical options: Playouts are restricted but "
                    "thinking on the opponent's time is still allowed. "
                    "Add --noponder if you want a weakened engine.\n");
             exit(EXIT_FAILURE);
         }
+        **/
 
         // 0 may be specified to mean "no limit"
         if (cfg_max_playouts == 0) {

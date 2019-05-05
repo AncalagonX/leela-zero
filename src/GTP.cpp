@@ -136,7 +136,7 @@ void GTP::setup_default_parameters() {
     cfg_noise = false;
     cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_ci_alpha = 1e-5f;
-    cfg_lcb_min_visit_ratio = 0.10f;
+    cfg_lcb_min_visit_ratio = 0.25f;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
@@ -453,18 +453,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 game.set_to_move(who);
                 // Outputs winrate and pvs for lz-genmove_analyze
 
-                int move;
-                // Check if we've already played the configured number of non-pass moves.
-                // If not, play another non-pass move if possible.
-                // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
-                if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
-                    kgs_cleanup_counter++;
-                    move = search->think(who, UCTSearch::NOPASS);
-                }
-                else {
-                    move = search->think(who);
-                }
-
+                int move = search->think(who);
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);
@@ -535,7 +524,17 @@ bool GTP::execute(GameState & game, std::string xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
-                int move = search->think(who, UCTSearch::NOPASS);
+                int move;
+                // Check if we've already played the configured number of non-pass moves.
+                // If not, play another non-pass move if possible.
+                // kgs_cleanup_counter is reset when "final_status_list", "kgs-game_over", or "clear_board" are called.
+                if (kgs_cleanup_counter < cfg_kgs_cleanup_moves) {
+                    kgs_cleanup_counter++;
+                    move = search->think(who, UCTSearch::NOPASS);
+                }
+                else {
+                    move = search->think(who);
+                }
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);

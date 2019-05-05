@@ -40,6 +40,9 @@
 using namespace Utils;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
+bool is_pondering_now = false;
+bool ponder_just_started = false;
+int current_movenum = 0;
 
 class OutputAnalysisData {
 public:
@@ -110,6 +113,8 @@ bool UCTSearch::advance_to_new_rootstate() {
 
     auto depth =
         int(m_rootstate.get_movenum() - m_last_rootstate->get_movenum());
+
+    current_movenum = static_cast<int>(m_rootstate.get_movenum());
 
     if (depth < 0) {
         return false;
@@ -270,22 +275,29 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         return;
     }
 
+    if (ponder_just_started) {
+        myprintf("================= EXPECTED PONDER RESULTS =================\n");
+    }
+
     int movecount = 0;
     for (const auto& node : parent.get_children()) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
-        if (++movecount > 2 && !node->get_visits()) break;
+        //if (++movecount > 2 && !node->get_visits()) break;
+        if (++movecount > 2 && (node->get_visits() < (cfg_lcb_min_visit_ratio * max_visits))) break;
+        if (ponder_just_started && (movecount > 10)) break;
+        //if (node->get_visits() < 50) break;
 
         std::string move = state.move_to_text(node->get_move());
         FastState tmpstate = state;
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (LCB: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (LCB: %5.2f%%) (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
             move.c_str(),
             node->get_visits(),
-            node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
             std::max(0.0f, node->get_eval_lcb(color) * 100.0f),
+            node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
             node->get_policy() * 100.0f,
             pv.c_str());
     }
@@ -307,16 +319,14 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         max_visits = std::max(max_visits, node->get_visits());
     }
 
-    auto max_visits = 0;
-    for (const auto& node : parent.get_children()) {
-        max_visits = std::max(max_visits, node->get_visits());
-    }
-
     for (const auto& node : parent.get_children()) {
         // Send only variations with visits, unless more moves were
         // requested explicitly.
         if (!node->get_visits()) {
             //&& sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
+            continue;
+        }
+        if (node->get_visits() < 50) {
             continue;
         }
         auto move = state.move_to_text(node->get_move());
@@ -602,8 +612,18 @@ void UCTSearch::dump_analysis(int playouts) {
 
     std::string pvstring = get_pv(tempstate, *m_root);
     float winrate = 100.0f * m_root->get_raw_eval(color);
-    myprintf("Playouts: %d, Win: %5.2f%%, PV: %s\n",
-             playouts, winrate, pvstring.c_str());
+    float lcb = 100.0f * m_root->get_eval_lcb(color);
+    int visits = static_cast<int>(m_root->get_visits());
+    // Leading Space
+    //printf("%d\n",x);  <-- ORIGINAL
+    // printf("%*d\n", width, x);  <-- LEADING SPACES
+    if (is_pondering_now) {
+        myprintf("PONDER:%6d /%6d [LCB: %5.2f%%] PV: %s\n",
+                    (visits - playouts), playouts, lcb, pvstring.c_str());
+    } else {
+        myprintf("PLAY:%6d /%6d [LCB: %5.2f%%] PV: %s\n",
+            (visits - playouts), playouts, lcb, pvstring.c_str());
+    }
 }
 
 bool UCTSearch::is_running() const {
@@ -704,6 +724,26 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 }
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
+    if (is_pondering_now) {
+        return (static_cast<int>((0.1f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 250 && !is_pondering_now) {
+        return (static_cast<int>((4.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((4.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 300 && !is_pondering_now) {
+        return (static_cast<int>((8.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((8.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 350 && !is_pondering_now) {
+        return (static_cast<int>((16.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((16.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
     return m_playouts >= m_maxplayouts
            || m_root->get_visits() >= m_maxvisits
            || elapsed_centis >= time_for_move;
@@ -724,6 +764,7 @@ void UCTSearch::increment_playouts() {
 }
 
 int UCTSearch::think(int color, passflag_t passflag) {
+    ponder_just_started = false;
     // Start counting time for us
     m_rootstate.start_clock(color);
 
@@ -739,7 +780,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
             m_rootstate.board.get_boardsize(),
             color, m_rootstate.get_movenum());
 
-    myprintf("Thinking at most %.1f seconds...\n", time_for_move/100.0f);
+    myprintf("Thinking at most %.1f seconds...\n\n", time_for_move/100.0f);
 
     // create a sorted list of legal moves (make sure we
     // play something legal and decent even in time trouble)
@@ -774,7 +815,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
         // output some stats every few seconds
         // check if we should still search
-        if (elapsed_centis - last_update > 250) {
+        if (elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
             dump_analysis(static_cast<int>(m_playouts));
         }
@@ -805,9 +846,8 @@ int UCTSearch::think(int color, passflag_t passflag) {
     Time elapsed;
     int elapsed_centis = Time::timediff_centis(start, elapsed);
     if (elapsed_centis+1 > 0) {
-        myprintf("%d visits, %d nodes, %d playouts, %.0f n/s\n\n",
+        myprintf("%d visits, %d playouts, %.0f n/s\n\n",
                  m_root->get_visits(),
-                 static_cast<int>(m_nodes),
                  static_cast<int>(m_playouts),
                  (m_playouts * 100.0) / (elapsed_centis+1));
     }
@@ -815,10 +855,13 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
     // Copy the root state. Use to check for tree re-use in future calls.
     m_last_rootstate = std::make_unique<GameState>(m_rootstate);
+    //ponder_just_started = true;
     return bestmove;
 }
 
 void UCTSearch::ponder() {
+    //ponder_just_started = true;
+    is_pondering_now = true;
     update_root();
 
     m_root->prepare_root_node(m_network, m_rootstate.board.get_to_move(),
@@ -831,6 +874,7 @@ void UCTSearch::ponder() {
     }
     Time start;
     auto keeprunning = true;
+    auto last_update = 0;
     auto last_output = 0;
     do {
         auto currstate = std::make_unique<GameState>(m_rootstate);
@@ -838,6 +882,20 @@ void UCTSearch::ponder() {
         if (result.valid()) {
             increment_playouts();
         }
+
+        Time elapsed;
+        int elapsed_centis = Time::timediff_centis(start, elapsed);
+
+        if ((elapsed_centis > 1) && (elapsed_centis <= 90)) {
+            //is_pondering_now = true;
+            ponder_just_started = true;
+        }
+
+        if (elapsed_centis > 90) {
+            //is_pondering_now = true;
+            ponder_just_started = false;
+        }
+
         if (cfg_analyze_interval_centis) {
             Time elapsed;
             int elapsed_centis = Time::timediff_centis(start, elapsed);
@@ -845,6 +903,10 @@ void UCTSearch::ponder() {
                 last_output = elapsed_centis;
                 output_analysis(m_rootstate, *m_root);
             }
+        }
+        if (elapsed_centis - last_update > 100) {
+            last_update = elapsed_centis;
+            dump_analysis(static_cast<int>(m_playouts));
         }
         keeprunning  = is_running();
         keeprunning &= !stop_thinking(0, 1);
@@ -858,7 +920,8 @@ void UCTSearch::ponder() {
     myprintf("\n");
     dump_stats(m_rootstate, *m_root);
 
-    myprintf("\n%d visits, %d nodes\n\n", m_root->get_visits(), m_nodes.load());
+    myprintf("\n%d visits, %d playouts\n\n", m_root->get_visits(), static_cast<int>(m_playouts));
+    is_pondering_now = false;
 
     // Copy the root state. Use to check for tree re-use in future calls.
     m_last_rootstate = std::make_unique<GameState>(m_rootstate);
