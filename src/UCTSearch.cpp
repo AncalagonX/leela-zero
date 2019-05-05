@@ -729,6 +729,11 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
+    if (current_movenum > 200 && !is_pondering_now) {
+        return (static_cast<int>((2.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((2.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
     if (current_movenum > 250 && !is_pondering_now) {
         return (static_cast<int>((4.0f) * (m_playouts)) >= m_maxplayouts)
             || (static_cast<int>((4.0f) * (m_root->get_visits())) >= m_maxvisits)
