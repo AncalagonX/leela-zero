@@ -83,6 +83,7 @@ private:
     std::string m_move;
     int m_visits;
     int m_winrate;
+    float m_policy_prior;
     std::string m_pv;
     float m_lcb;
     bool m_lcb_ratio_exceeded;
@@ -309,8 +310,8 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
     for (const auto& node : parent.get_children()) {
         // Send only variations with visits, unless more moves were
         // requested explicitly.
-        if (!node->get_visits()
-            && sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
+        if (!node->get_visits()) {
+            //&& sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
             continue;
         }
         auto move = state.move_to_text(node->get_move());
