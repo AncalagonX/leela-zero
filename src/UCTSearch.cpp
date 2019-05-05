@@ -633,8 +633,8 @@ bool UCTSearch::is_running() const {
 int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     auto playouts = m_playouts.load();
     const auto playouts_left =
-        std::max(0, std::min(m_maxplayouts - playouts,
-                             m_maxvisits - m_root->get_visits()));
+        (2 * std::max(0, std::min(m_maxplayouts - playouts,
+                             m_maxvisits - m_root->get_visits())));
 
     // Wait for at least 1 second and 100 playouts
     // so we get a reliable playout_rate.
@@ -644,7 +644,7 @@ int UCTSearch::est_playouts_left(int elapsed_centis, int time_for_move) const {
     const auto playout_rate = 1.0f * playouts / elapsed_centis;
     const auto time_left = std::max(0, time_for_move - elapsed_centis);
     return std::min(playouts_left,
-                    static_cast<int>(std::ceil(playout_rate * time_left)));
+                    static_cast<int>(2 * (std::ceil(playout_rate * time_left))));
 }
 
 size_t UCTSearch::prune_noncontenders(int color, int elapsed_centis, int time_for_move, bool prune) {
