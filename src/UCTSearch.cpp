@@ -729,14 +729,19 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
-    if (current_movenum > 200 && !is_pondering_now) {
-        return (static_cast<int>((2.0f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((2.0f) * (m_root->get_visits())) >= m_maxvisits)
+    if (current_movenum > 450 && !is_pondering_now) {
+        return (static_cast<int>((64.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((64.0f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
-    if (current_movenum > 250 && !is_pondering_now) {
-        return (static_cast<int>((4.0f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((4.0f) * (m_root->get_visits())) >= m_maxvisits)
+    if (current_movenum > 400 && !is_pondering_now) {
+        return (static_cast<int>((32.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((32.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 350 && !is_pondering_now) {
+        return (static_cast<int>((16.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((16.0f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     if (current_movenum > 300 && !is_pondering_now) {
@@ -744,9 +749,14 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || (static_cast<int>((8.0f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
-    if (current_movenum > 350 && !is_pondering_now) {
-        return (static_cast<int>((16.0f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((16.0f) * (m_root->get_visits())) >= m_maxvisits)
+    if (current_movenum > 250 && !is_pondering_now) {
+        return (static_cast<int>((4.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((4.0f) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 200 && !is_pondering_now) {
+        return (static_cast<int>((2.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((2.0f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     return m_playouts >= m_maxplayouts

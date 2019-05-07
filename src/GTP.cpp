@@ -199,6 +199,7 @@ const std::string GTP::s_commands[] = {
     "kgs-genmove_cleanup",
     "kgs-time_settings",
     "kgs-game_over",
+    "kgs-chat",
     "heatmap",
     "lz-analyze",
     "lz-genmove_analyze",
@@ -788,7 +789,8 @@ bool GTP::execute(GameState & game, std::string xinput) {
             cmdstream >> tmp; // eat message
         } while (!cmdstream.fail());
 
-        gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
+        //gtp_fail_printf(id, "I'm a go bot, not a chat bot.");
+        gtp_fail_printf(id, "");
         return true;
     } else if (command.find("kgs-game_over") == 0) {
         // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
