@@ -53,9 +53,14 @@ int cfg_num_threads;
 int cfg_max_threads;
 int cfg_max_playouts;
 int cfg_max_visits;
+int cfg_single_move_visit_limit;
+float cfg_second_best_move_ratio;
+int cfg_single_move_visits_required_to_check;
 TimeManagement::enabled_t cfg_timemanage;
 int cfg_lagbuffer_cs;
 int cfg_resignpct;
+int cfg_resign_moves;
+int resign_moves_counter;
 int cfg_noise;
 int cfg_random_cnt;
 int cfg_random_min_visits;
@@ -116,6 +121,9 @@ void GTP::setup_default_parameters() {
 #endif
     cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
+    cfg_single_move_visit_limit = UCTSearch::UNLIMITED_PLAYOUTS;
+    cfg_second_best_move_ratio = 100.0f;
+    cfg_single_move_visits_required_to_check = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
 #ifdef USE_OPENCL
@@ -133,6 +141,8 @@ void GTP::setup_default_parameters() {
     cfg_fpu_reduction = 0.25f;
     // see UCTSearch::should_resign
     cfg_resignpct = -1;
+    cfg_resign_moves = 5;
+    resign_moves_counter = 0;
     cfg_noise = false;
     cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_ci_alpha = 1e-5f;
@@ -372,6 +382,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         game.reset_game();
         search = std::make_unique<UCTSearch>(game, *s_network);
         kgs_cleanup_counter = 0; // Reset on new game
+        resign_moves_counter = 0; // Reset on new game
         gtp_printf(id, "");
         return true;
     } else if (command.find("komi") == 0) {
@@ -810,8 +821,9 @@ bool GTP::execute(GameState & game, std::string xinput) {
         gtp_fail_printf(id, "");
         return true;
     } else if (command.find("kgs-game_over") == 0) {
-        // Reset the cleanup counter and do nothing else. Particularly, don't ponder.
+        // Reset the cleanup counter and resignation counter, and do nothing else. Particularly, don't ponder.
         kgs_cleanup_counter = 0;
+        resign_moves_counter = 0;
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);

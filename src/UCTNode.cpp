@@ -27,6 +27,7 @@
 #include <iterator>
 #include <limits>
 #include <numeric>
+#include <random>
 #include <utility>
 #include <vector>
 
@@ -39,6 +40,18 @@
 #include "Utils.h"
 
 using namespace Utils;
+int most_root_visits_seen = 0;
+int second_most_root_visits_seen = 0;
+int vertex_most_root_visits_seen = 0;
+int vertex_second_most_root_visits_seen = 0;
+
+std::random_device rd;
+
+std::mt19937 gen(rd());
+
+std::uniform_int_distribution<> dis100(1, 100);
+std::uniform_real_distribution<> dis_float_fuzz_zero_to_two(0.01, 1.99);
+std::uniform_real_distribution<> dis_float_fuzz_0_5_to_1_5(0.50, 1.50);
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -294,11 +307,29 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         }
     }
 
+    // Random number from [0, max - 1]
+    //std::uint64_t randuint64(const std::uint64_t max);
+
+    //std::random_device rd;
+    //std::ranlux48 gen(rd());
+    //std::uint64_t random_test_integer = (gen() << 16) ^ gen();
+
     const auto numerator = std::sqrt(double(parentvisits) *
             std::log(cfg_logpuct * double(parentvisits) + cfg_logconst));
     const auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction) * std::sqrt(total_visited_policy);
+
+   
+    // The two lines below were for me to test displaying the total_visit_policy values:
+    //auto current_move_vertex = get_move();
+    //myprintf("%d = %.5f total_visited_policy.\n", current_move_vertex, total_visited_policy);
+
+
+
     // Estimated eval for unknown nodes = original parent NN eval - reduction
     const auto fpu_eval = get_net_eval(color) - fpu_reduction;
+
+    //NOTE: I CHANGED THE ABOVE ORIGINAL FPU_EVAL CODE TO JUST BE A FLAT 0.50:
+    //const auto fpu_eval = 0.50f;
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
@@ -321,10 +352,41 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
+        
+        /**
         if (movenum_now <= 250) {
             winrate = winrate * (movenum_float / 250.0f);
         }
+        **/
+
+        // "If" statement above replaced with single line below:
+        winrate = winrate * std::min(1.0, movenum_now / 1000.0);
+
+        float winrate_fuzz_factor_zero_to_two = dis_float_fuzz_zero_to_two(gen);
+        float winrate_fuzz_factor_0_5_to_1_5 = dis_float_fuzz_0_5_to_1_5(gen);
+
+        winrate = winrate * winrate_fuzz_factor_zero_to_two;
+        //winrate = winrate * winrate_fuzz_factor_0_5_to_1_5;
+
         const auto value = winrate + puct;
+
+        if (is_root && (static_cast<int>(child.get_visits()) > most_root_visits_seen)) {
+            if (vertex_most_root_visits_seen != child.get_move()) {
+                vertex_most_root_visits_seen = child.get_move();
+                second_most_root_visits_seen = most_root_visits_seen;
+            }
+            most_root_visits_seen = static_cast<int>(child.get_visits());
+        }
+
+        if (is_root
+        && (static_cast<int>(child.get_visits()) < most_root_visits_seen)
+        && (static_cast<int>(child.get_visits()) > second_most_root_visits_seen)) {
+            if (vertex_second_most_root_visits_seen != child.get_move()) {
+                vertex_second_most_root_visits_seen = child.get_move();
+            }
+            second_most_root_visits_seen = static_cast<int>(child.get_visits());
+        }
+
         assert(value > std::numeric_limits<double>::lowest());
 
         if (value > best_value) {

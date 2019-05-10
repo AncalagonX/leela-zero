@@ -30,6 +30,9 @@
 #include <string>
 #include <vector>
 
+#include <ctime>
+#include <random>
+
 #include "GTP.h"
 #include "GameState.h"
 #include "Network.h"
@@ -64,6 +67,12 @@ static void parse_commandline(int argc, char *argv[]) {
                        "Requires --noponder.")
         ("visits,v", po::value<int>(),
                      "Weaken engine by limiting the number of visits.")
+        ("singlemovevisits", po::value<int>(),
+                     "Limit maximum visits allowed on a single move.")
+        ("secondbestmoveratio", po::value<float>()->default_value(cfg_second_best_move_ratio),
+                    "Ratio of maximum viists allowed on second best move, relative to singlemovevisits.")
+        ("singlemovevisitsrequiredtocheck", po::value<int>(),
+                     "Required visits on most visited move before secondbestmovereatio is checked.")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
         ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
@@ -326,13 +335,35 @@ static void parse_commandline(int argc, char *argv[]) {
             cfg_max_playouts = UCTSearch::UNLIMITED_PLAYOUTS;
         }
     }
-
+    
     if (vm.count("visits")) {
         cfg_max_visits = vm["visits"].as<int>();
 
         // 0 may be specified to mean "no limit"
         if (cfg_max_visits == 0) {
             cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
+        }
+    }
+
+    if (vm.count("singlemovevisits")) {
+        cfg_single_move_visit_limit = vm["singlemovevisits"].as<int>();
+
+        // 0 may be specified to mean "no limit"
+        if (cfg_single_move_visit_limit == 0) {
+            cfg_single_move_visit_limit = UCTSearch::UNLIMITED_PLAYOUTS;
+        }
+    }
+
+    if (vm.count("secondbestmoveratio")) {
+        cfg_second_best_move_ratio = vm["secondbestmoveratio"].as<float>();
+    }
+
+    if (vm.count("singlemovevisitsrequiredtocheck")) {
+        cfg_single_move_visits_required_to_check = vm["singlemovevisitsrequiredtocheck"].as<int>();
+
+        // 0 may be specified to mean "no limit"
+        if (cfg_single_move_visits_required_to_check == 0) {
+            cfg_single_move_visits_required_to_check = UCTSearch::UNLIMITED_PLAYOUTS;
         }
     }
 

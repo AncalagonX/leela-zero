@@ -96,6 +96,7 @@ public:
     int think(int color, passflag_t passflag = NORMAL);
     void set_playout_limit(int playouts);
     void set_visit_limit(int visits);
+    void set_single_move_visit_limit(int single_move_visits);
     void ponder();
     bool is_running() const;
     void increment_playouts();
@@ -126,6 +127,7 @@ private:
     std::atomic<bool> m_run{false};
     int m_maxplayouts;
     int m_maxvisits;
+    int m_singlemovevisits;
 
     std::list<Utils::ThreadGroup> m_delete_futures;
 

@@ -97,6 +97,7 @@ UCTSearch::UCTSearch(GameState& g, Network& network)
     : m_rootstate(g), m_network(network) {
     set_playout_limit(cfg_max_playouts);
     set_visit_limit(cfg_max_visits);
+    set_single_move_visit_limit(cfg_single_move_visit_limit);
 
     m_root = std::make_unique<UCTNode>(FastBoard::PASS, 0.0f);
 }
@@ -177,6 +178,10 @@ void UCTSearch::update_root() {
     // Definition of m_playouts is playouts per search call.
     // So reset this count now.
     m_playouts = 0;
+    most_root_visits_seen = 0;
+    second_most_root_visits_seen = 0;
+    vertex_most_root_visits_seen = 0;
+    vertex_second_most_root_visits_seen = 0;
 
 #ifndef NDEBUG
     auto start_nodes = m_root->count_nodes_and_clear_expand_state();
@@ -429,6 +434,10 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
         0.01f * (is_default_cfg_resign ? 10 : cfg_resignpct);
     if (besteval > resign_threshold) {
         // eval > cfg_resign
+        if (resign_moves_counter != 0) {
+            myprintf("Resetting resign_moves_counter to zero (was %d / %d consecutive moves below resign threshold (%d%%)).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
+            resign_moves_counter = 0; // Reset if besteval is above resign_threshold
+        }
         return false;
     }
 
@@ -445,10 +454,20 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
         if (besteval > blended_resign_threshold) {
             // Allow lower eval for white in handicap games
             // where opp may fumble.
+            resign_moves_counter = 0; // Reset if besteval is above blended_resign_threshold
             return false;
         }
     }
 
+    if (++resign_moves_counter < cfg_resign_moves) {
+        // resign not allowed
+        myprintf("Resign not allowed: %d / %d consecutive moves below resign threshold (%d%%).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
+        return false;
+    }
+
+    // Reset resign_moves_counter if we are resigning
+    myprintf("Resign allowed: %d / %d consecutive moves below resign threshold (%d%%).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
+    resign_moves_counter = 0;
     return true;
 }
 
@@ -790,9 +809,42 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || elapsed_centis >= time_for_move;
     }
     **/
+
+    //most_root_visits_seen
+
+    float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
+
+    if (!is_pondering_now && (elapsed_centis >= 90)) { // Wait 90ms before making these checks
+        if (most_root_visits_seen >= m_singlemovevisits) { // Check if the most visited move has more than our configured single-move-visit-limit
+            myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
+                                most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
+            return true; // Stop thinking
+        }
+        if ((most_root_visits_seen) >= cfg_single_move_visits_required_to_check) { // Ensure we have at least enough bare minimum visits to make the next check
+            if (cfg_second_best_move_ratio >= visit_ratio_best_two_moves) { // Check if we have a good enough visit ratio on the top candidate for an "Even Earlier, Early Out"
+                myprintf("\n     Stopping early: VISIT RATIO = %.2f (limit %.2f) \n     Most root visits = %d (limit %d) <--> Second most root visits = %d\n",
+                    visit_ratio_best_two_moves, cfg_second_best_move_ratio, most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen);
+                return true; // Stop thinking
+            }
+        }
+    }
+
+    ///////////////////////////// REPLACED BY THE ABOVE MULTIPLE NESTED "IF" STATEMENTS
+    /**
+    
+    if (!is_pondering_now && (elapsed_centis >= 90)) {
+        return most_root_visits_seen >= m_singlemovevisits
+            || (((4 * most_root_visits_seen) >= m_singlemovevisits) && (cfg_second_best_move_ratio >= visit_ratio_best_two_moves))
+            || m_playouts >= m_maxplayouts
+            || m_root->get_visits() >= m_maxvisits
+            || elapsed_centis >= time_for_move;
+    }
+    **/
+    
     return m_playouts >= m_maxplayouts
            || m_root->get_visits() >= m_maxvisits
            || elapsed_centis >= time_for_move;
+    
 }
 
 void UCTWorker::operator()() {
@@ -986,4 +1038,12 @@ void UCTSearch::set_visit_limit(int visits) {
                   "Inconsistent types for visits amount.");
     // Limit to type max / 2 to prevent overflow when multithreading.
     m_maxvisits = std::min(visits, UNLIMITED_PLAYOUTS);
+}
+
+void UCTSearch::set_single_move_visit_limit(int single_move_visits) {
+    static_assert(std::is_convertible<decltype(single_move_visits),
+        decltype(m_singlemovevisits)>::value,
+        "Inconsistent types for visits amount.");
+    // Limit to type max / 2 to prevent overflow when multithreading.
+    m_singlemovevisits = std::min(single_move_visits, UNLIMITED_PLAYOUTS);
 }
