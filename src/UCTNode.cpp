@@ -279,7 +279,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -303,6 +303,8 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
 
+    float movenum_float = movenum_now * 1.0f;
+
     for (auto& child : m_children) {
         if (!child.active()) {
             continue;
@@ -319,6 +321,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
+        if (movenum_now <= 250) {
+            winrate = winrate * (movenum_float / 250.0f);
+        }
         const auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -346,6 +351,11 @@ public:
         auto a_visit = a.get_visits();
         auto b_visit = b.get_visits();
 
+        // if visits are not same, sort on visits
+        if (a_visit != b_visit) {
+            return a_visit < b_visit;
+        }
+
         // Need at least 2 visits for LCB.
         if (m_lcb_min_visits < 2) {
             m_lcb_min_visits = 2;
@@ -360,11 +370,6 @@ public:
             if (a_lcb != b_lcb) {
                 return a_lcb < b_lcb;
             }
-        }
-
-        // if visits are not same, sort on visits
-        if (a_visit != b_visit) {
-            return a_visit < b_visit;
         }
 
         // neither has visits, sort on policy prior

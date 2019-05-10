@@ -136,7 +136,7 @@ void GTP::setup_default_parameters() {
     cfg_noise = false;
     cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_ci_alpha = 1e-5f;
-    cfg_lcb_min_visit_ratio = 0.25f;
+    cfg_lcb_min_visit_ratio = 0.1f;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
@@ -454,7 +454,24 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 game.set_to_move(who);
                 // Outputs winrate and pvs for lz-genmove_analyze
 
+                // Commented out the following one line to replace with the code below:
                 int move = search->think(who);
+
+
+                /**
+                int move;
+                // Check if movenum > 300
+                // If so, don't allow passing or eye-filling.
+                if (game.get_movenum() > 800) {
+                    move = search->think(who, UCTSearch::NOPASS);
+                }
+                else {
+                    move = search->think(who);
+                }
+                **/
+
+
+
                 game.play_move(move);
 
                 std::string vertex = game.move_to_text(move);

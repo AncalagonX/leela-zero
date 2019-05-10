@@ -216,6 +216,7 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
+    int movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -237,7 +238,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -549,6 +550,34 @@ int UCTSearch::get_best_move(passflag_t passflag) {
                     myprintf("No seemingly better alternative to passing.\n");
                 }
             }
+
+
+
+        /***********************/ // TESTING THE "NO EYE-FILLING CODE"
+        }
+        else if ((movenum > 350) && (bestmove != FastBoard::PASS)) {
+            // Do not allow eye-filling after move 300:
+            //myprintf("Do not allow eye-filling after move 300.\n");
+            // Find a valid non-pass move.
+            UCTNode * nopass = m_root->get_nopass_child(m_rootstate);
+            if (nopass != nullptr) {
+                myprintf("Searched for a non-eye-filling move.\n");
+                bestmove = nopass->get_move();
+                if (nopass->first_visit()) {
+                    besteval = 1.0f;
+                }
+                else {
+                    besteval = nopass->get_raw_eval(color);
+                }
+            }
+            else {
+                myprintf("No alternative to eye-filling move, will pass instead.\n");
+                bestmove = FastBoard::PASS;
+            }
+            /***********************/
+
+
+
         } else if (m_rootstate.get_last_move() == FastBoard::PASS) {
             // Opponents last move was passing.
             // We didn't consider passing. Should we have and
@@ -725,40 +754,42 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     if (is_pondering_now) {
-        return (static_cast<int>((0.1f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
+        return (static_cast<int>((0.5f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((0.5f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
+    /**
     if (current_movenum > 450 && !is_pondering_now) {
-        return (static_cast<int>((m_playouts)) >= 800)
-            || (static_cast<int>(m_root->get_visits()) >= 800)
+        return (static_cast<int>((12) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((12) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     if (current_movenum > 400 && !is_pondering_now) {
-        return (static_cast<int>((m_playouts)) >= 1600)
-            || (static_cast<int>(m_root->get_visits()) >= 1600)
+        return (static_cast<int>((10) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((10) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     if (current_movenum > 350 && !is_pondering_now) {
-        return (static_cast<int>((m_playouts)) >= 3200)
-            || (static_cast<int>(m_root->get_visits()) >= 3200)
-            || elapsed_centis >= time_for_move;
-    }
-    if (current_movenum > 300 && !is_pondering_now) {
-        return (static_cast<int>((16) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((16) * (m_root->get_visits())) >= m_maxvisits)
-            || elapsed_centis >= time_for_move;
-    }
-    if (current_movenum > 250 && !is_pondering_now) {
         return (static_cast<int>((8) * (m_playouts)) >= m_maxplayouts)
             || (static_cast<int>((8) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
-    if (current_movenum > 200 && !is_pondering_now) {
+    if (current_movenum > 300 && !is_pondering_now) {
+        return (static_cast<int>((6) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((6) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    if (current_movenum > 250 && !is_pondering_now) {
         return (static_cast<int>((4) * (m_playouts)) >= m_maxplayouts)
             || (static_cast<int>((4) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
+    if (current_movenum > 200 && !is_pondering_now) {
+        return (static_cast<int>((2) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((2) * (m_root->get_visits())) >= m_maxvisits)
+            || elapsed_centis >= time_for_move;
+    }
+    **/
     return m_playouts >= m_maxplayouts
            || m_root->get_visits() >= m_maxvisits
            || elapsed_centis >= time_for_move;
