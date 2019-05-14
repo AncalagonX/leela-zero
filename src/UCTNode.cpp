@@ -422,6 +422,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
+
+        /**
+        if (is_opponent_move && (movenum_now < 100)) {
+            winrate = winrate * 0.10f;
+        }
+
+        if (!is_opponent_move && (movenum_now < 100)) {
+            winrate = winrate * 5.0f;
+        }
+        **/
+
         const auto value = winrate + puct;
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -430,14 +441,34 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         int int_parent_visits = static_cast<int>(parentvisits);
 
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
+            best_winrate = winrate;
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
         }
 
-        if (value > best_value) {
+        /**
+
+        if (is_opponent_move && (dis2(gen) == 1)) {
+            if (child.get_move() == -1) {
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+            else {
+                continue;
+            }
+        }
+        **/
+
+        if ((value > best_value)) {
             best_value = value;
             best_value2 = value;
             best = &child; // This is LZ's default unmodified search choice. In case the wide search below fails to return a valid move choice (i.e. if told to search more intersections than there are available), then LZ will choose this node to visit as a fall-back instead of crashing.
+        }
+
+        if (is_opponent_move && (depth <= 10) && (value >= (0.75 * best_value))) {
+            best = &child;
         }
     }
 
