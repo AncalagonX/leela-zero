@@ -275,17 +275,12 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         return;
     }
 
-    if (ponder_just_started) {
-        myprintf("================= EXPECTED PONDER RESULTS =================\n");
-    }
-
     int movecount = 0;
     for (const auto& node : parent.get_children()) {
         // Always display at least two moves. In the case there is
         // only one move searched the user could get an idea why.
         //if (++movecount > 2 && !node->get_visits()) break;
         if (++movecount > 2 && (node->get_visits() < (cfg_lcb_min_visit_ratio * max_visits))) break;
-        if (ponder_just_started && (movecount > 10)) break;
         //if (node->get_visits() < 50) break;
 
         std::string move = state.move_to_text(node->get_move());
@@ -293,11 +288,11 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (LCB: %5.2f%%) (V: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (V: %5.2f%%) (LCB: %5.2f%%) (N: %5.2f%%) PV: %s\n",
             move.c_str(),
             node->get_visits(),
-            std::max(0.0f, node->get_eval_lcb(color) * 100.0f),
             node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
+            std::max(0.0f, node->get_eval_lcb(color) * 100.0f),
             node->get_policy() * 100.0f,
             pv.c_str());
     }
@@ -603,27 +598,13 @@ std::string UCTSearch::get_pv(FastState & state, UCTNode& parent) {
 }
 
 void UCTSearch::dump_analysis(int playouts) {
-    if (cfg_quiet) {
-        return;
-    }
-
     FastState tempstate = m_rootstate;
     int color = tempstate.board.get_to_move();
 
     std::string pvstring = get_pv(tempstate, *m_root);
     float winrate = 100.0f * m_root->get_raw_eval(color);
-    float lcb = 100.0f * m_root->get_eval_lcb(color);
-    int visits = static_cast<int>(m_root->get_visits());
-    // Leading Space
-    //printf("%d\n",x);  <-- ORIGINAL
-    // printf("%*d\n", width, x);  <-- LEADING SPACES
-    if (is_pondering_now) {
-        myprintf("PONDER:%6d /%6d [LCB: %5.2f%%] PV: %s\n",
-                    (visits - playouts), playouts, lcb, pvstring.c_str());
-    } else {
-        myprintf("PLAY:%6d /%6d [LCB: %5.2f%%] PV: %s\n",
-            (visits - playouts), playouts, lcb, pvstring.c_str());
-    }
+    myprintf("Playouts: %d, Win: %5.2f%%, PV: %s\n",
+             playouts, winrate, pvstring.c_str());
 }
 
 bool UCTSearch::is_running() const {
