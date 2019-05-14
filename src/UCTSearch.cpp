@@ -57,11 +57,11 @@ public:
         auto tmp = "info move " + m_move
                  + " visits " + std::to_string(m_visits)
                  + " winrate "
-                 + std::to_string(static_cast<int>(m_winrate * 10000))
+                 + std::to_string(static_cast<int>(m_winrate * 100)) // I'm actually sending LCB here instead of winrate
                  + " prior "
                  + std::to_string(static_cast<int>(m_policy_prior * 10000.0f))
                  + " lcb "
-                 + std::to_string(static_cast<int>(std::max(0.0f, m_lcb) * 10000));
+                 + std::to_string(static_cast<int>(std::max(0.0f, m_lcb) * 10000)); // This was added by the Ttl LCB patch
         if (order >= 0) {
             tmp += " order " + std::to_string(order);
         }
@@ -76,16 +76,16 @@ public:
                 return a.m_lcb < b.m_lcb;
             }
         }
-        if (a.m_visits == b.m_visits) {
-            return a.m_winrate < b.m_winrate;
+        if (a.m_winrate == b.m_winrate) {
+            return a.m_visits < b.m_visits;
         }
-        return a.m_visits < b.m_visits;
+        return a.m_winrate < b.m_winrate;
     }
 
 private:
     std::string m_move;
     int m_visits;
-    int m_winrate;
+    float m_winrate;
     float m_policy_prior;
     std::string m_pv;
     float m_lcb;
@@ -288,12 +288,15 @@ void UCTSearch::dump_stats(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         std::string pv = move + " " + get_pv(tmpstate, *node);
 
-        myprintf("%4s -> %7d (V: %5.2f%%) (LCB: %5.2f%%) (N: %5.2f%%) PV: %s\n",
+        myprintf("%4s -> %7d (V: %5.2f%%) (LCB: %5.2f%%) (N: %5.2f%%) PV: %s\n", // New Ttl output
             move.c_str(),
             node->get_visits(),
             node->get_visits() ? node->get_raw_eval(color)*100.0f : 0.0f,
-            std::max(0.0f, node->get_eval_lcb(color) * 100.0f),
+            std::max(0.0f, node->get_eval_lcb(color) * 100.0f), // New Ttl output (newer than the OLDER line below)
+            //std::max(0.0f, node->get_lcb(color) * 100.0f), // OLDER New Ttl output
             node->get_policy() * 100.0f,
+            //node->get_lcb_binomial(color) * 100.0f, // Roy7's output
+            //node->get_ucb_binomial(color) * 100.0f, // Roy7's output
             pv.c_str());
     }
     tree_stats(parent);
@@ -321,7 +324,7 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
             //&& sortable_data.size() >= cfg_analyze_tags.post_move_count()) {
             continue;
         }
-        if (node->get_visits() < 50) {
+        if (node->get_visits() < 4) {
             continue;
         }
         auto move = state.move_to_text(node->get_move());
@@ -329,7 +332,9 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
         tmpstate.play_move(node->get_move());
         auto rest_of_pv = get_pv(tmpstate, *node);
         auto pv = move + (rest_of_pv.empty() ? "" : " " + rest_of_pv);
-        auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f;
+        //auto move_eval = node->get_visits() ? node->get_raw_eval(color) : 0.0f; //Default LZ
+        //auto move_eval = node->get_visits() ? node->get_lcb_binomial(color) : 0.0f; // Roy7's old output, gives LCB in place of winrate
+        auto move_eval = std::max(0.0f, node->get_eval_lcb(color) * 100.0f); // NEW, Ttl's output, gives LCB in place of winrate
         auto policy = node->get_policy();
         auto lcb = node->get_eval_lcb(color);
         auto visits = node->get_visits();
@@ -338,7 +343,7 @@ void UCTSearch::output_analysis(FastState & state, UCTNode & parent) {
             visits > max_visits * cfg_lcb_min_visit_ratio;
         // Store data in array
         sortable_data.emplace_back(move, visits,
-                                   move_eval, policy, pv, lcb, lcb_ratio_exceeded);
+                                   move_eval, policy, pv, lcb, lcb_ratio_exceeded); // NEW Original after Ttl patch
     }
     // Sort array to decide order
     std::stable_sort(rbegin(sortable_data), rend(sortable_data));
@@ -710,6 +715,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
+    /**
     if (current_movenum > 450 && !is_pondering_now) {
         return (static_cast<int>((m_playouts)) >= 800)
             || (static_cast<int>(m_root->get_visits()) >= 800)
@@ -725,7 +731,6 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || (static_cast<int>(m_root->get_visits()) >= 3200)
             || elapsed_centis >= time_for_move;
     }
-    /**
     if (current_movenum > 300 && !is_pondering_now) {
         return (static_cast<int>((16) * (m_playouts)) >= m_maxplayouts)
             || (static_cast<int>((16) * (m_root->get_visits())) >= m_maxvisits)
