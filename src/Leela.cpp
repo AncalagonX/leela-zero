@@ -116,6 +116,8 @@ static void parse_commandline(int argc, char *argv[]) {
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
             "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
+        ("maxmovevisits", po::value<int>()->default_value(cfg_max_visits_on_a_single_move),
+            "Max visits allowed on a single move before LZ stops searching vertexes.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -238,6 +240,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("kgscleanupmoves")) {
         cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
+    }
+
+    if (vm.count("maxmovevisits")) {
+        cfg_max_visits_on_a_single_move = vm["maxmovevisits"].as<int>();
     }
 
 #ifdef USE_OPENCL

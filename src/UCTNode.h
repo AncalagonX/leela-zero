@@ -32,6 +32,11 @@
 #include "SMP.h"
 #include "UCTNodePointer.h"
 
+extern int most_root_visits_seen;
+extern int vertex_most_root_visits_seen;
+extern int movenum_most_root_visits_seen;
+extern bool max_visits_have_been_seen;
+
 class UCTNode {
 public:
     // When we visit a node, add this amount of virtual losses
@@ -51,7 +56,7 @@ public:
     const std::vector<UCTNodePointer>& get_children() const;
     void sort_children(int color, float lcb_min_visits);
     UCTNode& get_best_root_child(int color);
-    UCTNode* uct_select_child(int color, bool is_root);
+    UCTNode* uct_select_child(int color, bool is_root, int movenum_now);
 
     size_t count_nodes_and_clear_expand_state();
     bool first_visit() const;

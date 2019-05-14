@@ -77,6 +77,7 @@ extern std::string cfg_custom_engine_name;
 extern std::string cfg_custom_engine_version;
 extern int cfg_kgs_cleanup_moves;
 extern int kgs_cleanup_counter;
+extern int cfg_max_visits_on_a_single_move;
 
 /*
     A list of all valid GTP2 commands is defined here:

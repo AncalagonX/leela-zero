@@ -39,6 +39,10 @@
 #include "Utils.h"
 
 using namespace Utils;
+int most_root_visits_seen = 0;
+int vertex_most_root_visits_seen = 0;
+int movenum_most_root_visits_seen = -1;
+bool max_visits_have_been_seen = false;
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -279,7 +283,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
-UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
+UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     wait_expanded();
 
     // Count parentvisits manually to avoid issues with transpositions.
@@ -320,6 +324,25 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root) {
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
         const auto value = winrate + puct;
+
+        if (is_root
+        && (child.get_visits() > cfg_max_visits_on_a_single_move)
+        && (vertex_most_root_visits_seen == child.get_move())
+        && (movenum_most_root_visits_seen == movenum_now)) {
+            max_visits_have_been_seen = true;
+        }
+
+        if (is_root
+        && (static_cast<int>(child.get_visits()) > most_root_visits_seen)) {
+            most_root_visits_seen = static_cast<int>(child.get_visits());
+            vertex_most_root_visits_seen = child.get_move();
+            movenum_most_root_visits_seen = movenum_now;
+        }
+
+        //if (is_root && (most_root_visits_seen >= cfg_max_visits_on_a_single_move) && (child.get_move() != -1)) {
+        //    continue;
+        //}
+
         assert(value > std::numeric_limits<double>::lowest());
 
         if (value > best_value) {

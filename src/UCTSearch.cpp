@@ -176,6 +176,7 @@ bool UCTSearch::advance_to_new_rootstate() {
 void UCTSearch::update_root() {
     // Definition of m_playouts is playouts per search call.
     // So reset this count now.
+    most_root_visits_seen = 0;
     m_playouts = 0;
 
 #ifndef NDEBUG
@@ -237,7 +238,8 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     }
 
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get());
+        int movenum_now = static_cast<int>(m_rootstate.get_movenum());
+        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -711,8 +713,9 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     if (is_pondering_now) {
-        return (static_cast<int>((0.1f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((0.1f) * (m_root->get_visits())) >= m_maxvisits)
+        return (most_root_visits_seen >= cfg_max_visits_on_a_single_move)
+            || (static_cast<int>((1.0f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((1.0f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     /**
@@ -830,6 +833,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
     // stop the search
     m_run = false;
     tg.wait_all();
+    most_root_visits_seen = 0;
 
     // reactivate all pruned root children
     for (const auto& node : m_root->get_children()) {
@@ -918,6 +922,7 @@ void UCTSearch::ponder() {
     // stop the search
     m_run = false;
     tg.wait_all();
+    most_root_visits_seen = 0;
 
     // display search info
     myprintf("\n");

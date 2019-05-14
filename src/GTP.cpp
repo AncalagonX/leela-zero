@@ -92,6 +92,7 @@ std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
 int cfg_kgs_cleanup_moves;
 int kgs_cleanup_counter;
+int cfg_max_visits_on_a_single_move;
 
 
 
@@ -134,7 +135,7 @@ void GTP::setup_default_parameters() {
     // see UCTSearch::should_resign
     cfg_resignpct = -1;
     cfg_noise = false;
-    cfg_fpu_root_reduction = cfg_fpu_reduction;
+    cfg_fpu_root_reduction = 0.05f;
     cfg_ci_alpha = 1e-5f;
     cfg_lcb_min_visit_ratio = 0.25f;
     cfg_random_cnt = 0;
@@ -150,6 +151,7 @@ void GTP::setup_default_parameters() {
     cfg_custom_engine_version = "";
     cfg_kgs_cleanup_moves = 5;
     kgs_cleanup_counter = 0;
+    cfg_max_visits_on_a_single_move = UCTSearch::UNLIMITED_PLAYOUTS;
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -245,6 +247,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
     // Required on Unixy systems
     if (xinput.find("loadsgf") != std::string::npos) {
         transform_lowercase = false;
+        most_root_visits_seen = 0;
     }
 
     if (xinput.find("add_features") != std::string::npos) {
@@ -364,6 +367,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
 
         return true;
     } else if (command.find("clear_board") == 0) {
+        most_root_visits_seen = 0;
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);
@@ -394,6 +398,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
 
         return true;
     } else if (command.find("play") == 0) {
+        most_root_visits_seen = 0;
         if (command.find("resign") != std::string::npos) {
             game.play_move(FastBoard::RESIGN);
             gtp_printf(id, "");
@@ -552,6 +557,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         }
         return true;
     } else if (command.find("undo") == 0) {
+        most_root_visits_seen = 0;
         if (game.undo_move()) {
             gtp_printf(id, "");
         } else {
@@ -749,6 +755,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
 
         return true;
     } else if (command.find("loadsgf") == 0) {
+        most_root_visits_seen = 0;
         std::istringstream cmdstream(command);
         std::string tmp, filename;
         int movenum;
