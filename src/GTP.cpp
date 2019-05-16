@@ -203,6 +203,7 @@ const std::string GTP::s_commands[] = {
     "kgs-game_over",
     "kgs-chat",
     "heatmap",
+    "clop_tune",
     "lz-analyze",
     "lz-genmove_analyze",
     ""
@@ -392,6 +393,40 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 game.set_komi(komi);
             }
             gtp_printf(id, "");
+        } else {
+            gtp_fail_printf(id, "syntax not understood");
+        }
+
+        return true;
+    } else if (command.find("clop_tune") == 0) {
+        std::istringstream cmdstream(command);
+        std::string tmp;
+        std::string parameter_to_tune;
+        float parameter_value;
+
+        cmdstream >> tmp;  // eat clop
+        cmdstream >> parameter_to_tune;
+        cmdstream >> parameter_value;
+        
+
+        if (!cmdstream.fail()) {
+            gtp_printf(id, "");
+            if (parameter_to_tune == "puct" || parameter_to_tune == "cpuct" || parameter_to_tune == "cfg_puct") {
+                cfg_puct = parameter_value;
+            } else if (parameter_to_tune == "fpu_root" || parameter_to_tune == "fpu_root_reduction" || parameter_to_tune == "cfg_fpu_root_reduction") {
+                cfg_fpu_root_reduction = parameter_value;
+            } else if (parameter_to_tune == "fpu" || parameter_to_tune == "fpu_reduction" || parameter_to_tune == "cfg_fpu_reduction") {
+                cfg_fpu_reduction = parameter_value;
+            } else if (parameter_to_tune == "lcb_min_visit_ratio" || parameter_to_tune == "cfg_lcb_min_visit_ratio") {
+                cfg_lcb_min_visit_ratio = parameter_value;
+            } else if (parameter_to_tune == "ci_alpha" || parameter_to_tune == "cfg_ci_alpha") {
+                cfg_ci_alpha = parameter_value;
+            } else if (parameter_to_tune == "logconst" || parameter_to_tune == "cfg_logconst") {
+                cfg_logconst = parameter_value;
+            } else {
+                gtp_fail_printf(id, "syntax error");
+                return 1;
+            }
         } else {
             gtp_fail_printf(id, "syntax not understood");
         }
