@@ -127,6 +127,7 @@ static void parse_commandline(int argc, char *argv[]) {
         ("logconst", po::value<float>())
         ("softmax_temp", po::value<float>())
         ("fpu_reduction", po::value<float>())
+        ("fpu_root_reduction", po::value<float>())
         ("ci_alpha", po::value<float>())
         ;
 #endif
@@ -202,6 +203,9 @@ static void parse_commandline(int argc, char *argv[]) {
     }
     if (vm.count("fpu_reduction")) {
         cfg_fpu_reduction = vm["fpu_reduction"].as<float>();
+    }
+    if (vm.count("fpu_root_reduction")) {
+        cfg_fpu_root_reduction = vm["fpu_root_reduction"].as<float>();
     }
     if (vm.count("ci_alpha")) {
         cfg_ci_alpha = vm["ci_alpha"].as<float>();

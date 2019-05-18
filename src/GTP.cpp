@@ -135,7 +135,7 @@ void GTP::setup_default_parameters() {
     // see UCTSearch::should_resign
     cfg_resignpct = -1;
     cfg_noise = false;
-    cfg_fpu_root_reduction = 0.05f;
+    cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_ci_alpha = 1e-5f;
     cfg_lcb_min_visit_ratio = 0.25f;
     cfg_random_cnt = 0;
