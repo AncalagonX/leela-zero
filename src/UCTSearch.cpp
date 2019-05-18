@@ -572,7 +572,9 @@ int UCTSearch::get_best_move(passflag_t passflag) {
 
 
 
-        /***********************/ // TESTING THE "NO EYE-FILLING CODE"
+        // TESTING THE "NO EYE-FILLING CODE"
+        /***********************
+
         }
         else if ((movenum > 350) && (bestmove != FastBoard::PASS)) {
             // Do not allow eye-filling after move 300:
@@ -593,7 +595,7 @@ int UCTSearch::get_best_move(passflag_t passflag) {
                 myprintf("No alternative to eye-filling move, will pass instead.\n");
                 bestmove = FastBoard::PASS;
             }
-            /***********************/
+        ***********************/
 
 
 
@@ -773,8 +775,8 @@ bool UCTSearch::have_alternate_moves(int elapsed_centis, int time_for_move) {
 
 bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     if (is_pondering_now) {
-        return (static_cast<int>((0.5f) * (m_playouts)) >= m_maxplayouts)
-            || (static_cast<int>((0.5f) * (m_root->get_visits())) >= m_maxvisits)
+        return (static_cast<int>((0.01f) * (m_playouts)) >= m_maxplayouts)
+            || (static_cast<int>((0.01f) * (m_root->get_visits())) >= m_maxvisits)
             || elapsed_centis >= time_for_move;
     }
     /**
