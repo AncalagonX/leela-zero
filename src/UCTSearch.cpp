@@ -421,7 +421,7 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     const size_t board_squares = m_rootstate.board.get_boardsize()
                                * m_rootstate.board.get_boardsize();
     //const auto move_threshold = board_squares / 4;
-    const auto move_threshold = 150;
+    const auto move_threshold = 130;
     const auto movenum = m_rootstate.get_movenum();
     if (movenum <= move_threshold) {
         // too early in game to resign

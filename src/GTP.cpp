@@ -146,7 +146,7 @@ void GTP::setup_default_parameters() {
     cfg_noise = false;
     cfg_fpu_root_reduction = cfg_fpu_reduction;
     cfg_ci_alpha = 1e-5f;
-    cfg_lcb_min_visit_ratio = 0.25f;
+    cfg_lcb_min_visit_ratio = 0.50f;
     cfg_random_cnt = 0;
     cfg_random_min_visits = 1;
     cfg_random_temp = 1.0f;
@@ -201,9 +201,9 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    "fixed_handicap",
-    "place_free_handicap",
-    "set_free_handicap",
+    //"fixed_handicap",
+    //"place_free_handicap",
+    //"set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",
