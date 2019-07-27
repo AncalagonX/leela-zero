@@ -43,6 +43,8 @@ constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 bool is_pondering_now = false;
 bool ponder_just_started = false;
 int current_movenum = 0;
+float speedup_factor = 1.0f;
+float faster_out_speedup_factor = 1.0f;
 
 class OutputAnalysisData {
 public:
@@ -182,6 +184,7 @@ void UCTSearch::update_root() {
     second_most_root_visits_seen = 0;
     vertex_most_root_visits_seen = 0;
     vertex_second_most_root_visits_seen = 0;
+    best_root_winrate = 0.0f;
 
 #ifndef NDEBUG
     auto start_nodes = m_root->count_nodes_and_clear_expand_state();
@@ -816,12 +819,47 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
     //most_root_visits_seen
 
+    if (!is_pondering_now) {
+        if (current_movenum < 30) {
+            speedup_factor = 1.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+        if ((current_movenum >= 30) && (best_root_winrate >= 0.90)) {
+            speedup_factor = 2.0f;
+        }
+
+        if ((current_movenum >= 60) && (best_root_winrate >= 0.90)) {
+            speedup_factor = 4.0f;
+        }
+
+        if ((current_movenum >= 90) && (best_root_winrate >= 0.90)) {
+            speedup_factor = 6.0f;
+        }
+
+        if ((current_movenum >= 120) && (best_root_winrate >= 0.90)) {
+            speedup_factor = 8.0f;
+        }
+
+        if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
+            speedup_factor = 1.0f;
+        }
+        if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.65)) {
+            speedup_factor = 0.25f;
+            faster_out_speedup_factor = 0.5f;
+        }
+    }
+
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
+    int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
     if (!is_pondering_now && (elapsed_centis >= 90)) { // Wait 90ms before making these checks
-        if (most_root_visits_seen >= m_singlemovevisits) { // Check if the most visited move has more than our configured single-move-visit-limit
-            myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
-                                most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
+        int check_most_root_visits_seen = static_cast<int>(m_singlemovevisits / speedup_factor);
+        if (check_most_root_visits_seen < cfg_single_move_visits_required_to_check) {
+            check_most_root_visits_seen = cfg_single_move_visits_required_to_check;
+        }
+        if (most_root_visits_seen >= check_most_root_visits_seen) { // Check if the most visited move has more than our configured single-move-visit-limit
+            myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d (%d)) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
+                                most_root_visits_seen, check_most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
             return true; // Stop thinking
         }
         if ((most_root_visits_seen) >= cfg_single_move_visits_required_to_check) { // Ensure we have at least enough bare minimum visits to make the next check
@@ -844,9 +882,21 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || elapsed_centis >= time_for_move;
     }
     **/
+
+    int check_maxplayouts_seen = static_cast<int>(m_maxplayouts / speedup_factor);
+
+    if (check_maxplayouts_seen < cfg_single_move_visits_required_to_check) {
+        check_maxplayouts_seen = cfg_single_move_visits_required_to_check;
+    }
+
+    int check_maxvisits_seen = static_cast<int>(m_maxvisits / speedup_factor);
+
+    if (check_maxvisits_seen < cfg_single_move_visits_required_to_check) {
+        check_maxvisits_seen = cfg_single_move_visits_required_to_check;
+    }
     
-    return m_playouts >= m_maxplayouts
-           || m_root->get_visits() >= m_maxvisits
+    return m_playouts >= check_maxplayouts_seen
+           || m_root->get_visits() >= check_maxvisits_seen
            || elapsed_centis >= time_for_move;
     
 }

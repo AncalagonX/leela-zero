@@ -44,6 +44,7 @@ int most_root_visits_seen = 0;
 int second_most_root_visits_seen = 0;
 int vertex_most_root_visits_seen = 0;
 int vertex_second_most_root_visits_seen = 0;
+float best_root_winrate = 0.0f;
 
 std::random_device rd;
 
@@ -292,6 +293,7 @@ void UCTNode::accumulate_eval(float eval) {
     atomic_add(m_blackevals, double(eval));
 }
 
+//UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now, bool is_depth_1, bool is_opponent_move, bool is_pondering_now) {
 UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
     wait_expanded();
 
@@ -333,6 +335,7 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
 
     auto best = static_cast<UCTNodePointer*>(nullptr);
     auto best_value = std::numeric_limits<double>::lowest();
+    best_root_winrate = std::numeric_limits<double>::lowest();
 
     float movenum_float = movenum_now * 1.0f;
 
@@ -380,6 +383,9 @@ UCTNode* UCTNode::uct_select_child(int color, bool is_root, int movenum_now) {
                 second_most_root_visits_seen = most_root_visits_seen;
             }
             most_root_visits_seen = static_cast<int>(child.get_visits());
+            if (most_root_visits_seen >= 1) {
+                best_root_winrate = winrate;
+            }
         }
 
         if (is_root
