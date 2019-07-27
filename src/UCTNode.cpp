@@ -408,6 +408,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int second_most_root_visits_seen_so_far = 1;
     float best_policy = -10.0f;
     int best_policy_vertex = 999999;
+    auto second_best_value = std::numeric_limits<double>::lowest();
     int randomX = dis100(gen);
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
@@ -450,7 +451,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             if (psa > best_policy) {
                 best_policy = psa;
                 best_policy_vertex = child.get_move();
-                best = &child;
             }
         }
     }
@@ -497,11 +497,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
+        /**
         if (!is_opponent_move
             && ((movenum_now + depth) <= 150)
             && (child.get_move() == best_policy_vertex)) {
             continue;
         }
+        **/
 
         if (value > best_value) {
             best_value = value;
@@ -645,6 +647,51 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         *****************/
 
         
+    }
+
+    if (!is_opponent_move) {
+        for (auto& child : m_children) {
+            if (!child.active()) {
+                continue;
+            }
+
+            auto winrate = fpu_eval;
+            auto lcb = 0.0f;
+            if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+                // Someone else is expanding this node, never select it
+                // if we can avoid so, because we'd block on it.
+                winrate = -1.0f - fpu_reduction;
+            }
+            else if (child.get_visits() > 0) {
+                winrate = child.get_eval(color);
+                lcb = child.get_lcb(color);
+
+            }
+            const auto psa = child.get_policy();
+            const auto denom = 1.0 + child.get_visits();
+            auto puct = cfg_puct * psa * (numerator / denom);
+
+            int int_m_visits = static_cast<int>(m_visits);
+            int int_child_visits = static_cast<int>(child.get_visits());
+            int int_parent_visits = static_cast<int>(parentvisits);
+
+            auto value = winrate + puct;
+
+            /**
+
+            if (!is_opponent_move && (winrate >= winrate_target_value)) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
+
+            **/
+
+            assert(value > std::numeric_limits<double>::lowest());
+
+            if ((value >= second_best_value) && (value < best_value)) {
+                second_best_value = value;
+                best = &child;
+            }
+        }
     }
     /**
     if ((best_winrate < 0.5)
