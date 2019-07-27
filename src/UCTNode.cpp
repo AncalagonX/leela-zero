@@ -649,7 +649,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         
     }
 
-    if (!is_opponent_move) {
+    if (!is_opponent_move && (movenum_now + depth <= 150)) {
         for (auto& child : m_children) {
             if (!child.active()) {
                 continue;
