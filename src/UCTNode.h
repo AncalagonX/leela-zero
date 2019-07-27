@@ -43,6 +43,12 @@
 #include "SMP.h"
 #include "UCTNodePointer.h"
 
+extern int most_root_visits_seen;
+extern int second_most_root_visits_seen;
+extern int vertex_most_root_visits_seen;
+extern int vertex_second_most_root_visits_seen;
+extern float best_root_winrate;
+
 class UCTNode {
 public:
     // When we visit a node, add this amount of virtual losses

@@ -52,6 +52,13 @@
 #include "Utils.h"
 
 using namespace Utils;
+
+int most_root_visits_seen = 0;
+int second_most_root_visits_seen = 0;
+int vertex_most_root_visits_seen = 0;
+int vertex_second_most_root_visits_seen = 0;
+float best_root_winrate = 0.0f;
+
 using namespace boost::math;
 
 std::random_device rd;
@@ -495,6 +502,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
             most_root_visits_seen_so_far = int_child_visits;
+            best_root_winrate = winrate;
         }
 
         /**
