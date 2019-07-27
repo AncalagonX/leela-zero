@@ -406,6 +406,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     auto best_psa = std::numeric_limits<double>::lowest();
     int most_root_visits_seen_so_far = 1;
     int second_most_root_visits_seen_so_far = 1;
+    float best_policy = -10.0f;
+    int best_policy_vertex = 999999;
     int randomX = dis100(gen);
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
@@ -427,10 +429,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         winrate_target_value = 0.01f * (cfg_winrate_target + 15); // Converts user input into float between 1.0f and 0.0f
     }
 
+    if (winrate_target_value >= 1.0f) {
+        winrate_target_value = 1.0f;
+    }
+
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
     if (is_pondering_now) {
         is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+    }
+
+    if (!is_opponent_move) {
+        for (auto& child : m_children) { // This loop finds the highest-policy move, and saves its vertex
+            if (!child.active()) {
+                continue;
+            }
+
+            const auto psa = child.get_policy();
+
+            if (psa > best_policy) {
+                best_policy = psa;
+                best_policy_vertex = child.get_move();
+                best = &child;
+            }
+        }
     }
 
     for (auto& child : m_children) {
@@ -475,16 +497,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             most_root_visits_seen_so_far = int_child_visits;
         }
 
+        if (!is_opponent_move
+            && ((movenum_now + depth) <= 150)
+            && (child.get_move() == best_policy_vertex)) {
+            continue;
+        }
+
+        if (value > best_value) {
+            best_value = value;
+            best = &child;
+        }
+
         // Ignore considering opponent passing if we just passed (#1)
 
+        /**
         if (is_opponent_move
         && (child.get_move() == -1)
         && (movenum_now <= 250)) {
             continue;
         }
+        **/
 
         // Having this "if statement" first ensures default LZ search picks a "best move" in the rare case of failure in the "Pass Bot" sections below.
-        
+
+        /**        
         if (value > best_value) {
             if (!is_opponent_move && !(child.get_move() == -1) && (winrate > best_winrate) && (int_m_visits > 800)) {
                 best_winrate = winrate;
@@ -493,21 +529,25 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best_value2 = value;
             best = &child;
         }
+        **/
 
 
 
         // Ignore considering opponent passing if we just passed (#2)
 
+        /**
         if (is_opponent_move
         && (get_move() == -1)
         && (child.get_move() == -1)
         && (movenum_now <= 250)) {
             continue;
         }
+        **/
         
 
         // If root and it's our turn, always send 50 visits into "Pass".
 
+        /**
         if (!is_opponent_move
         && (is_root)
         && (movenum_now <= 250)
@@ -521,9 +561,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best->inflate();
             return best->get();
         }
+        **/
 
         // If root and it's our turn, always send "Pass" by extra visits equal to:  approximately 5% of highest root move visits so far
 
+        /**
         if (!is_opponent_move
         && (is_root)
         && (movenum_now <= 250)
@@ -537,6 +579,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best->inflate();
             return best->get();
         }
+        **/
 
         /***********
 
@@ -575,6 +618,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         // If root and it's our turn, AND "Pass" is >= winrate_target_value, send ALL visits to it.
 
+        /**
         if (!is_opponent_move
         && (is_root)
         && (movenum_now <= 250)
@@ -590,6 +634,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 return best->get();
             }
         }
+        **/
 
         /*****************
         ******* COPIED FROM VERTEX BRANCH CODE
@@ -601,7 +646,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         
     }
-
+    /**
     if ((best_winrate < 0.5)
     && (best_winrate >= 0.01)) {
         cfg_timemanage = TimeManagement::OFF;
@@ -609,6 +654,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     if (best_winrate >= winrate_target_value) {
         cfg_timemanage = TimeManagement::FAST;
     }
+    **/
 
 
 
