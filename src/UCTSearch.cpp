@@ -57,6 +57,9 @@ using namespace Utils;
 
 constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 bool is_pondering_now;
+std::string movenum_now = "";
+//cfg_custom_engine_name = movenum_now;
+//cfg_custom_engine_name = "B A";
 
 class OutputAnalysisData {
 public:
@@ -250,6 +253,10 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
                 result = SearchResult::from_eval(eval);
             }
         }
+    }
+
+    if (node == m_root.get()) {
+        movenum_now = std::to_string(int(m_rootstate.get_movenum()));
     }
 
     if (node->has_children() && !result.valid()) {
@@ -473,6 +480,7 @@ int UCTSearch::get_best_move(passflag_t passflag) {
 
     // Check whether to randomize the best move proportional
     // to the playout counts, early game only.
+    movenum_now = std::to_string(int(m_rootstate.get_movenum()));
     auto movenum = int(m_rootstate.get_movenum());
     if (movenum < cfg_random_cnt) {
         m_root->randomize_first_proportionally();
@@ -805,8 +813,9 @@ int UCTSearch::think(int color, passflag_t passflag) {
 
         // output some stats every few seconds
         // check if we should still search
-        if (!cfg_quiet && elapsed_centis - last_update > 250) {
+        if (!cfg_quiet && elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
+            cfg_custom_engine_name = get_analysis(m_playouts.load());
             myprintf("%s\n", get_analysis(m_playouts.load()).c_str());
         }
         keeprunning  = is_running();

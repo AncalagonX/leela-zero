@@ -75,6 +75,9 @@ namespace TimeManagement {
     };
 };
 
+
+extern std::string movenum_now;
+
 class UCTSearch {
 public:
     /*
