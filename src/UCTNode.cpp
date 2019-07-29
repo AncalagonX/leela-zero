@@ -415,6 +415,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int second_most_root_visits_seen_so_far = 1;
     float best_policy = -10.0f;
     int best_policy_vertex = 999999;
+    float best_opponent_policy = -10.0f;
+    float second_best_opponent_policy = -10.0f;
+    float top_two_opponent_policy_ratio = 0.0f;
+    float top_two_opponent_policy_ratio_inverse = 0.0f;
+    int best_opponent_policy_vertex = 999999;
     auto second_best_value = std::numeric_limits<double>::lowest();
     int randomX = dis100(gen);
 
@@ -463,6 +468,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
     }
     **/
+
+    ////////////////////////////////////////// CODE BLOCK TO FIND HIGH-POLICY OPPONENT MOVES
+    /**
+    if (!is_opponent_move) {
+        for (auto& child : m_children) { // This loop finds the highest-policy move, and saves its vertex
+            if (!child.active()) {
+                continue;
+            }
+
+            const auto psa = child.get_policy();
+
+            if (psa > best_opponent_policy) {
+                second_best_opponent_policy = best_opponent_policy;
+                best_opponent_policy = psa;
+                best_opponent_policy_vertex = child.get_move();
+            }
+        }
+
+        top_two_opponent_policy_ratio = (second_best_opponent_policy + (1/1600)) / (best_opponent_policy + (1/1600)); // Smaller ratio = greater policy disparity for top two
+        top_two_opponent_policy_ratio_inverse = (best_opponent_policy + (1/1600)) / (second_best_opponent_policy + (1/1600)); // Smaller ratio = less policy disparity for top two
+
+    }
+    **/
+    
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -533,6 +562,27 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         int vertex_prev = static_cast<int>(get_move());
         double xy_pythagoras_distance = 1.0;
 
+        ////////////////////////////////////////// CODE BLOCK FOR USING THE "FIND HIGH-POLICY OPPONENT MOVES" FOR LOOP FURTHER ABOVE
+        /**
+        if (is_opponent_move) {
+            if (top_two_opponent_policy_ratio <= 0.10f) {
+                value = value * 2;
+                if (top_two_opponent_policy_ratio <= 0.01f) {
+                    value = value * 2;
+                }
+            }
+        }
+        **/
+
+        if (!is_opponent_move && (vertex_now > 0) && (vertex_prev > 0) && (movenum_now <= 150)) {
+            if (get_policy() >= 0.90f) {
+                value = value * 2;
+                if (get_policy() >= 0.99f) {
+                    value = value * 4;
+                }
+            }
+        }
+
         if (!is_opponent_move && (vertex_now > 0) && (vertex_prev > 0)) {
 
             //int x = vertex % 21;
@@ -549,8 +599,15 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
             xy_pythagoras_distance = sqrt((x_distance)^2 + (y_distance)^2);
 
+            float movenum_attenuation = 1.0f;
+            if ((depth + movenum_now) >= 150) {
+                movenum_attenuation = (1 / ((depth + movenum_now) - 148));
+            }
+
             if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
-                value = value * xy_pythagoras_distance;
+                if (winrate >= 0.40) {
+                    value = value * (xy_pythagoras_distance * movenum_attenuation);
+                }
             }
 
             //////////////////////////////// KEIMA CODE BELOW
