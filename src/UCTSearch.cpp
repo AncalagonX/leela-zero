@@ -738,6 +738,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             || elapsed_centis >= time_for_move;
     }
 
+    current_movenum = static_cast<int>(m_rootstate.get_movenum());
+
     if (!is_pondering_now) {
         if (current_movenum < 30) {
             speedup_factor = 1.0f;

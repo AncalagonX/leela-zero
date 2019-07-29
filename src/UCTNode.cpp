@@ -574,6 +574,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         **/
 
+        ////////////////////////////////////////// CODE BLOCK FOR "FIND FORCING MOVES THE OPPONENT MUST PLAY
+        /**
         if (!is_opponent_move && (vertex_now > 0) && (vertex_prev > 0) && (movenum_now <= 150)) {
             if (get_policy() >= 0.90f) {
                 value = value * 2;
@@ -582,6 +584,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
         }
+        **/
 
         if (!is_opponent_move && (vertex_now > 0) && (vertex_prev > 0)) {
 
@@ -597,18 +600,55 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int x_distance = abs(x_now - x_prev);
             int y_distance = abs(y_now - y_prev);
 
-            xy_pythagoras_distance = sqrt((x_distance)^2 + (y_distance)^2);
+            xy_pythagoras_distance = sqrt((x_distance) ^ 2 + (y_distance) ^ 2);
 
             float movenum_attenuation = 1.0f;
-            if ((depth + movenum_now) >= 150) {
-                movenum_attenuation = (1 / ((depth + movenum_now) - 148));
+            float xy_pythagoras_distance_depth_attenuation = xy_pythagoras_distance / ((depth * 0.25f) + 1.0f);
+            if (xy_pythagoras_distance_depth_attenuation <= 1.0f) {
+                xy_pythagoras_distance_depth_attenuation = 1.0f;
             }
+            //if ((depth + movenum_now) >= 150) {
+            //    movenum_attenuation = (1 / ((depth + movenum_now) - 148));
+            //}
 
-            if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
-                if (winrate >= 0.40) {
-                    value = value * (xy_pythagoras_distance * movenum_attenuation);
+            //if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
+            if (depth + movenum_now <= 150) {
+                if (winrate >= 0.50) {
+                    value = value * (xy_pythagoras_distance_depth_attenuation);
                 }
             }
+        }
+
+        ////////////////////////////////////////// CODE BLOCK FOR "PRIORITIZE FINDING MOVES THAT MADE THE OPPONENT PLAY NEARBY"
+        /**
+        if (is_opponent_move && (vertex_now > 0) && (vertex_prev > 0)) {
+
+            //int x = vertex % 21;
+            //int y = (vertex - x) / 21;
+
+            int x_now = (vertex_now % 21) - 1;
+            int y_now = (vertex_now / 21) - 1;
+
+            int x_prev = (vertex_prev % 21) - 1;
+            int y_prev = (vertex_prev / 21) - 1;
+
+            int x_distance = abs(x_now - x_prev);
+            int y_distance = abs(y_now - y_prev);
+
+            xy_pythagoras_distance = sqrt((x_distance) ^ 2 + (y_distance) ^ 2);
+
+            float movenum_attenuation = 1.0f;
+            //if ((depth + movenum_now) >= 150) {
+            //    movenum_attenuation = (1 / ((depth + movenum_now) - 148));
+            //}
+
+            if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
+                if (winrate >= 0.50) {
+                    value = value * ((1/(sqrt(xy_pythagoras_distance))) * movenum_attenuation);
+                }
+            }
+        }
+        **/
 
             //////////////////////////////// KEIMA CODE BELOW
             /**
@@ -631,7 +671,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
             **/
-        }
+        //} /////////////////////////// THIS BRACKET WAS MOVED ABOVE KEIMA CODE SINCE I DISABLED KEIMA CODE
 
         /**
         if (!is_opponent_move && (movenum_now + depth <= 200)) {
