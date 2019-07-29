@@ -373,7 +373,7 @@ void GTP::setup_default_parameters() {
     cfg_kgs_cleanup_moves = 5;
     kgs_cleanup_counter = 0;
     cfg_random_temp = 1.0f;
-    cfg_winrate_target = 65;
+    cfg_winrate_target = 100;
     cfg_opponent_color = 1; // BLACK = 0, WHITE = 1
     cfg_dumbpass = false;
     cfg_logfile_handle = nullptr;
