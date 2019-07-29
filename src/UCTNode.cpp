@@ -641,6 +641,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
                     //continue;
                     value = value * 0.000001;
+                    if (randomX <= 75) {
+                        continue;
+                    }
                 }
             }
         }
@@ -1062,6 +1065,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     randomX_100 = dis100(gen);
+    randomX = dis100(gen);
     assert(best != nullptr);
     best->inflate();
     return best->get();
