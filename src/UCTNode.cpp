@@ -57,6 +57,8 @@ int most_root_visits_seen = 0;
 int second_most_root_visits_seen = 0;
 int vertex_most_root_visits_seen = 0;
 int vertex_second_most_root_visits_seen = 0;
+int upcoming_random_x = 0;
+int upcoming_random_y = 0;
 float best_root_winrate = 0.0f;
 
 using namespace boost::math;
@@ -75,6 +77,8 @@ std::uniform_int_distribution<> dis16(1, 16);
 std::uniform_int_distribution<> dis24(1, 24);
 std::uniform_int_distribution<> dis32(1, 32);
 std::uniform_int_distribution<> dis100(1, 100);
+
+std::uniform_int_distribution<> dis0_18(0, 18);
 
 int visit_limit_tracking = 1; // This is necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 int m_visits_tracked_here = 0;
@@ -452,6 +456,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
     }
 
+
+
     /**
     if (!is_opponent_move) {
         for (auto& child : m_children) { // This loop finds the highest-policy move, and saves its vertex
@@ -544,7 +550,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         auto value = winrate + puct;
 
-
+        if (!is_opponent_move) {
+            if (movenum_now % 5 == 0) {
+                upcoming_random_x = dis0_18(gen);
+                upcoming_random_y = dis0_18(gen);
+            }
+        }
 
 
         /////////////////////////////////////////////////////////////////////////////////

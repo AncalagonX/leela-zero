@@ -47,6 +47,8 @@ extern int most_root_visits_seen;
 extern int second_most_root_visits_seen;
 extern int vertex_most_root_visits_seen;
 extern int vertex_second_most_root_visits_seen;
+extern int upcoming_random_x;
+extern int upcoming_random_y;
 extern float best_root_winrate;
 
 class UCTNode {
