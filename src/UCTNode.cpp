@@ -522,7 +522,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         // PATTERN A (play on hoshi) IS THE SINGLE 17-LINE IF BLOCK IMMEDIATELY BELOW: //
         /////////////////////////////////////////////////////////////////////////////////
         
-        if (!is_opponent_move && (movenum_now + depth <= 200)) {
+        if (!is_opponent_move && (movenum_now + depth <= 150)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = check_vertex - remainder_vertex;
@@ -544,8 +544,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         ///////////////////////////////////////////////////////////////////////////////////////
         // PATTERN B (don't play on hoshi) IS THE SINGLE 17-LINE IF BLOCK IMMEDIATELY BELOW: //
         ///////////////////////////////////////////////////////////////////////////////////////
-        /**
-        if (!is_opponent_move && (movenum_now + depth <= 200)) {
+        
+        if (is_opponent_move && (movenum_now + depth <= 150)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = check_vertex - remainder_vertex;
@@ -562,7 +562,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
         }
-        **/
+        
         
         /**
         if (!is_opponent_move && (movenum_now + depth <= 150)) {

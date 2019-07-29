@@ -142,7 +142,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>leelaz_Z1_CHECKBOARD_ALTERNATE_A_skip_lcb</TargetName>
+    <TargetName>leelaz_Z1_CHECKBOARD_ALTERNATE_A_skip_lcb_VERSUS_B_move150</TargetName>
     <IntDir>$(Platform)\$(Configuration)\leelaz\</IntDir>
     <IncludePath>..\..\src\Eigen;$(IncludePath)</IncludePath>
   </PropertyGroup>
