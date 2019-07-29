@@ -539,14 +539,19 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int leftover_vertex = check_vertex - remainder_vertex;
             int leftover_divided_vertex = leftover_vertex / 21;
 
-            value = (winrate / (1.0f - ((((abs(10.5f - leftover_divided_vertex)/10.5f) + (abs(10.5f - remainder_vertex)/10.5f)) * 0.5f) / 1.0f))) + puct;
+            //value = (winrate / (1.0f - ((((abs(10.5f - leftover_divided_vertex)/10.5f) + (abs(10.5f - remainder_vertex)/10.5f)) * 0.5f) / 1.0f))) + puct;
 
             //Bounds of 17 and 4 on everything allowed Q4 and D16
-            /**
+
             if (leftover_vertex >= 16 || leftover_vertex <= 5 || remainder_vertex >= 16 || remainder_vertex <= 5) {
-                value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
+                //value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
+                value = value * 0.50f
             }
-            **/
+            if (remainder_vertex >= 16 || remainder_vertex <= 5) {
+                //value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
+                value = value * 0.50f
+            }
+            
         }
 
         /**
