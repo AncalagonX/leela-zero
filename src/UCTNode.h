@@ -63,6 +63,7 @@ public:
     bool create_children(Network & network,
                          std::atomic<int>& nodecount,
                          GameState& state, float& eval,
+                         int color_to_move,
                          float min_psa_ratio = 0.0f);
 
     const std::vector<UCTNodePointer>& get_children() const;

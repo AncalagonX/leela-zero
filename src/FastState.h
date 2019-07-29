@@ -45,6 +45,7 @@ public:
 
     void play_move(int vertex);
     bool is_move_legal(int color, int vertex) const;
+    bool is_move_keima(int color, int vertex) const;
 
     void set_komi(float komi);
     float get_komi() const;
