@@ -515,24 +515,26 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         auto value = winrate + puct;
 
-        /**
+        /
         if (!is_opponent_move && (movenum_now + depth <= 100)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = check_vertex - remainder_vertex;
             if (leftover_vertex % 2 == 0) {
                 if (remainder_vertex % 2 != 0) {
-                    value = value * 0.50f;
+                    //value = value * 0.50f;
+                    continue;
                 }
             }
             if (leftover_vertex % 2 != 0) {
                 if (remainder_vertex % 2 == 0) {
-                    value = value * 0.50f;
+                    //value = value * 0.50f;
+                    continue;
                 }
             }
         }
-        **/
-
+        
+        /**
         if (!is_opponent_move && (movenum_now + depth <= 150)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
@@ -553,6 +555,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
             
         }
+        **/
 
         /**
 
