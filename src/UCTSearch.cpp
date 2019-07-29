@@ -422,6 +422,9 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     const auto movenum = m_rootstate.get_movenum();
 
     auto move_threshold = num_intersections / 4;
+    if (cfg_resignpct == 8) {
+        move_threshold = 170;
+    }
     if ((movenum >= 150) && (cfg_resignpct == 9)) {
         move_threshold = 999;
     }
