@@ -529,120 +529,51 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         //int x = (vertex % m_sidevertices) - 1;
         //int y = (vertex / m_sidevertices) - 1;
 
-        if (!is_opponent_move) {
+        int vertex_now = static_cast<int>(child.get_move());
+        int vertex_prev = static_cast<int>(get_move());
+        double xy_pythagoras_distance = 1.0;
 
-            int vertex_now = static_cast<int>(child.get_move());
+        if (!is_opponent_move && (vertex_now > 0) && (vertex_prev > 0)) {
 
             //int x = vertex % 21;
             //int y = (vertex - x) / 21;
 
-            int x = (vertex_now % 21) - 1;
-            int y = (vertex_now / 21) - 1;
+            int x_now = (vertex_now % 21) - 1;
+            int y_now = (vertex_now / 21) - 1;
 
-            int keima1x = x + 1;
-            int keima1y = y + 2;
+            int x_prev = (vertex_prev % 21) - 1;
+            int y_prev = (vertex_prev / 21) - 1;
 
-            int keima2x = x + 2;
-            int keima2y = y + 1;
+            int x_distance = abs(x_now - x_prev);
+            int y_distance = abs(y_now - y_prev);
 
-            int keima3x = x + 2;
-            int keima3y = y - 1;
+            xy_pythagoras_distance = sqrt((x_distance)^2 + (y_distance)^2);
 
-            int keima4x = x + 1;
-            int keima4y = y - 2;
-
-            int keima5x = x - 1;
-            int keima5y = y - 2;
-
-            int keima6x = x - 2;
-            int keima6y = y - 1;
-
-            int keima7x = x - 2;
-            int keima7y = y + 1;
-
-            int keima8x = x - 1;
-            int keima8y = y + 2;
-
-            int keima1_vertex = 0;
-            int keima2_vertex = 0;
-            int keima3_vertex = 0;
-            int keima4_vertex = 0;
-            int keima5_vertex = 0;
-            int keima6_vertex = 0;
-            int keima7_vertex = 0;
-            int keima8_vertex = 0;
-
-            if (keima1x >= 0 && keima1x < 19 && keima1y >= 0 && keima1y < 19) {
-                keima1_vertex = state.board.get_vertex(keima1x, keima1y);
-            }
-            if (keima2x >= 0 && keima2x < 19 && keima2y >= 0 && keima2y < 19) {
-                keima2_vertex = state.board.get_vertex(keima2x, keima2y);
-            }
-            if (keima3x >= 0 && keima3x < 19 && keima3y >= 0 && keima3y < 19) {
-                keima3_vertex = state.board.get_vertex(keima3x, keima3y);
-            }
-            if (keima4x >= 0 && keima4x < 19 && keima4y >= 0 && keima4y < 19) {
-                keima4_vertex = state.board.get_vertex(keima4x, keima4y);
-            }
-            if (keima5x >= 0 && keima5x < 19 && keima5y >= 0 && keima5y < 19) {
-                keima5_vertex = state.board.get_vertex(keima5x, keima5y);
-            }
-            if (keima6x >= 0 && keima6x < 19 && keima6y >= 0 && keima6y < 19) {
-                keima6_vertex = state.board.get_vertex(keima6x, keima6y);
-            }
-            if (keima7x >= 0 && keima7x < 19 && keima7y >= 0 && keima7y < 19) {
-                keima7_vertex = state.board.get_vertex(keima7x, keima7y);
-            }
-            if (keima8x >= 0 && keima8x < 19 && keima8y >= 0 && keima8y < 19) {
-                keima8_vertex = state.board.get_vertex(keima8x, keima8y);
+            if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
+                value = value * xy_pythagoras_distance;
             }
 
+            //////////////////////////////// KEIMA CODE BELOW
+            /**
             //BLACK = 0, WHITE = 1, EMPTY = 2, INVAL = 3
 
+            int keima1_vertex;
+            bool keima1_bool;
 
-            bool keima1_bool = false;
-            bool keima2_bool = false;
-            bool keima3_bool = false;
-            bool keima4_bool = false;
-            bool keima5_bool = false;
-            bool keima6_bool = false;
-            bool keima7_bool = false;
-            bool keima8_bool = false;
-
-            if (depth + movenum_now <= 150 && depth + movenum_now >= 2) {
+            if ((depth + movenum_now <= 150) && (depth + movenum_now >= 2)) {
                 if (state.board.get_state(keima1_vertex) == color_to_move) {
                     keima1_bool = true;
                 }
-                if (state.board.get_state(keima2_vertex) == color_to_move) {
-                    keima2_bool = true;
-                }
-                if (state.board.get_state(keima3_vertex) == color_to_move) {
-                    keima3_bool = true;
-                }
-                if (state.board.get_state(keima4_vertex) == color_to_move) {
-                    keima4_bool = true;
-                }
-                if (state.board.get_state(keima5_vertex) == color_to_move) {
-                    keima5_bool = true;
-                }
-                if (state.board.get_state(keima6_vertex) == color_to_move) {
-                    keima6_bool = true;
-                }
-                if (state.board.get_state(keima7_vertex) == color_to_move) {
-                    keima7_bool = true;
-                }
-                if (state.board.get_state(keima8_vertex) == color_to_move) {
-                    keima8_bool = true;
-                }
 
-                if (keima1_bool || keima2_bool || keima3_bool || keima4_bool || keima5_bool || keima6_bool || keima7_bool || keima8_bool) {
+                if (keima1_bool) {
                     //insert keima-boosting code here if needed
                 }
-                if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
+                if (!keima1_bool) {
                     //continue;
                     value = value * 0.000001;
                 }
             }
+            **/
         }
 
         /**
