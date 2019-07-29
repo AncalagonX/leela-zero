@@ -609,7 +609,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             bool keima7_bool = false;
             bool keima8_bool = false;
 
-            if (depth + movenum_now <= 150 && depth + movenum_now >= 2) {
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 4) {
                 if (state.board.get_state(keima1_vertex) == color_to_move) {
                     keima1_bool = true;
                 }
