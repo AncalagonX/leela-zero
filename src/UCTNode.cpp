@@ -380,7 +380,7 @@ void UCTNode::narrow_search() {
     visit_limit_tracking = (1 + m_visits_tracked_here); // This resets the visit counts used by search limiter. It's necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 }
 
-UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth, bool is_pondering_now) {
+UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, int movenum_now, int depth, bool is_pondering_now, GameState& state) {
     //LOCK(get_mutex(), lock);
     wait_expanded();
 
@@ -522,6 +522,130 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         // PATTERN A (play on hoshi) IS THE SINGLE 17-LINE IF BLOCK IMMEDIATELY BELOW: //
         /////////////////////////////////////////////////////////////////////////////////
         
+        //int i;
+        //int j;
+        //int vertex = state.board.get_vertex(i, j);
+
+        //int x = (vertex % m_sidevertices) - 1;
+        //int y = (vertex / m_sidevertices) - 1;
+
+        if (!is_opponent_move) {
+
+            int vertex_now = static_cast<int>(child.get_move());
+
+            //int x = vertex % 21;
+            //int y = (vertex - x) / 21;
+
+            int x = (vertex_now % 21) - 1;
+            int y = (vertex_now / 21) - 1;
+
+            int keima1x = x + 1;
+            int keima1y = y + 2;
+
+            int keima2x = x + 2;
+            int keima2y = y + 1;
+
+            int keima3x = x + 2;
+            int keima3y = y - 1;
+
+            int keima4x = x + 1;
+            int keima4y = y - 2;
+
+            int keima5x = x - 1;
+            int keima5y = y - 2;
+
+            int keima6x = x - 2;
+            int keima6y = y - 1;
+
+            int keima7x = x - 2;
+            int keima7y = y + 1;
+
+            int keima8x = x - 1;
+            int keima8y = y + 2;
+
+            int keima1_vertex = 0;
+            int keima2_vertex = 0;
+            int keima3_vertex = 0;
+            int keima4_vertex = 0;
+            int keima5_vertex = 0;
+            int keima6_vertex = 0;
+            int keima7_vertex = 0;
+            int keima8_vertex = 0;
+
+            if (keima1x >= 0 && keima1x < 19 && keima1y >= 0 && keima1y < 19) {
+                keima1_vertex = state.board.get_vertex(keima1x, keima1y);
+            }
+            if (keima2x >= 0 && keima2x < 19 && keima2y >= 0 && keima2y < 19) {
+                keima2_vertex = state.board.get_vertex(keima2x, keima2y);
+            }
+            if (keima3x >= 0 && keima3x < 19 && keima3y >= 0 && keima3y < 19) {
+                keima3_vertex = state.board.get_vertex(keima3x, keima3y);
+            }
+            if (keima4x >= 0 && keima4x < 19 && keima4y >= 0 && keima4y < 19) {
+                keima4_vertex = state.board.get_vertex(keima4x, keima4y);
+            }
+            if (keima5x >= 0 && keima5x < 19 && keima5y >= 0 && keima5y < 19) {
+                keima5_vertex = state.board.get_vertex(keima5x, keima5y);
+            }
+            if (keima6x >= 0 && keima6x < 19 && keima6y >= 0 && keima6y < 19) {
+                keima6_vertex = state.board.get_vertex(keima6x, keima6y);
+            }
+            if (keima7x >= 0 && keima7x < 19 && keima7y >= 0 && keima7y < 19) {
+                keima7_vertex = state.board.get_vertex(keima7x, keima7y);
+            }
+            if (keima8x >= 0 && keima8x < 19 && keima8y >= 0 && keima8y < 19) {
+                keima8_vertex = state.board.get_vertex(keima8x, keima8y);
+            }
+
+            //BLACK = 0, WHITE = 1, EMPTY = 2, INVAL = 3
+
+
+            bool keima1_bool = false;
+            bool keima2_bool = false;
+            bool keima3_bool = false;
+            bool keima4_bool = false;
+            bool keima5_bool = false;
+            bool keima6_bool = false;
+            bool keima7_bool = false;
+            bool keima8_bool = false;
+
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 2) {
+                if (state.board.get_state(keima1_vertex) == color_to_move) {
+                    keima1_bool = true;
+                }
+                if (state.board.get_state(keima2_vertex) == color_to_move) {
+                    keima2_bool = true;
+                }
+                if (state.board.get_state(keima3_vertex) == color_to_move) {
+                    keima3_bool = true;
+                }
+                if (state.board.get_state(keima4_vertex) == color_to_move) {
+                    keima4_bool = true;
+                }
+                if (state.board.get_state(keima5_vertex) == color_to_move) {
+                    keima5_bool = true;
+                }
+                if (state.board.get_state(keima6_vertex) == color_to_move) {
+                    keima6_bool = true;
+                }
+                if (state.board.get_state(keima7_vertex) == color_to_move) {
+                    keima7_bool = true;
+                }
+                if (state.board.get_state(keima8_vertex) == color_to_move) {
+                    keima8_bool = true;
+                }
+
+                if (keima1_bool || keima2_bool || keima3_bool || keima4_bool || keima5_bool || keima6_bool || keima7_bool || keima8_bool) {
+                    //insert keima-boosting code here if needed
+                }
+                if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
+                    //continue;
+                    value = value * 0.000001;
+                }
+            }
+        }
+
+        /**
         if (!is_opponent_move && (movenum_now + depth <= 200)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
@@ -539,6 +663,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
         }
+        **/
         
 
         ///////////////////////////////////////////////////////////////////////////////////////
