@@ -424,7 +424,7 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    "fixed_handicap",
+    //"fixed_handicap",
     "last_move",
     "move_history",
     //"place_free_handicap",

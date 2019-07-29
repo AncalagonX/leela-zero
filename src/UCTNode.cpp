@@ -447,6 +447,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
     }
 
+    /**
     if (!is_opponent_move) {
         for (auto& child : m_children) { // This loop finds the highest-policy move, and saves its vertex
             if (!child.active()) {
@@ -461,6 +462,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
     }
+    **/
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -479,7 +481,31 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             lcb = child.get_lcb(color);
 
         }
-        const auto psa = child.get_policy();
+        auto psa = child.get_policy();
+
+        /**
+        if (!is_opponent_move && (movenum_now + depth <= 150)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = check_vertex - remainder_vertex;
+
+            //Bounds of 17 and 4 on everything allowed Q4 and D16
+
+            if (leftover_vertex >= 16 || leftover_vertex <= 5) {
+                psa = (psa + 0.01f) * 10.0f;
+            }
+            if (remainder_vertex >= 16 || remainder_vertex <= 5) {
+                psa = (psa + 0.01f) * 10.0f;
+            }
+        }
+        **/
+
+        /**
+        if (!is_opponent_move) {
+            psa = (child.get_policy()) * (sqrt(child.get_move() * 1.0f));
+        }
+        **/
+
         const auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
 
@@ -488,6 +514,40 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         int int_parent_visits = static_cast<int>(parentvisits);
 
         auto value = winrate + puct;
+
+        /**
+        if (!is_opponent_move && (movenum_now + depth <= 100)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = check_vertex - remainder_vertex;
+            if (leftover_vertex % 2 == 0) {
+                if (remainder_vertex % 2 != 0) {
+                    value = value * 0.50f;
+                }
+            }
+            if (leftover_vertex % 2 != 0) {
+                if (remainder_vertex % 2 == 0) {
+                    value = value * 0.50f;
+                }
+            }
+        }
+        **/
+
+        if (!is_opponent_move && (movenum_now + depth <= 150)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = check_vertex - remainder_vertex;
+            int leftover_divided_vertex = leftover_vertex / 21;
+
+            value = (winrate / (1.0f - ((((abs(10.5f - leftover_divided_vertex)/10.5f) + (abs(10.5f - remainder_vertex)/10.5f)) * 0.5f) / 1.0f))) + puct;
+
+            //Bounds of 17 and 4 on everything allowed Q4 and D16
+            /**
+            if (leftover_vertex >= 16 || leftover_vertex <= 5 || remainder_vertex >= 16 || remainder_vertex <= 5) {
+                value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
+            }
+            **/
+        }
 
         /**
 
@@ -657,6 +717,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         
     }
 
+    /**
     if (!is_opponent_move && (movenum_now + depth <= 150)) {
         for (auto& child : m_children) {
             if (!child.active()) {
@@ -685,14 +746,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
             auto value = winrate + puct;
 
-            /**
-
-            if (!is_opponent_move && (winrate >= winrate_target_value)) {
-                value = (1 - abs(winrate_target_value - winrate)) + puct;
-            }
-
-            **/
-
             assert(value > std::numeric_limits<double>::lowest());
 
             if ((value >= second_best_value) && (value < best_value)) {
@@ -701,6 +754,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
     }
+    **/
+
     /**
     if ((best_winrate < 0.5)
     && (best_winrate >= 0.01)) {
