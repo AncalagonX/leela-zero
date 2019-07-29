@@ -57,6 +57,8 @@ int most_root_visits_seen = 0;
 int second_most_root_visits_seen = 0;
 int vertex_most_root_visits_seen = 0;
 int vertex_second_most_root_visits_seen = 0;
+int rng_a;
+int rng_b;
 float best_root_winrate = 0.0f;
 
 using namespace boost::math;
@@ -75,6 +77,8 @@ std::uniform_int_distribution<> dis16(1, 16);
 std::uniform_int_distribution<> dis24(1, 24);
 std::uniform_int_distribution<> dis32(1, 32);
 std::uniform_int_distribution<> dis100(1, 100);
+//std::uniform_int_distribution<> dis_custom(rng_a, rng_b);
+std::uniform_int_distribution<> dis_custom(1, rng_b);
 
 int visit_limit_tracking = 1; // This is necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 int m_visits_tracked_here = 0;
@@ -417,6 +421,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int best_policy_vertex = 999999;
     auto second_best_value = std::numeric_limits<double>::lowest();
     int randomX = dis100(gen);
+    int randomX10 = dis10(gen);
+    rng_b = (depth + 1);
+    int random_1_to_depth = dis_custom(gen);
 
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
     auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
@@ -638,10 +645,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 if (keima1_bool || keima2_bool || keima3_bool || keima4_bool || keima5_bool || keima6_bool || keima7_bool || keima8_bool) {
                     //insert keima-boosting code here if needed
                 }
+                if (random_1_to_depth >= 1) {
+
+                }
+                //if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
                 if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
                     //continue;
-                    value = value * 0.0000001;
-                    if (randomX <= 95) {
+                    value = value * 0.0000001 * ((random_1_to_depth) ^ 2);
+                    if (randomX <= 90) {
                         continue;
                     }
                 }
