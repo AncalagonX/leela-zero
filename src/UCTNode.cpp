@@ -529,7 +529,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         //int x = (vertex % m_sidevertices) - 1;
         //int y = (vertex / m_sidevertices) - 1;
 
-        if (!is_opponent_move && is_opponent_move) {
+        if (!is_opponent_move) {
 
             int vertex_now = static_cast<int>(child.get_move());
 
@@ -609,7 +609,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             bool keima7_bool = false;
             bool keima8_bool = false;
 
-            if (depth + movenum_now <= 150 && depth + movenum_now >= 3) {
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 4) {
                 if (state.board.get_state(keima1_vertex) == color_to_move) {
                     keima1_bool = true;
                 }
@@ -650,7 +650,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         //Only allowed to play one-jump or immediate diagonal moves
 
-        if (!is_opponent_move) {
+        if (is_opponent_move) {
 
             int vertex_now = static_cast<int>(child.get_move());
 
@@ -754,7 +754,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             bool diagonal7_bool = false;
             bool diagonal8_bool = false;
 
-            if (depth + movenum_now <= 150 && depth + movenum_now >= 3) {
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 4) {
                 if (state.board.get_state(jump1_vertex) == color_to_move) {
                     if (state.board.get_state(jump1_check_vertex) != color_to_move) {
                         jump1_bool = true;
