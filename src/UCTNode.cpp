@@ -648,6 +648,125 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
 
+        if (is_opponent_move) {
+
+            int vertex_now = static_cast<int>(child.get_move());
+
+            //int x = vertex % 21;
+            //int y = (vertex - x) / 21;
+
+            int x = (vertex_now % 21) - 1;
+            int y = (vertex_now / 21) - 1;
+
+            int bigkeima1x = x + 1;
+            int bigkeima1y = y + 3;
+
+            int bigkeima2x = x + 3;
+            int bigkeima2y = y + 1;
+
+            int bigkeima3x = x + 3;
+            int bigkeima3y = y - 1;
+
+            int bigkeima4x = x + 1;
+            int bigkeima4y = y - 3;
+
+            int bigkeima5x = x - 1;
+            int bigkeima5y = y - 3;
+
+            int bigkeima6x = x - 3;
+            int bigkeima6y = y - 1;
+
+            int bigkeima7x = x - 3;
+            int bigkeima7y = y + 1;
+
+            int bigkeima8x = x - 1;
+            int bigkeima8y = y + 3;
+
+            int bigkeima1_vertex = 0;
+            int bigkeima2_vertex = 0;
+            int bigkeima3_vertex = 0;
+            int bigkeima4_vertex = 0;
+            int bigkeima5_vertex = 0;
+            int bigkeima6_vertex = 0;
+            int bigkeima7_vertex = 0;
+            int bigkeima8_vertex = 0;
+
+            if (bigkeima1x >= 0 && bigkeima1x < 19 && bigkeima1y >= 0 && bigkeima1y < 19) {
+                bigkeima1_vertex = state.board.get_vertex(bigkeima1x, bigkeima1y);
+            }
+            if (bigkeima2x >= 0 && bigkeima2x < 19 && bigkeima2y >= 0 && bigkeima2y < 19) {
+                bigkeima2_vertex = state.board.get_vertex(bigkeima2x, bigkeima2y);
+            }
+            if (bigkeima3x >= 0 && bigkeima3x < 19 && bigkeima3y >= 0 && bigkeima3y < 19) {
+                bigkeima3_vertex = state.board.get_vertex(bigkeima3x, bigkeima3y);
+            }
+            if (bigkeima4x >= 0 && bigkeima4x < 19 && bigkeima4y >= 0 && bigkeima4y < 19) {
+                bigkeima4_vertex = state.board.get_vertex(bigkeima4x, bigkeima4y);
+            }
+            if (bigkeima5x >= 0 && bigkeima5x < 19 && bigkeima5y >= 0 && bigkeima5y < 19) {
+                bigkeima5_vertex = state.board.get_vertex(bigkeima5x, bigkeima5y);
+            }
+            if (bigkeima6x >= 0 && bigkeima6x < 19 && bigkeima6y >= 0 && bigkeima6y < 19) {
+                bigkeima6_vertex = state.board.get_vertex(bigkeima6x, bigkeima6y);
+            }
+            if (bigkeima7x >= 0 && bigkeima7x < 19 && bigkeima7y >= 0 && bigkeima7y < 19) {
+                bigkeima7_vertex = state.board.get_vertex(bigkeima7x, bigkeima7y);
+            }
+            if (bigkeima8x >= 0 && bigkeima8x < 19 && bigkeima8y >= 0 && bigkeima8y < 19) {
+                bigkeima8_vertex = state.board.get_vertex(bigkeima8x, bigkeima8y);
+            }
+
+            //BLACK = 0, WHITE = 1, EMPTY = 2, INVAL = 3
+
+
+            bool bigkeima1_bool = false;
+            bool bigkeima2_bool = false;
+            bool bigkeima3_bool = false;
+            bool bigkeima4_bool = false;
+            bool bigkeima5_bool = false;
+            bool bigkeima6_bool = false;
+            bool bigkeima7_bool = false;
+            bool bigkeima8_bool = false;
+
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 4) {
+                if (state.board.get_state(bigkeima1_vertex) == color_to_move) {
+                    bigkeima1_bool = true;
+                }
+                if (state.board.get_state(bigkeima2_vertex) == color_to_move) {
+                    bigkeima2_bool = true;
+                }
+                if (state.board.get_state(bigkeima3_vertex) == color_to_move) {
+                    bigkeima3_bool = true;
+                }
+                if (state.board.get_state(bigkeima4_vertex) == color_to_move) {
+                    bigkeima4_bool = true;
+                }
+                if (state.board.get_state(bigkeima5_vertex) == color_to_move) {
+                    bigkeima5_bool = true;
+                }
+                if (state.board.get_state(bigkeima6_vertex) == color_to_move) {
+                    bigkeima6_bool = true;
+                }
+                if (state.board.get_state(bigkeima7_vertex) == color_to_move) {
+                    bigkeima7_bool = true;
+                }
+                if (state.board.get_state(bigkeima8_vertex) == color_to_move) {
+                    bigkeima8_bool = true;
+                }
+
+                if (bigkeima1_bool || bigkeima2_bool || bigkeima3_bool || bigkeima4_bool || bigkeima5_bool || bigkeima6_bool || bigkeima7_bool || bigkeima8_bool) {
+                    //insert bigkeima-boosting code here if needed
+                }
+                if (!bigkeima1_bool && !bigkeima2_bool && !bigkeima3_bool && !bigkeima4_bool && !bigkeima5_bool && !bigkeima6_bool && !bigkeima7_bool && !bigkeima8_bool) {
+                    //continue;
+                    value = value * 0.0000000001;
+                    if (randomX <= 98) {
+                        continue;
+                    }
+                }
+            }
+        }
+
         /**
         if (!is_opponent_move && (movenum_now + depth <= 200)) {
             int check_vertex = static_cast<int>(child.get_move());
