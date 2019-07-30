@@ -529,7 +529,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         //int x = (vertex % m_sidevertices) - 1;
         //int y = (vertex / m_sidevertices) - 1;
 
-        if (!is_opponent_move) {
+        if (!is_opponent_move && is_opponent_move) {
 
             int vertex_now = static_cast<int>(child.get_move());
 
@@ -609,7 +609,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             bool keima7_bool = false;
             bool keima8_bool = false;
 
-            if (depth + movenum_now <= 150 && depth + movenum_now >= 4) {
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 3) {
                 if (state.board.get_state(keima1_vertex) == color_to_move) {
                     keima1_bool = true;
                 }
@@ -639,6 +639,159 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                     //insert keima-boosting code here if needed
                 }
                 if (!keima1_bool && !keima2_bool && !keima3_bool && !keima4_bool && !keima5_bool && !keima6_bool && !keima7_bool && !keima8_bool) {
+                    //continue;
+                    value = value * 0.0000000001;
+                    if (randomX <= 98) {
+                        continue;
+                    }
+                }
+            }
+        }
+
+        //Only allowed to play one-jump or immediate diagonal moves
+
+        if (!is_opponent_move) {
+
+            int vertex_now = static_cast<int>(child.get_move());
+
+            //int x = vertex % 21;
+            //int y = (vertex - x) / 21;
+
+            int x = (vertex_now % 21) - 1;
+            int y = (vertex_now / 21) - 1;
+
+            int jump1x = x + 2;
+            int jump1y = y + 0;
+            int jump1x_check = x + 1;
+
+            int jump2x = x - 2;
+            int jump2y = y + 0;
+            int jump2x_check = x - 1;
+
+            int jump3x = x + 0;
+            int jump3y = y + 2;
+            int jump3y_check = y + 1;
+
+            int jump4x = x + 0;
+            int jump4y = y - 2;
+            int jump4y_check = y - 1;
+
+            int diagonal5x = x + 1;
+            int diagonal5y = y + 1;
+
+            int diagonal6x = x + 1;
+            int diagonal6y = y - 1;
+
+            int diagonal7x = x - 1;
+            int diagonal7y = y + 1;
+
+            int diagonal8x = x - 1;
+            int diagonal8y = y - 1;
+
+            int jump1_vertex = 0;
+            int jump1_check_vertex = 0;
+            int jump2_vertex = 0;
+            int jump2_check_vertex = 0;
+            int jump3_vertex = 0;
+            int jump3_check_vertex = 0;
+            int jump4_vertex = 0;
+            int jump4_check_vertex = 0;
+            int diagonal5_vertex = 0;
+            int diagonal6_vertex = 0;
+            int diagonal7_vertex = 0;
+            int diagonal8_vertex = 0;
+
+            if (jump1x >= 0 && jump1x < 19 && jump1y >= 0 && jump1y < 19) {
+                jump1_vertex = state.board.get_vertex(jump1x, jump1y);
+            }
+            if (jump1x_check >= 0 && jump1x_check < 19 && jump1y >= 0 && jump1y < 19) {
+                jump1_check_vertex = state.board.get_vertex(jump1x_check, jump1y);
+            }
+            if (jump2x >= 0 && jump2x < 19 && jump2y >= 0 && jump2y < 19) {
+                jump2_vertex = state.board.get_vertex(jump2x, jump2y);
+            }
+            if (jump2x_check >= 0 && jump2x_check < 19 && jump2y >= 0 && jump2y < 19) {
+                jump2_check_vertex = state.board.get_vertex(jump2x_check, jump2y);
+            }
+            if (jump3x >= 0 && jump3x < 19 && jump3y >= 0 && jump3y < 19) {
+                jump3_vertex = state.board.get_vertex(jump3x, jump3y);
+            }
+            if (jump3x >= 0 && jump3x < 19 && jump3y_check >= 0 && jump3y_check < 19) {
+                jump3_check_vertex = state.board.get_vertex(jump3x, jump3y_check);
+            }
+            if (jump4x >= 0 && jump4x < 19 && jump4y >= 0 && jump4y < 19) {
+                jump4_vertex = state.board.get_vertex(jump4x, jump4y);
+            }
+            if (jump4x >= 0 && jump4x < 19 && jump4y_check >= 0 && jump4y_check < 19) {
+                jump4_check_vertex = state.board.get_vertex(jump4x, jump4y_check);
+            }
+            if (diagonal5x >= 0 && diagonal5x < 19 && diagonal5y >= 0 && diagonal5y < 19) {
+                diagonal5_vertex = state.board.get_vertex(diagonal5x, diagonal5y);
+            }
+            if (diagonal6x >= 0 && diagonal6x < 19 && diagonal6y >= 0 && diagonal6y < 19) {
+                diagonal6_vertex = state.board.get_vertex(diagonal6x, diagonal6y);
+            }
+            if (diagonal7x >= 0 && diagonal7x < 19 && diagonal7y >= 0 && diagonal7y < 19) {
+                diagonal7_vertex = state.board.get_vertex(diagonal7x, diagonal7y);
+            }
+            if (diagonal8x >= 0 && diagonal8x < 19 && diagonal8y >= 0 && diagonal8y < 19) {
+                diagonal8_vertex = state.board.get_vertex(diagonal8x, diagonal8y);
+            }
+
+            //BLACK = 0, WHITE = 1, EMPTY = 2, INVAL = 3
+
+
+            bool jump1_bool = false;
+            bool jump2_bool = false;
+            bool jump3_bool = false;
+            bool jump4_bool = false;
+            bool jump1_check_bool = false;
+            bool jump2_check_bool = false;
+            bool jump3_check_bool = false;
+            bool jump4_check_bool = false;
+            bool diagonal5_bool = false;
+            bool diagonal6_bool = false;
+            bool diagonal7_bool = false;
+            bool diagonal8_bool = false;
+
+            if (depth + movenum_now <= 150 && depth + movenum_now >= 3) {
+                if (state.board.get_state(jump1_vertex) == color_to_move) {
+                    if (state.board.get_state(jump1_check_vertex) != color_to_move) {
+                        jump1_bool = true;
+                    }
+                }
+                if (state.board.get_state(jump2_vertex) == color_to_move) {
+                    if (state.board.get_state(jump2_check_vertex) != color_to_move) {
+                        jump2_bool = true;
+                    }
+                }
+                if (state.board.get_state(jump3_vertex) == color_to_move) {
+                    if (state.board.get_state(jump3_check_vertex) != color_to_move) {
+                        jump3_bool = true;
+                    }
+                }
+                if (state.board.get_state(jump4_vertex) == color_to_move) {
+                    if (state.board.get_state(jump4_check_vertex) != color_to_move) {
+                        jump4_bool = true;
+                    }
+                }
+                if (state.board.get_state(diagonal5_vertex) == color_to_move) {
+                    diagonal5_bool = true;
+                }
+                if (state.board.get_state(diagonal6_vertex) == color_to_move) {
+                    diagonal6_bool = true;
+                }
+                if (state.board.get_state(diagonal7_vertex) == color_to_move) {
+                    diagonal7_bool = true;
+                }
+                if (state.board.get_state(diagonal8_vertex) == color_to_move) {
+                    diagonal8_bool = true;
+                }
+
+                if (jump1_bool || jump2_bool || jump3_bool || jump4_bool || diagonal5_bool || diagonal6_bool || diagonal7_bool || diagonal8_bool) {
+                        //insert keima-boosting code here if needed
+                }
+                if (!jump1_bool && !jump2_bool && !jump3_bool && !jump4_bool && !diagonal5_bool && !diagonal6_bool && !diagonal7_bool && !diagonal8_bool) {
                     //continue;
                     value = value * 0.0000000001;
                     if (randomX <= 98) {
