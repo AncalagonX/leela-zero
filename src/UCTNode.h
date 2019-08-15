@@ -180,4 +180,8 @@ private:
     void wait_expanded();
 };
 
+extern float total_winrate_deficit;
+extern float winrate_deficit_change;
+extern bool deficit_recorded;
+
 #endif

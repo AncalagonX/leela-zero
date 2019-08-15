@@ -72,6 +72,9 @@ std::uniform_int_distribution<> dis100(1, 100);
 int visit_limit_tracking = 1; // This is necessary to properly allocate visits when the user changes search width on the fly. It's set to 1 to avoid any future division-by-zero errors.
 int m_visits_tracked_here = 0;
 bool winrate_too_low = false;
+float total_winrate_deficit = 0.0f;
+float winrate_deficit_change = 0.0f;
+bool deficit_recorded = false;
 
 UCTNode::UCTNode(int vertex, float policy) : m_move(vertex), m_policy(policy) {
 }
@@ -465,6 +468,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         assert(value > std::numeric_limits<double>::lowest());
+
+        if (is_root && !deficit_recorded && (int_child_visits > most_root_visits_seen_so_far) && (most_root_visits_seen_so_far >= 500)) {
+            deficit_recorded = true;
+            winrate_deficit_change = winrate - winrate_target_value;
+        }
 
         if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
             second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;

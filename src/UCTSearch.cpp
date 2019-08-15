@@ -824,6 +824,12 @@ int UCTSearch::think(int color, passflag_t passflag) {
         return FastBoard::PASS;
     }
 
+    // Accumulate and deal with deficit tracking
+    total_winrate_deficit += winrate_deficit_change;
+    deficit_recorded = false;
+    myprintf("\n\n%.2f winrate deficit\n\n",
+        (100.0f * total_winrate_deficit));
+
     // Display search info.
     myprintf("\n");
     dump_stats(m_rootstate, *m_root);

@@ -142,7 +142,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>leelaz_Z1_TIEBOT_lcb_JIGO</TargetName>
+    <TargetName>leelaz_Z1_TIEBOT_lcb_JIGO_tracking</TargetName>
     <IntDir>$(Platform)\$(Configuration)\leelaz\</IntDir>
     <IncludePath>..\..\src\Eigen;$(IncludePath)</IncludePath>
   </PropertyGroup>
