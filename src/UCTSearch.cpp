@@ -120,8 +120,6 @@ bool UCTSearch::advance_to_new_rootstate() {
     auto depth =
         int(m_rootstate.get_movenum() - m_last_rootstate->get_movenum());
 
-    current_movenum = static_cast<int>(m_rootstate.get_movenum());
-
     if (depth < 0) {
         return false;
     }
@@ -233,6 +231,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     const auto color = currstate.get_to_move();
     const auto color_to_move = m_rootstate.get_to_move();
     const auto movenum_now = m_rootstate.get_movenum();
+    current_movenum = static_cast<int>(m_rootstate.get_movenum());
     auto result = SearchResult{};
 
     node->virtual_loss();

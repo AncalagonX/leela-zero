@@ -529,7 +529,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         //int x = (vertex % m_sidevertices) - 1;
         //int y = (vertex / m_sidevertices) - 1;
 
-        if (!is_opponent_move && (movenum_now >= 1) && (movenum_now + depth <= 170) && (static_cast<int>(get_move()) >= 1)) {
+        if (!is_opponent_move && (movenum_now >= 1) && (movenum_now + depth <= 150) && (static_cast<int>(get_move()) >= 1)) {
 
             int vertex_now = static_cast<int>(child.get_move());
             int vertex_prev = static_cast<int>(get_move());
