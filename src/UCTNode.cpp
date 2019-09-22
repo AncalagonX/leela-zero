@@ -447,7 +447,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
     }
 
-    /**
     if (!is_opponent_move) {
         for (auto& child : m_children) { // This loop finds the highest-policy move, and saves its vertex
             if (!child.active()) {
@@ -462,7 +461,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
     }
-    **/
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -533,27 +531,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         **/
 
-        if (!is_opponent_move && (movenum_now + depth <= 150)) {
-            int check_vertex = static_cast<int>(child.get_move());
-            int remainder_vertex = check_vertex % 21;
-            int leftover_vertex = check_vertex - remainder_vertex;
-            int leftover_divided_vertex = leftover_vertex / 21;
-
-            //value = (winrate / (1.0f - ((((abs(10.5f - leftover_divided_vertex)/10.5f) + (abs(10.5f - remainder_vertex)/10.5f)) * 0.5f) / 1.0f))) + puct;
-
-            //Bounds of 17 and 4 on everything allowed Q4 and D16
-
-            if (leftover_vertex >= 16 || leftover_vertex <= 5 || remainder_vertex >= 16 || remainder_vertex <= 5) {
-                //value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
-                value = value * 0.50f
-            }
-            if (remainder_vertex >= 16 || remainder_vertex <= 5) {
-                //value = (abs(10 - leftover_vertex) + abs(10 - remainder_vertex)) * 0.5f;
-                value = value * 0.50f
-            }
-            
-        }
-
         /**
 
         if (!is_opponent_move && (winrate >= winrate_target_value)) {
@@ -570,13 +547,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             best_root_winrate = winrate;
         }
 
-        /**
         if (!is_opponent_move
             && ((movenum_now + depth) <= 150)
             && (child.get_move() == best_policy_vertex)) {
             continue;
         }
-        **/
 
         if (value > best_value) {
             best_value = value;
@@ -780,9 +755,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     std::uniform_int_distribution<> dis_moves(0, number_of_moves_to_search);
     std::uniform_int_distribution<> dis_root_visit_ratio(0, most_root_visits_second_root_visits_ratio);
     //int random_search_count = dis_moves(gen);
-    int random_search_count = 0; // Searches top 1-2 moves on Tiebot's turn.
+    int random_search_count = 5; // Searches top 1-2 moves on Tiebot's turn.
     if (is_pondering_now) {
-        random_search_count = 0; // Searches top 3-4 moves when pondering on opponent's turn.
+        random_search_count = 5; // Searches top 3-4 moves when pondering on opponent's turn.
     }
     int random_most_root_visits_skip = dis_root_visit_ratio(gen);
     int randomX_100 = dis100(gen);
@@ -803,7 +778,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             if (!child.active()) {
                 continue;
             }
-            if (depth >= 2) {
+            if (depth > 2) {
+                continue;
+            }
+
+            if (!is_opponent_move
+                && ((movenum_now + depth) <= 150)
+                && (child.get_move() == best_policy_vertex)) {
                 continue;
             }
 
@@ -859,6 +840,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 continue;
             }
             if (!is_root) {
+                continue;
+            }
+
+            if (!is_opponent_move
+                && ((movenum_now + depth) <= 150)
+                && (child.get_move() == best_policy_vertex)) {
                 continue;
             }
 
