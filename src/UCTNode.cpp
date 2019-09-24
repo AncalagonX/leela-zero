@@ -517,10 +517,42 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
+        if (!is_opponent_move && (movenum_now + depth <= 150)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+
+            int check_parent_vertex = static_cast<int>(child.get_move());
+            int remainder_parent_vertex = check_parent_vertex % 21;
+            int leftover_parent_vertex = (check_parent_vertex - remainder_parent_vertex) / 21;
+
+            if (movenum_now + depth <= 2) {
+                if (check_vertex == 220) {
+                    value = 1000.0 * value;
+                }
+            }
+            if (movenum_now + depth <= 2) {
+                if ((check_parent_vertex == 220) && (check_vertex == 219)) {
+                    value = 100.0 * value;
+                }
+            }
+            if ((remainder_parent_vertex == 21 - remainder_vertex) && (leftover_parent_vertex == 21 - leftover_vertex)) {
+                value = 100.0 * value;
+            }
+            if ((remainder_parent_vertex != 21 - remainder_vertex) && (leftover_parent_vertex != 21 - leftover_vertex)) {
+                value = value / 100.0;
+            }
+            
+        }
+
+
+
 
         /////////////////////////////////////////////////////////////////////////////////
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
+
+        /**
 
         if (!is_opponent_move && (movenum_now + depth <= 150)) {
             int check_vertex = static_cast<int>(child.get_move());
@@ -580,7 +612,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             //}
 
             //puct = puct * sqrt((abs(11 - leftover_vertex)) ^ 2 + (abs(11 - remainder_vertex)) ^ 2);
-        }
+        //}
+
+        
+
+
+
 
         //auto value = winrate + puct;
 
