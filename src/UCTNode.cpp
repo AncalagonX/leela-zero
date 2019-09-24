@@ -519,9 +519,78 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
         /////////////////////////////////////////////////////////////////////////////////
+        // TENGEN-FOCUSED: //
+        /////////////////////////////////////////////////////////////////////////////////
+
+        if (!is_opponent_move && (movenum_now + depth <= 150)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = check_vertex - remainder_vertex;
+            if (leftover_vertex <= 4 || leftover_vertex >= 16) {
+                value = 0.80 * value;
+            }
+            if (remainder_vertex <= 4 || remainder_vertex >= 16) {
+                value = 0.80 * value;
+            }
+
+            if (leftover_vertex <= 2 || leftover_vertex >= 18) {
+                value = 0.90 * value;
+            }
+            if (remainder_vertex <= 2 || remainder_vertex >= 18) {
+                value = 0.90 * value;
+            }
+
+            if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
+                value = 1000.0 * value;
+            }
+
+            if ((movenum_now + depth <= 1) && (check_vertex == 219)) {
+                value = 100.0 * value;
+            }
+
+            if ((movenum_now + depth <= 1) && (check_vertex != 220) && (check_vertex != 219)) {
+                value = value / 1000.0;
+            }
+            /** undelete this
+
+            if ((movenum_now + depth <= 2) && (check_vertex == 220)) {
+                if (remainder_vertex == 10 && leftover_vertex == 10) {
+                    value = 1000.0 * value;
+                }
+            }
+            if ((movenum_now + depth <= 2) && (check_vertex == 220)) {
+                if (remainder_vertex == 10 && leftover_vertex == 9) {
+                    value = 100.0 * value;
+                }
+            }
+
+            if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
+                value = value / 1000.0;
+            }
+            **/
+
+
+
+
+
+
+
+            //if ((movenum_now + depth <= 1) && (check_vertex == 219)) {
+            //    value = 100.0 * value;
+            //}
+
+            //puct = puct * sqrt((abs(11 - leftover_vertex)) ^ 2 + (abs(11 - remainder_vertex)) ^ 2);
+        }
+
+        //auto value = winrate + puct;
+
+
+        /////////////////////////////////////////////////////////////////////////////////
         // PATTERN A (play on hoshi) IS THE SINGLE 17-LINE IF BLOCK IMMEDIATELY BELOW: //
         /////////////////////////////////////////////////////////////////////////////////
-        
+
+
+        /**
         if (!is_opponent_move && (movenum_now + depth <= 200)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
@@ -539,7 +608,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
         }
-        
+        **/
+
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // PATTERN B (don't play on hoshi) IS THE SINGLE 17-LINE IF BLOCK IMMEDIATELY BELOW: //
