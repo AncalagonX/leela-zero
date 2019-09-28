@@ -522,10 +522,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
 
-        if (!is_opponent_move && (movenum_now + depth <= 150)) {
+        if (!is_opponent_move && (movenum_now + depth <= 100)) {
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
-            int leftover_vertex = check_vertex - remainder_vertex;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
             if (leftover_vertex <= 4 || leftover_vertex >= 16) {
                 value = 0.80 * value;
             }
@@ -533,24 +533,36 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 value = 0.80 * value;
             }
 
-            if (leftover_vertex <= 2 || leftover_vertex >= 18) {
-                value = 0.90 * value;
-            }
-            if (remainder_vertex <= 2 || remainder_vertex >= 18) {
-                value = 0.90 * value;
-            }
+            //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
+            //    value = 0.90 * value;
+            //}
+            //if (remainder_vertex <= 2 || remainder_vertex >= 18) {
+            //    value = 0.90 * value;
+            //}
 
-            if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
+            if ((movenum_now + depth <= 0) && (check_vertex == 220)) {
                 value = 1000.0 * value;
             }
 
-            if ((movenum_now + depth <= 1) && (check_vertex == 219)) {
-                value = 100.0 * value;
-            }
-
-            if ((movenum_now + depth <= 1) && (check_vertex != 220) && (check_vertex != 219)) {
+            if ((movenum_now + depth <= 0) && (check_vertex != 220)) {
                 value = value / 1000.0;
             }
+
+            // 9x10  = 199
+            // 11x10 = 241
+            // 10x9  = 219
+            // 10x11 = 221
+
+            if ((movenum_now + depth == 1) && (check_vertex == 220) && (get_move() != 199) && (get_move() != 241) && (get_move() != 219) && (get_move() != 221)) {
+                value = 1000.0 * value;
+            }
+            if (movenum_now + depth == 1) {
+                if ((get_move() == 199) || (get_move() == 241) || (get_move() == 219) || (get_move() == 221)) {
+                }if (check_vertex == 220) {
+                    value = value / 1000.0;
+                }
+            }
+
             /** undelete this
 
             if ((movenum_now + depth <= 2) && (check_vertex == 220)) {
