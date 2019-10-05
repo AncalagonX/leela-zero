@@ -224,6 +224,7 @@ float UCTSearch::get_min_psa_ratio() const {
 SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
+    const auto color_to_move = m_rootstate.get_to_move();
     int movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
@@ -245,8 +246,11 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         }
     }
 
+    auto depth =
+        int(currstate.get_movenum() - m_rootstate.get_movenum());
+
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, node == m_root.get(), movenum_now);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, is_pondering_now);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -820,7 +824,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     //most_root_visits_seen
 
     if (!is_pondering_now) {
-        if (current_movenum < 30) {
+        if (current_movenum < 10) {
             speedup_factor = 1.0f;
             faster_out_speedup_factor = 1.0f;
         }
@@ -843,6 +847,12 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
             speedup_factor = 1.0f;
         }
+
+        if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.50)) {
+            speedup_factor = 0.50f;
+            faster_out_speedup_factor = 0.5f;
+        }
+
         if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.65)) {
             speedup_factor = 0.25f;
             faster_out_speedup_factor = 0.5f;

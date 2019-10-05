@@ -201,9 +201,9 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    "fixed_handicap",
-    "place_free_handicap",
-    "set_free_handicap",
+    //"fixed_handicap",
+    //"place_free_handicap",
+    //"set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",
@@ -463,9 +463,24 @@ bool GTP::execute(GameState & game, std::string xinput) {
             // start thinking
             {
                 game.set_to_move(who);
-                // Outputs winrate and pvs for lz-genmove_analyze
 
-                // Commented out the following one line to replace with the code below:
+                if (game.get_handicap() >= 2) {
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
+
+                if (game.get_komi() >= 7.6f || game.get_komi() <= 6.9f) {
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
+
+                // Outputs winrate and pvs for lz-genmove_analyze
                 int move = search->think(who);
 
 
