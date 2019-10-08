@@ -394,10 +394,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = (check_vertex - remainder_vertex) / 21;
             if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                value = 0.80 * value;
+                value = 0.90 * value;
             }
             if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                value = 0.80 * value;
+                value = 0.90 * value;
+            }
+
+            if (leftover_vertex <= 3 || leftover_vertex >= 17) {
+                value = 0.90 * value;
+            }
+            if (remainder_vertex <= 3 || remainder_vertex >= 17) {
+                value = 0.90 * value;
             }
 
             //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
@@ -436,10 +443,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = (check_vertex - remainder_vertex) / 21;
             if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                value = 0.90 * value;
+                value = 0.95 * value;
             }
             if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                value = 0.90 * value;
+                value = 0.95 * value;
+            }
+
+            if (leftover_vertex <= 3 || leftover_vertex >= 17) {
+                value = 0.95 * value;
+            }
+            if (remainder_vertex <= 3 || remainder_vertex >= 17) {
+                value = 0.95 * value;
             }
 
             //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
