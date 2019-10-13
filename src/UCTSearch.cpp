@@ -828,19 +828,19 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 1.0f;
             faster_out_speedup_factor = 1.0f;
         }
-        if ((current_movenum >= 30) && (best_root_winrate >= 0.90)) {
+        if ((current_movenum >= 300) && (best_root_winrate >= 0.90)) {
             speedup_factor = 2.0f;
         }
 
-        if ((current_movenum >= 60) && (best_root_winrate >= 0.90)) {
+        if ((current_movenum >= 600) && (best_root_winrate >= 0.90)) {
             speedup_factor = 4.0f;
         }
 
-        if ((current_movenum >= 90) && (best_root_winrate >= 0.90)) {
+        if ((current_movenum >= 900) && (best_root_winrate >= 0.90)) {
             speedup_factor = 6.0f;
         }
 
-        if ((current_movenum >= 120) && (best_root_winrate >= 0.90)) {
+        if ((current_movenum >= 1200) && (best_root_winrate >= 0.90)) {
             speedup_factor = 8.0f;
         }
 

@@ -384,107 +384,12 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
         }
 
-
-        /////////////////////////////////////////////////////////////////////////////////
-        // TENGEN-FOCUSED: //
-        /////////////////////////////////////////////////////////////////////////////////
-
-        if (!is_opponent_move && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9)) {
-            int check_vertex = static_cast<int>(child.get_move());
-            int remainder_vertex = check_vertex % 21;
-            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
-            if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                value = 0.90 * value;
-            }
-            if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                value = 0.90 * value;
-            }
-
-            if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                value = 0.90 * value;
-            }
-            if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                value = 0.90 * value;
-            }
-
-            //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
-            //    value = 0.90 * value;
-            //}
-            //if (remainder_vertex <= 2 || remainder_vertex >= 18) {
-            //    value = 0.90 * value;
-            //}
-
-            if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
-                value = 1000.0 * value;
-            }
-
-            if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
-                value = value / 1000.0;
-            }
-
-            // 9x10  = 199
-            // 11x10 = 241
-            // 10x9  = 219
-            // 10x11 = 221
-
-            //if ((movenum_now + depth == 1) && (check_vertex == 220) && (get_move() != 199) && (get_move() != 241) && (get_move() != 219) && (get_move() != 221)) {
-            //    value = 1000.0 * value;
-            //}
-            //if (movenum_now + depth == 1) {
-            //    if ((get_move() == 199) || (get_move() == 241) || (get_move() == 219) || (get_move() == 221)) {
-            //    }if (check_vertex == 220) {
-            //        value = value / 1000.0;
-            //    }
-            //}
+        if (!is_opponent_move && (winrate >= 0.75) && (depth > 1) && (movenum_now + depth <= 350)) {
+            value = (1 - abs(0.75 - winrate)) + puct;
         }
 
-        if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9)) {
-            int check_vertex = static_cast<int>(child.get_move());
-            int remainder_vertex = check_vertex % 21;
-            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
-            if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                value = 0.95 * value;
-            }
-            if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                value = 0.95 * value;
-            }
-
-            if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                value = 0.95 * value;
-            }
-            if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                value = 0.95 * value;
-            }
-
-            //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
-            //    value = 0.90 * value;
-            //}
-            //if (remainder_vertex <= 2 || remainder_vertex >= 18) {
-            //    value = 0.90 * value;
-            //}
-
-            if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
-                value = 1000.0 * value;
-            }
-
-            if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
-                value = value / 1000.0;
-            }
-
-            // 9x10  = 199
-            // 11x10 = 241
-            // 10x9  = 219
-            // 10x11 = 221
-
-            //if ((movenum_now + depth == 1) && (check_vertex == 220) && (get_move() != 199) && (get_move() != 241) && (get_move() != 219) && (get_move() != 221)) {
-            //    value = 1000.0 * value;
-            //}
-            //if (movenum_now + depth == 1) {
-            //    if ((get_move() == 199) || (get_move() == 241) || (get_move() == 219) || (get_move() == 221)) {
-            //    }if (check_vertex == 220) {
-            //        value = value / 1000.0;
-            //    }
-            //}
+        if (!is_opponent_move && (winrate >= 0.75) && (depth <= 1) && (movenum_now + depth <= 350)) {
+            value = 0.95 * ((1 - abs(0.75 - winrate)) + puct);
         }
 
         if (is_root && (static_cast<int>(child.get_visits()) > most_root_visits_seen)) {
@@ -545,7 +450,7 @@ public:
 
             // Sort on lower confidence bounds
             if (a_lcb != b_lcb) {
-                return a_lcb < b_lcb;
+                //return a_lcb < b_lcb;
             }
         }
 
