@@ -846,6 +846,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
         if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
             speedup_factor = 1.0f;
+            faster_out_speedup_factor = 1.0f;
         }
 
         if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.50)) {
@@ -854,8 +855,13 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         }
 
         if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.65)) {
-            speedup_factor = 0.25f;
-            faster_out_speedup_factor = 0.5f;
+            speedup_factor = 0.05f;
+            faster_out_speedup_factor = 0.3333f;
+        }
+
+        if (current_movenum <= 5) {
+            speedup_factor = 8.0f;
+            faster_out_speedup_factor = 1.0f;
         }
     }
 
