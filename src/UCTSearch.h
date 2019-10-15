@@ -33,6 +33,8 @@
 #include "UCTNode.h"
 #include "Network.h"
 
+extern int current_movenum;
+
 
 class SearchResult {
 public:

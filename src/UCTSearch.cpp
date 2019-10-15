@@ -858,11 +858,6 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 0.05f;
             faster_out_speedup_factor = 0.3333f;
         }
-
-        if (current_movenum <= 5) {
-            speedup_factor = 8.0f;
-            faster_out_speedup_factor = 1.0f;
-        }
     }
 
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
@@ -870,15 +865,15 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
     if (!is_pondering_now && (elapsed_centis >= 90)) { // Wait 90ms before making these checks
         int check_most_root_visits_seen = static_cast<int>(m_singlemovevisits / speedup_factor);
-        if (check_most_root_visits_seen < cfg_single_move_visits_required_to_check) {
-            check_most_root_visits_seen = cfg_single_move_visits_required_to_check;
+        if (check_most_root_visits_seen < static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) {
+            check_most_root_visits_seen = static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor);
         }
         if (most_root_visits_seen >= check_most_root_visits_seen) { // Check if the most visited move has more than our configured single-move-visit-limit
             myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d (%d)) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
                                 most_root_visits_seen, check_most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
             return true; // Stop thinking
         }
-        if ((most_root_visits_seen) >= cfg_single_move_visits_required_to_check) { // Ensure we have at least enough bare minimum visits to make the next check
+        if ((most_root_visits_seen) >= static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) { // Ensure we have at least enough bare minimum visits to make the next check
             if (cfg_second_best_move_ratio >= visit_ratio_best_two_moves) { // Check if we have a good enough visit ratio on the top candidate for an "Even Earlier, Early Out"
                 myprintf("\n     Stopping early: VISIT RATIO = %.2f (limit %.2f) \n     Most root visits = %d (limit %d) <--> Second most root visits = %d\n",
                     visit_ratio_best_two_moves, cfg_second_best_move_ratio, most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen);

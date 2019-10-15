@@ -383,6 +383,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         search = std::make_unique<UCTSearch>(game, *s_network);
         kgs_cleanup_counter = 0; // Reset on new game
         resign_moves_counter = 0; // Reset on new game
+        current_movenum = 0; // Reset on new game
         gtp_printf(id, "");
         return true;
     } else if (command.find("komi") == 0) {
@@ -839,6 +840,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         // Reset the cleanup counter and resignation counter, and do nothing else. Particularly, don't ponder.
         kgs_cleanup_counter = 0;
         resign_moves_counter = 0;
+        current_movenum = 0; // Reset on new game
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);
