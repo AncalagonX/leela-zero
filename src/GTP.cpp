@@ -678,7 +678,14 @@ void GTP::execute(GameState & game, const std::string& xinput) {
         } else {
             gtp_fail_printf(id, "syntax not understood");
         }
-        cfg_custom_engine_name = vertex;
+        const auto movenum = int(game.get_movenum());
+        if (movenum <= 10) {
+            cfg_custom_engine_name = "gamemessage";
+        }
+        else {
+            cfg_custom_engine_name = "nomessage";
+        }
+        cfg_custom_engine_version = vertex;
         return;
     } else if (command.find("genmove") == 0
                || command.find("lz-genmove_analyze") == 0) {
@@ -749,7 +756,14 @@ void GTP::execute(GameState & game, const std::string& xinput) {
 
             std::string vertex = game.move_to_text(move);
 
-            cfg_custom_engine_name = vertex;
+            const auto movenum = int(game.get_movenum());
+            if (movenum <= 10) {
+                cfg_custom_engine_name = "gamemessage";
+            }
+            else {
+                cfg_custom_engine_name = "test";
+            }
+            cfg_custom_engine_version = vertex;
 
             if (!analysis_output) {
                 gtp_printf(id, "%s", vertex.c_str());

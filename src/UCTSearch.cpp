@@ -815,7 +815,7 @@ int UCTSearch::think(int color, passflag_t passflag) {
         // check if we should still search
         if (!cfg_quiet && elapsed_centis - last_update > 100) {
             last_update = elapsed_centis;
-            cfg_custom_engine_name = get_analysis(m_playouts.load());
+            cfg_custom_engine_version = get_analysis(m_playouts.load());
             myprintf("%s\n", get_analysis(m_playouts.load()).c_str());
         }
         keeprunning  = is_running();
