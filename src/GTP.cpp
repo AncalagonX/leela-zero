@@ -49,6 +49,8 @@ using namespace Utils;
 // Configuration flags
 bool cfg_gtp_mode;
 bool cfg_allow_pondering;
+bool resign_next;
+bool pass_next;
 int cfg_num_threads;
 int cfg_max_threads;
 int cfg_max_playouts;
@@ -109,6 +111,8 @@ void GTP::initialize(std::unique_ptr<Network>&& net) {
 void GTP::setup_default_parameters() {
     cfg_gtp_mode = false;
     cfg_allow_pondering = true;
+    resign_next = false;
+    pass_next = false;
     cfg_max_threads = 64;
     //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
@@ -315,7 +319,16 @@ bool GTP::execute(GameState & game, std::string xinput) {
         return true;
     } else if (command == "name") {
         //gtp_printf(id, PROGRAM_NAME);
+        if (cfg_custom_engine_name == "versiononly ") {
+            cfg_custom_engine_name = "versiononly";
+        }
+        if (cfg_custom_engine_name == "nomessage ") {
+            cfg_custom_engine_name = "nomessage";
+        }
         gtp_printf(id, cfg_custom_engine_name.c_str());
+        if (cfg_custom_engine_name != "nomessage") {
+            cfg_custom_engine_name = "versiononly";
+        }
         return true;
     } else if (command == "version") {
         //gtp_printf(id, PROGRAM_VERSION);
@@ -464,6 +477,24 @@ bool GTP::execute(GameState & game, std::string xinput) {
             // start thinking
             {
                 game.set_to_move(who);
+
+                if (resign_next == true) {
+                    resign_next = false;
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
+
+                if (pass_next == true) {
+                    pass_next = false;
+                    int move = FastBoard::PASS;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
 
                 if (game.get_handicap() >= 2) {
                     int move = FastBoard::RESIGN;
@@ -825,10 +856,32 @@ bool GTP::execute(GameState & game, std::string xinput) {
         // kgs-chat (game|private) Name Message
         std::istringstream cmdstream(command);
         std::string tmp;
+        std::string px;
+        std::string word;
 
         cmdstream >> tmp; // eat kgs-chat
         cmdstream >> tmp; // eat game|private
         cmdstream >> tmp; // eat player name
+        cmdstream >> px;
+        if (px == "unicode+0027") {
+            cfg_custom_engine_name = "";
+            cmdstream >> word;
+            do {
+                cfg_custom_engine_name += word;
+                cfg_custom_engine_name += " ";
+                cmdstream >> word;
+            } while (!cmdstream.fail());
+        }
+        if (px == "unicode+0027") {
+            cmdstream >> word;
+            if (word == "pass") {
+                pass_next = true;
+            }
+            if (word == "resign") {
+                resign_next = true;
+            }
+        }
+
         do {
             cmdstream >> tmp; // eat message
         } while (!cmdstream.fail());
