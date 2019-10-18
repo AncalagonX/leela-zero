@@ -89,6 +89,8 @@ static void parse_commandline(int argc, char *argv[]) {
                        "fast = Same as on but always plays faster.\n"
                        "no_pruning = For self play training use.\n")
         ("noponder", "Disable thinking on opponent's time.")
+        ("passbot", "Enables PassBot mode.")
+        ("tengenbot", "Enables TengenBot mode.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
         ("cpu-only", "Use CPU-only implementation and do not use GPU.")
@@ -125,6 +127,11 @@ static void parse_commandline(int argc, char *argv[]) {
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
             "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
+        ("winratetarget",
+            po::value<int>()->default_value(cfg_winrate_target),
+            "Require engine to search for weaker moves that maintain a winrate of x%, regardless of the strength of the engine's opponent. Valid arguments are any integer from 0 to 100.\n"
+            "100 is unmodified search, playing strongest moves as usual.\n"
+            "50 forces a perfectly tied 50% winrate game against its opponent.")
         ;
 #ifdef USE_TUNER
     po::options_description tuner_desc("Tuning options");
@@ -252,6 +259,13 @@ static void parse_commandline(int argc, char *argv[]) {
     if (vm.count("kgscleanupmoves")) {
         cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
     }
+    if (vm.count("winratetarget")) {
+        cfg_winrate_target = vm["winratetarget"].as<int>();
+        // 0 to 100 are the only meaningful values. Default to 100% (unmodified search) if invalid input.
+        if ((cfg_winrate_target > 100) || (cfg_winrate_target < 0)) {
+            cfg_winrate_target = 100;
+        }
+    }
 
 #ifdef USE_OPENCL
     if (vm.count("gpu")) {
@@ -309,6 +323,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("noponder")) {
         cfg_allow_pondering = false;
+    }
+
+    if (vm.count("passbot")) {
+        cfg_passbot = true;
+    }
+
+    if (vm.count("tengenbot")) {
+        cfg_tengenbot = true;
     }
 
     if (vm.count("noise")) {

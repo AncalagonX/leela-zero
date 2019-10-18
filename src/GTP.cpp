@@ -51,6 +51,9 @@ bool cfg_gtp_mode;
 bool cfg_allow_pondering;
 bool resign_next;
 bool pass_next;
+bool cfg_passbot;
+bool cfg_tengenbot;
+int cfg_winrate_target;
 int cfg_num_threads;
 int cfg_max_threads;
 int cfg_max_playouts;
@@ -159,6 +162,10 @@ void GTP::setup_default_parameters() {
     cfg_logfile_handle = nullptr;
     cfg_quiet = false;
     cfg_benchmark = false;
+
+    cfg_passbot = true;
+    cfg_tengenbot = false;
+    cfg_winrate_target = 65;
 
     cfg_sentinel_file = "sentinel.quit";
     best_winrate_string = "";

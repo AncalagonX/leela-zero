@@ -338,6 +338,24 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     auto best_value = std::numeric_limits<double>::lowest();
     best_root_winrate = std::numeric_limits<double>::lowest();
 
+
+    auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+    auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+    if (movenum_now < 100) {
+        winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
+    }
+    if (movenum_now >= 100) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 5); // Converts user input into float between 1.0f and 0.0f
+    }
+
+    if (movenum_now >= 150) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+    }
+    if (movenum_now >= 200) {
+        winrate_target_value = 0.01f * (cfg_winrate_target + 15); // Converts user input into float between 1.0f and 0.0f
+    }
+
+
     float movenum_float = movenum_now * 1.0f;
 
     for (auto& child : m_children) {
@@ -350,13 +368,14 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             // Someone else is expanding this node, never select it
             // if we can avoid so, because we'd block on it.
             winrate = -1.0f - fpu_reduction;
-        } else if (child.get_visits() > 0) {
+        }
+        else if (child.get_visits() > 0) {
             winrate = child.get_eval(color);
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
         const auto puct = cfg_puct * psa * (numerator / denom);
-        
+
         /**
         if (movenum_now <= 250) {
             winrate = winrate * (movenum_float / 250.0f);
@@ -396,13 +415,23 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
 
         if (is_root
-        && (static_cast<int>(child.get_visits()) < most_root_visits_seen)
-        && (static_cast<int>(child.get_visits()) > second_most_root_visits_seen)) {
+            && (static_cast<int>(child.get_visits()) < most_root_visits_seen)
+            && (static_cast<int>(child.get_visits()) > second_most_root_visits_seen)) {
             if (vertex_second_most_root_visits_seen != child.get_move()) {
                 vertex_second_most_root_visits_seen = child.get_move();
             }
             second_most_root_visits_seen = static_cast<int>(child.get_visits());
         }
+
+
+
+
+        if (cfg_passbot == true) {
+
+        }
+
+
+
 
         assert(value > std::numeric_limits<double>::lowest());
 
@@ -441,8 +470,10 @@ public:
             auto b_lcb = b.get_eval_lcb(m_color);
 
             // Sort on lower confidence bounds
-            if (a_lcb != b_lcb) {
-                return a_lcb < b_lcb;
+            if (cfg_passbot == false) {
+                if (a_lcb != b_lcb) {
+                    return a_lcb < b_lcb;
+                }
             }
         }
 
