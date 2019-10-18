@@ -51,6 +51,8 @@ bool cfg_gtp_mode;
 bool cfg_allow_pondering;
 bool resign_next;
 bool pass_next;
+bool win_message_sent;
+bool win_message_confirmed_sent;
 bool cfg_passbot;
 bool cfg_tengenbot;
 int cfg_winrate_target;
@@ -117,6 +119,8 @@ void GTP::setup_default_parameters() {
     cfg_allow_pondering = true;
     resign_next = false;
     pass_next = false;
+    win_message_sent = false;
+    win_message_confirmed_sent = false;
     cfg_max_threads = 64;
     //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
@@ -163,9 +167,9 @@ void GTP::setup_default_parameters() {
     cfg_quiet = false;
     cfg_benchmark = false;
 
-    cfg_passbot = true;
+    cfg_passbot = false;
     cfg_tengenbot = false;
-    cfg_winrate_target = 65;
+    cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
     best_winrate_string = "";
@@ -329,9 +333,34 @@ bool GTP::execute(GameState & game, std::string xinput) {
     } else if (command == "name") {
         //gtp_printf(id, PROGRAM_NAME);
         if ((current_movenum % 60 == 29) || (current_movenum % 60 == 28)) {
-            cfg_custom_engine_name = best_winrate_string;
+            if (!win_message_confirmed_sent) {
+                cfg_custom_engine_name = best_winrate_string;
+            }
+        }
+        if (current_movenum % 60 == 1) {
+            if (win_message_sent) {
+                win_message_confirmed_sent = true;
+            }
+        }
+        /**
+        if (current_movenum % 60 == 29) {
+            if (!win_message_confirmed_sent) {
+                cfg_custom_engine_name = best_winrate_string;
+                if (win_message_sent) {
+                    win_message_confirmed_sent = true;
+                }
+            }
 
         }
+        if (current_movenum % 60 == 28) {
+            if (!win_message_confirmed_sent) {
+                cfg_custom_engine_name = best_winrate_string;
+            }
+
+        }
+        **/
+
+
         if (cfg_custom_engine_name == "versiononly ") {
             cfg_custom_engine_name = "versiononly";
         }
@@ -410,6 +439,8 @@ bool GTP::execute(GameState & game, std::string xinput) {
         kgs_cleanup_counter = 0; // Reset on new game
         resign_moves_counter = 0; // Reset on new game
         current_movenum = 0; // Reset on new game
+        win_message_sent = false; // Reset on new game
+        win_message_confirmed_sent = false; // Reset on new game
         gtp_printf(id, "");
         return true;
     } else if (command.find("komi") == 0) {
@@ -907,6 +938,8 @@ bool GTP::execute(GameState & game, std::string xinput) {
         kgs_cleanup_counter = 0;
         resign_moves_counter = 0;
         current_movenum = 0; // Reset on new game
+        win_message_sent = false; // Reset on new game
+        win_message_confirmed_sent = false; // Reset on new game
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);

@@ -33,6 +33,7 @@ extern bool cfg_gtp_mode;
 extern bool cfg_allow_pondering;
 extern bool cfg_passbot;
 extern bool cfg_tengenbot;
+extern bool win_message_sent;
 extern int cfg_winrate_target;
 extern int cfg_num_threads;
 extern int cfg_max_threads;
