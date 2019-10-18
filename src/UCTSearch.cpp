@@ -858,12 +858,30 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 0.05f;
             faster_out_speedup_factor = 0.3333f;
         }
+        if (!is_pondering_now) {
+            if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+                //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
+                int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));
+                //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
+                //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
+                best_winrate_string = "My current humanity is " + std::to_string(integer_winrate) + "%%";
+            }
+        }
+
     }
 
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
     int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
     if (!is_pondering_now && (elapsed_centis >= 90)) { // Wait 90ms before making these checks
+        //if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+        //    //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
+        //    int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));
+        //    //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
+        //    //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
+        //    best_winrate_string = "My current winrate is " + std::to_string(integer_winrate) + "%%";
+        //}
+
         int check_most_root_visits_seen = static_cast<int>(m_singlemovevisits / speedup_factor);
         if (check_most_root_visits_seen < static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) {
             check_most_root_visits_seen = static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor);

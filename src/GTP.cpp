@@ -95,6 +95,7 @@ bool cfg_cpu_only;
 int cfg_analyze_interval_centis;
 
 std::string cfg_sentinel_file;
+std::string best_winrate_string;
 std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
 int cfg_kgs_cleanup_moves;
@@ -160,6 +161,7 @@ void GTP::setup_default_parameters() {
     cfg_benchmark = false;
 
     cfg_sentinel_file = "sentinel.quit";
+    best_winrate_string = "";
     cfg_custom_engine_name = "";
     cfg_custom_engine_version = "";
     cfg_kgs_cleanup_moves = 5;
@@ -319,6 +321,10 @@ bool GTP::execute(GameState & game, std::string xinput) {
         return true;
     } else if (command == "name") {
         //gtp_printf(id, PROGRAM_NAME);
+        if ((current_movenum % 60 == 29) || (current_movenum % 60 == 28)) {
+            cfg_custom_engine_name = best_winrate_string;
+
+        }
         if (cfg_custom_engine_name == "versiononly ") {
             cfg_custom_engine_name = "versiononly";
         }
@@ -863,7 +869,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         cmdstream >> tmp; // eat game|private
         cmdstream >> tmp; // eat player name
         cmdstream >> px;
-        if (px == "unicode+0027") {
+        if (px == "px") {
             cfg_custom_engine_name = "";
             cmdstream >> word;
             do {
@@ -872,7 +878,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cmdstream >> word;
             } while (!cmdstream.fail());
         }
-        if (px == "unicode+0027") {
+        if (px == "px") {
             cmdstream >> word;
             if (word == "pass") {
                 pass_next = true;

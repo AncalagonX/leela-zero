@@ -78,6 +78,7 @@ extern bool cfg_cpu_only;
 extern int cfg_analyze_interval_centis;
 
 extern std::string cfg_sentinel_file;
+extern std::string best_winrate_string;
 extern std::string cfg_custom_engine_name;
 extern std::string cfg_custom_engine_version;
 extern int cfg_kgs_cleanup_moves;
