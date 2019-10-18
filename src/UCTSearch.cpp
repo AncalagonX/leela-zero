@@ -865,6 +865,21 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
                 //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
                 //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
                 best_winrate_string = "My current humanity is " + std::to_string(integer_winrate) + "%%";
+                if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.20)) {
+                    best_winrate_string = "I am losing.";
+                }
+                if ((best_root_winrate > 0.20) && (best_root_winrate <= 0.40)) {
+                    best_winrate_string = "I am slightly losing.";
+                }
+                if ((best_root_winrate > 0.40) && (best_root_winrate <= 0.65)) {
+                    best_winrate_string = "The game is even.";
+                }
+                if ((best_root_winrate > 0.65) && (best_root_winrate <= 0.90)) {
+                    best_winrate_string = "I am slightly winning.";
+                }
+                if ((best_root_winrate > 0.90) && (best_root_winrate <= 0.99)) {
+                    best_winrate_string = "I believe I am winning. It's okay to keep playing.";
+                }
             }
         }
 
