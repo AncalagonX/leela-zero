@@ -855,11 +855,17 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         }
 
         if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.65)) {
-            speedup_factor = 0.05f;
+            speedup_factor = 0.10f;
             faster_out_speedup_factor = 0.3333f;
+            if (cfg_passbot == true) {
+                speedup_factor = 0.25f;
+            }
         }
+
+        
+
         if (!is_pondering_now) {
-            if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            if ((cfg_passbot == false) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
                 //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
                 int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));
                 //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);

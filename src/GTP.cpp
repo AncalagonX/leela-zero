@@ -333,7 +333,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
     } else if (command == "name") {
         //gtp_printf(id, PROGRAM_NAME);
         if ((current_movenum % 60 == 29) || (current_movenum % 60 == 28)) {
-            if (!win_message_confirmed_sent) {
+            if (!win_message_confirmed_sent && !cfg_passbot) {
                 cfg_custom_engine_name = best_winrate_string;
             }
         }

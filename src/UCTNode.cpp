@@ -127,6 +127,8 @@ bool UCTNode::create_children(Network & network,
         }
     }
 
+    allow_pass = true;
+
     if (allow_pass) {
         nodelist.emplace_back(raw_netlist.policy_pass, FastBoard::PASS);
         legal_sum += raw_netlist.policy_pass;
@@ -339,6 +341,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     best_root_winrate = std::numeric_limits<double>::lowest();
 
 
+    auto second_best = static_cast<UCTNodePointer*>(nullptr);
+    auto best_value2 = std::numeric_limits<double>::lowest();
+    auto best_value_next = std::numeric_limits<double>::lowest();
+    auto best_winrate = std::numeric_limits<double>::lowest();
+    auto best_winrate2 = std::numeric_limits<double>::lowest();
+    auto best_lcb = std::numeric_limits<double>::lowest();
+    auto best_psa = std::numeric_limits<double>::lowest();
+    int most_root_visits_seen_so_far = 1;
+    int second_most_root_visits_seen_so_far = 1;
+
+
     auto winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
     auto raw_winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
     if (movenum_now < 100) {
@@ -357,6 +370,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
     float movenum_float = movenum_now * 1.0f;
+
+
 
     for (auto& child : m_children) {
         if (!child.active()) {
@@ -426,15 +441,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
-        if (cfg_passbot == true) {
 
-        }
 
 
 
 
         if (cfg_tengenbot == true) {
-            /////////////////////////////////////////////////////////////////////////////////
+        /////////////////////////////////////////////////////////////////////////////////
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
 
@@ -545,6 +558,240 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (value > best_value) {
             best_value = value;
             best = &child;
+        }
+
+
+
+
+
+
+        if (cfg_passbot == true) {
+
+            int int_m_visits = static_cast<int>(m_visits);
+            int int_child_visits = static_cast<int>(child.get_visits());
+            int int_parent_visits = static_cast<int>(parentvisits);
+
+            if (is_root && (int_child_visits > most_root_visits_seen_so_far)) {
+                second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
+                most_root_visits_seen_so_far = int_child_visits;
+            }
+
+            // Ignore considering opponent passing if we just passed (#1)
+
+            if (is_opponent_move
+                && (child.get_move() == -1)
+                && (movenum_now <= 250)) {
+                continue;
+            }
+
+            // Having this "if statement" first ensures default LZ search picks a "best move" in the rare case of failure in the "Pass Bot" sections below.
+
+            if (value > best_value) {
+                if (!is_opponent_move && !(child.get_move() == -1) && (winrate > best_winrate) && (int_m_visits > 800)) {
+                    best_winrate = winrate;
+                }
+                best_value = value;
+                best_value2 = value;
+                best = &child;
+            }
+
+
+
+            // Ignore considering opponent passing if we just passed (#2)
+
+            if (is_opponent_move
+                && (get_move() == -1)
+                && (child.get_move() == -1)
+                && (movenum_now <= 250)) {
+                continue;
+            }
+
+
+            // If root and it's our turn, always send 50 visits into "Pass".
+
+            if (!is_opponent_move
+                && (is_root)
+                && (movenum_now <= 250)
+                && (child.get_move() == -1)
+                && (int_child_visits <= 50)) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+
+            // If root and it's our turn, always send "Pass" by extra visits equal to:  approximately 5% of highest root move visits so far
+
+            /**
+            if (!is_opponent_move
+                && (is_root)
+                && (movenum_now <= 250)
+                && (child.get_move() == -1)
+                && (int_child_visits <= (50 + (10 * static_cast<int>(0.1 * static_cast<int>(0.05f * most_root_visits_seen_so_far)))))) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+            **/
+            
+
+            // If root and it's our turn, AND "Pass" is >= winrate_target_value, send ALL visits to it.
+
+            if (!is_opponent_move
+                && (is_root)
+                && (movenum_now <= 250)
+                && (child.get_move() == -1)) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                if ((winrate >= winrate_target_value)
+                    && (child.get_visits() < (0.80f * int_m_visits))) {
+                    best = &child;
+                    assert(best != nullptr);
+                    best->inflate();
+                    return best->get();
+                }
+            }
+
+            /*****************
+            ******* COPIED FROM VERTEX BRANCH CODE
+            if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+                value = (puct)+((winrate + puct) * ((get_move() == vertex_to_search_for_4a) / (depth + 1)));
+            }
+
+            *****************/
+
+
+        }
+
+
+
+
+
+
+    }
+
+    if (cfg_passbot == true && cfg_passbot == false) {
+        for (auto& child : m_children) {
+            if (!child.active()) {
+                continue;
+            }
+
+            auto winrate = fpu_eval;
+            auto lcb = 0.0f;
+            if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+                // Someone else is expanding this node, never select it
+                // if we can avoid so, because we'd block on it.
+                winrate = -1.0f - fpu_reduction;
+            }
+            else if (child.get_visits() > 0) {
+                winrate = child.get_eval(color);
+
+            }
+            const auto psa = child.get_policy();
+            const auto denom = 1.0 + child.get_visits();
+            auto puct = cfg_puct * psa * (numerator / denom);
+
+            int int_m_visits = static_cast<int>(m_visits);
+            int int_child_visits = static_cast<int>(child.get_visits());
+            int int_parent_visits = static_cast<int>(parentvisits);
+
+            auto value = winrate + puct;
+
+            bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
+
+            if (is_pondering_now) {
+                is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+            }
+
+            /**
+
+            if (!is_opponent_move && (winrate >= winrate_target_value)) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
+
+            **/
+
+            assert(value > std::numeric_limits<double>::lowest());
+
+            if (is_root && depth == 0 && (int_child_visits > most_root_visits_seen_so_far)) {
+                second_most_root_visits_seen_so_far = most_root_visits_seen_so_far;
+                most_root_visits_seen_so_far = int_child_visits;
+            }
+
+            if ((get_move() == -1
+                && (child.get_move() == -1)
+                && (movenum_now <= 150))) {
+                continue;
+            }
+
+
+            /**
+            if (!is_opponent_move
+                && (child.get_move() == -1)
+                && (int_child_visits == 0)) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+            **/
+
+
+            if (!is_opponent_move
+                && is_root
+                && (child.get_move() == -1)
+                && (int_child_visits <= 400)) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                best = &child;
+                assert(best != nullptr);
+                best->inflate();
+                return best->get();
+            }
+
+            if (!is_opponent_move
+                && is_root
+                && (child.get_move() == -1)) {
+                //&& (int_child_visits >= 400)) {
+                if (value > best_value) {
+                    best_value = value;
+                }
+                if (winrate >= winrate_target_value) {
+                    best = &child;
+                    assert(best != nullptr);
+                    best->inflate();
+                    return best->get();
+                }
+            }
+
+            /*****************
+            ******* COPIED FROM VERTEX BRANCH CODE
+            if (!is_opponent_move && (color_to_move != cfg_opponent) && (depth <= 20)) {
+                value = (puct)+((winrate + puct) * ((get_move() == vertex_to_search_for_4a) / (depth + 1)));
+            }
+
+            *****************/
+
+            if (value > best_value) {
+                if (!is_opponent_move && (winrate > best_winrate) && (int_m_visits > 100)) {
+                    best_winrate = winrate;
+                }
+                best_value = value;
+                best_value2 = value;
+                best = &child;
+            }
         }
     }
 

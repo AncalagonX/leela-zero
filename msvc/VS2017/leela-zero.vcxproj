@@ -144,7 +144,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetName>leelaz_LADDER_Nexus2</TargetName>
+    <TargetName>leelaz_LADDER_Nexus</TargetName>
     <IntDir>$(Platform)\$(Configuration)\leelaz\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
