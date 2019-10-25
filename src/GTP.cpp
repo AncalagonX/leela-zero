@@ -55,6 +55,8 @@ bool win_message_sent;
 bool win_message_confirmed_sent;
 bool cfg_passbot;
 bool cfg_tengenbot;
+bool cfg_tengen;
+bool cfg_faster;
 int cfg_winrate_target;
 int cfg_num_threads;
 int cfg_max_threads;
@@ -121,6 +123,7 @@ void GTP::setup_default_parameters() {
     pass_next = false;
     win_message_sent = false;
     win_message_confirmed_sent = false;
+    cfg_faster = false;
     cfg_max_threads = 64;
     //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
@@ -169,6 +172,7 @@ void GTP::setup_default_parameters() {
 
     cfg_passbot = false;
     cfg_tengenbot = false;
+    cfg_tengen = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
@@ -441,6 +445,10 @@ bool GTP::execute(GameState & game, std::string xinput) {
         current_movenum = 0; // Reset on new game
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
+        cfg_faster = false; // Reset on new game
+        if (cfg_custom_engine_name != "nomessage") {
+            cfg_custom_engine_name = "versiononly";
+        }
         gtp_printf(id, "");
         return true;
     } else if (command.find("komi") == 0) {
@@ -907,7 +915,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         cmdstream >> tmp; // eat game|private
         cmdstream >> tmp; // eat player name
         cmdstream >> px;
-        if (px == "px") {
+        if (px == "pxs0") {
             cfg_custom_engine_name = "";
             cmdstream >> word;
             do {
@@ -916,13 +924,37 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cmdstream >> word;
             } while (!cmdstream.fail());
         }
-        if (px == "px") {
+        if (px == "pxs1") {
             cmdstream >> word;
             if (word == "pass") {
                 pass_next = true;
             }
+            if ((word == "passbot_enable") && (cfg_passbot == false)) {
+                cfg_passbot = true;
+            }
+            if ((word == "passbot_disable") && (cfg_passbot == true)) {
+                cfg_passbot = false;
+            }
+            if ((word == "tengenbot_enable") && (cfg_tengenbot == false)) {
+                cfg_tengenbot = true;
+            }
+            if ((word == "tengenbot_disable") && (cfg_tengenbot == true)) {
+                cfg_tengenbot = false;
+            }
+            if ((word == "tengen_enable") && (cfg_tengen == false)) {
+                cfg_tengen = true;
+            }
+            if ((word == "tengen_disable") && (cfg_tengen == true)) {
+                cfg_tengen = false;
+            }
             if (word == "resign") {
                 resign_next = true;
+            }
+            if (word == "faster") {
+                cfg_faster = true;
+            }
+            if (word == "slower") {
+                cfg_faster = false;
             }
         }
 
@@ -940,6 +972,10 @@ bool GTP::execute(GameState & game, std::string xinput) {
         current_movenum = 0; // Reset on new game
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
+        cfg_faster = false; // Reset on new game
+        if (cfg_custom_engine_name != "nomessage") {
+            cfg_custom_engine_name = "versiononly";
+        }
         if (boost::filesystem::exists(cfg_sentinel_file)) {
             gtp_printf(id, "Sentinel file detected. Exiting LZ.");
             exit(EXIT_SUCCESS);

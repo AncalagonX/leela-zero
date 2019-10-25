@@ -823,6 +823,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
     //most_root_visits_seen
 
+    int required_elapsed_before_checking = 90;
+
     if (!is_pondering_now) {
         if (current_movenum < 10) {
             speedup_factor = 1.0f;
@@ -854,7 +856,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             faster_out_speedup_factor = 0.5f;
         }
 
-        if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.65)) {
+        if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.60)) {
             speedup_factor = 0.10f;
             faster_out_speedup_factor = 0.3333f;
             if (cfg_passbot == true) {
@@ -862,29 +864,35 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             }
         }
 
+        if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            speedup_factor = speedup_factor * 4.0f;
+            faster_out_speedup_factor = faster_out_speedup_factor * 4.0f;
+            required_elapsed_before_checking = 10;
+        }
+
         
 
         if (!is_pondering_now) {
             if ((cfg_passbot == false) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
                 //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
-                int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));
+                int integer_winrate = (static_cast<int>(1.25f * 100.0f * best_root_winrate));
                 //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
                 //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
                 //best_winrate_string = "I am currently " + std::to_string(integer_winrate) + "%% more human than you.";
                 if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.30)) {
-                    best_winrate_string = "I am losing.";
+                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more tengen than human.";
                 }
                 if ((best_root_winrate > 0.30) && (best_root_winrate <= 0.45)) {
-                    best_winrate_string = "I am slightly losing.";
+                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more tengen than human.";
                 }
                 if ((best_root_winrate > 0.45) && (best_root_winrate <= 0.65)) {
-                    best_winrate_string = "The game is currently tied.";
+                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more tengen than human.";
                 }
                 if ((best_root_winrate > 0.65) && (best_root_winrate <= 0.90)) {
-                    best_winrate_string = "I am slightly winning.";
+                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more tengen than human.";
                 }
                 if ((best_root_winrate > 0.90) && (best_root_winrate <= 0.99)) {
-                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more human than human.";
+                    best_winrate_string = "I am " + std::to_string(integer_winrate) + "%% more tengen than human.";
                     win_message_sent = true;
                 }
             }
@@ -895,7 +903,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
     int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
-    if (!is_pondering_now && (elapsed_centis >= 90)) { // Wait 90ms before making these checks
+    if (!is_pondering_now && (elapsed_centis >= required_elapsed_before_checking)) { // Wait 90ms before making these checks
         //if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         //    //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
         //    int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));

@@ -443,15 +443,51 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
+        if (cfg_tengen == true) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
 
+            if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
+                value = 1000.0 * value;
+            }
 
+            if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
+                value = value / 1000.0;
+            }
+        }
+
+        if (cfg_faster == true) {
+            if (is_opponent_move && (depth == 0) && (movenum_now + depth <= 100)) { // wider search during ponder
+                value = winrate + (10.0f * puct);
+            }
+        }
 
         if (cfg_tengenbot == true) {
         /////////////////////////////////////////////////////////////////////////////////
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
 
-            if (!is_opponent_move && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
+                int check_vertex = static_cast<int>(child.get_move());
+                int remainder_vertex = check_vertex % 21;
+                int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+                if (leftover_vertex <= 4 || leftover_vertex >= 16) {
+                    value = 0.90 * value;
+                }
+                if (remainder_vertex <= 4 || remainder_vertex >= 16) {
+                    value = 0.90 * value;
+                }
+
+                if (leftover_vertex <= 3 || leftover_vertex >= 17) {
+                    value = 0.90 * value;
+                }
+                if (remainder_vertex <= 3 || remainder_vertex >= 17) {
+                    value = 0.90 * value;
+                }
+            }
+            
+            if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -476,13 +512,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 //    value = 0.90 * value;
                 //}
 
-                if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
-                    value = 1000.0 * value;
-                }
+                /**
+                if (cfg_tengen == true) {
+                    if ((movenum_now + depth <= 1) && (check_vertex == 220)) {
+                        value = 1000.0 * value;
+                    }
 
-                if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
-                    value = value / 1000.0;
+                    if ((movenum_now + depth <= 1) && (check_vertex != 220)) {
+                        value = value / 1000.0;
+                    }
                 }
+                **/
 
                 // 9x10  = 199
                 // 11x10 = 241
@@ -500,7 +540,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 //}
             }
 
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -652,7 +692,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                     best_value = value;
                 }
                 if ((winrate >= winrate_target_value)
-                    && (child.get_visits() < (0.80f * int_m_visits))) {
+                    && (child.get_visits() < (0.60f * int_m_visits))) {
                     best = &child;
                     assert(best != nullptr);
                     best->inflate();
@@ -824,7 +864,7 @@ public:
             auto b_lcb = b.get_eval_lcb(m_color);
 
             // Sort on lower confidence bounds
-            if (cfg_passbot == false) {
+            if (cfg_passbot == false || cfg_passbot == true) { // Passbot mode should work fine with LCB threshold
                 if (a_lcb != b_lcb) {
                     return a_lcb < b_lcb;
                 }

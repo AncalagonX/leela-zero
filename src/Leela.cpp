@@ -91,6 +91,7 @@ static void parse_commandline(int argc, char *argv[]) {
         ("noponder", "Disable thinking on opponent's time.")
         ("passbot", "Enables PassBot mode.")
         ("tengenbot", "Enables TengenBot mode.")
+        ("tengen", "Forces Tengen move at game start.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
         ("cpu-only", "Use CPU-only implementation and do not use GPU.")
@@ -331,6 +332,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("tengenbot")) {
         cfg_tengenbot = true;
+    }
+
+    if (vm.count("tengen")) {
+        cfg_tengen = true;
     }
 
     if (vm.count("noise")) {
