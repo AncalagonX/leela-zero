@@ -468,7 +468,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
 
-            if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
+            //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.40)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -487,7 +488,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
             }
             
-            if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
+            //if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
+            if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (winrate >= 0.60)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -540,7 +542,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 //}
             }
 
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
+            //if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.65)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -650,7 +653,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             // If root and it's our turn, always send 50 visits into "Pass".
 
             if (!is_opponent_move
-                && (is_root)
+                //&& (is_root)
+                && (depth <= 1)
                 && (movenum_now <= 250)
                 && (child.get_move() == -1)
                 && (int_child_visits <= 50)) {
@@ -685,7 +689,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             // If root and it's our turn, AND "Pass" is >= winrate_target_value, send ALL visits to it.
 
             if (!is_opponent_move
-                && (is_root)
+                //&& (is_root)
+                && (depth <= 1)
                 && (movenum_now <= 250)
                 && (child.get_move() == -1)) {
                 if (value > best_value) {
