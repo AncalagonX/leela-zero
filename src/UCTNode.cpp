@@ -501,10 +501,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.95 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.95 * value;
                 }
 
                 //if (leftover_vertex <= 2 || leftover_vertex >= 18) {

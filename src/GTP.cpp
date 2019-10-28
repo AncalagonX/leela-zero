@@ -55,6 +55,7 @@ bool win_message_sent;
 bool win_message_confirmed_sent;
 bool cfg_passbot;
 bool cfg_tengenbot;
+bool cfg_tengenchat;
 bool cfg_tengen;
 bool cfg_faster;
 int cfg_winrate_target;
@@ -173,6 +174,7 @@ void GTP::setup_default_parameters() {
     cfg_passbot = false;
     cfg_tengenbot = false;
     cfg_tengen = false;
+    cfg_tengenchat = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
@@ -336,14 +338,17 @@ bool GTP::execute(GameState & game, std::string xinput) {
         return true;
     } else if (command == "name") {
         //gtp_printf(id, PROGRAM_NAME);
-        if ((current_movenum % 60 == 29) || (current_movenum % 60 == 28)) {
-            if (!win_message_confirmed_sent && !cfg_passbot) {
-                cfg_custom_engine_name = best_winrate_string;
+
+        if (cfg_tengenchat == true) {
+            if ((current_movenum % 60 == 29) || (current_movenum % 60 == 28)) {
+                if (!win_message_confirmed_sent && !cfg_passbot) {
+                    cfg_custom_engine_name = best_winrate_string;
+                }
             }
-        }
-        if (current_movenum % 60 == 1) {
-            if (win_message_sent) {
-                win_message_confirmed_sent = true;
+            if (current_movenum % 60 == 1) {
+                if (win_message_sent) {
+                    win_message_confirmed_sent = true;
+                }
             }
         }
         /**
@@ -929,27 +934,39 @@ bool GTP::execute(GameState & game, std::string xinput) {
             if (word == "pass") {
                 pass_next = true;
             }
-            if ((word == "passbot_enable") && (cfg_passbot == false)) {
+
+            if (word == "passbot_enable") {
                 cfg_passbot = true;
             }
-            if ((word == "passbot_disable") && (cfg_passbot == true)) {
+            if (word == "passbot_disable") {
                 cfg_passbot = false;
             }
-            if ((word == "tengenbot_enable") && (cfg_tengenbot == false)) {
+
+            if (word == "tengenbot_enable") {
                 cfg_tengenbot = true;
             }
-            if ((word == "tengenbot_disable") && (cfg_tengenbot == true)) {
+            if (word == "tengenbot_disable") {
                 cfg_tengenbot = false;
             }
-            if ((word == "tengen_enable") && (cfg_tengen == false)) {
+
+            if (word == "tengenchat_enable") {
+                cfg_tengenchat = true;
+            }
+            if (word == "tengenchat_disable") {
+                cfg_tengenchat = false;
+            }
+
+            if (word == "tengen_enable") {
                 cfg_tengen = true;
             }
-            if ((word == "tengen_disable") && (cfg_tengen == true)) {
+            if (word == "tengen_disable") {
                 cfg_tengen = false;
             }
+
             if (word == "resign") {
                 resign_next = true;
             }
+
             if (word == "faster") {
                 cfg_faster = true;
             }

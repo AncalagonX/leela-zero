@@ -873,7 +873,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         
 
         if (!is_pondering_now) {
-            if ((cfg_passbot == false) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            if ((cfg_tengenchat == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
                 //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
                 int integer_winrate = (static_cast<int>(1.25f * 100.0f * best_root_winrate));
                 //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);

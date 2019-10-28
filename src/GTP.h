@@ -34,6 +34,7 @@ extern bool cfg_allow_pondering;
 extern bool cfg_passbot;
 extern bool cfg_tengenbot;
 extern bool cfg_tengen;
+extern bool cfg_tengenchat;
 extern bool win_message_sent;
 extern bool cfg_faster;
 extern int cfg_winrate_target;
