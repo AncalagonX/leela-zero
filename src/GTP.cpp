@@ -56,7 +56,9 @@ bool win_message_confirmed_sent;
 bool cfg_passbot;
 bool cfg_tengenbot;
 bool cfg_tengenchat;
+bool cfg_kageyamachat;
 bool cfg_tengen;
+bool cfg_hiddenwinrate;
 bool cfg_faster;
 int cfg_winrate_target;
 int cfg_num_threads;
@@ -157,7 +159,7 @@ void GTP::setup_default_parameters() {
     cfg_fpu_reduction = 0.25f;
     // see UCTSearch::should_resign
     cfg_resignpct = -1;
-    cfg_resign_moves = 5;
+    cfg_resign_moves = 3;
     resign_moves_counter = 0;
     cfg_noise = false;
     cfg_fpu_root_reduction = cfg_fpu_reduction;
@@ -175,13 +177,15 @@ void GTP::setup_default_parameters() {
     cfg_tengenbot = false;
     cfg_tengen = false;
     cfg_tengenchat = false;
+    cfg_kageyamachat = false;
+    cfg_hiddenwinrate = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
     best_winrate_string = "";
     cfg_custom_engine_name = "";
     cfg_custom_engine_version = "";
-    cfg_kgs_cleanup_moves = 5;
+    cfg_kgs_cleanup_moves = 3;
     kgs_cleanup_counter = 0;
 
 #ifdef USE_CPU_ONLY
@@ -224,9 +228,9 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    //"fixed_handicap",
-    //"place_free_handicap",
-    //"set_free_handicap",
+    "fixed_handicap",
+    "place_free_handicap",
+    "set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",
@@ -349,6 +353,15 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 if (win_message_sent) {
                     win_message_confirmed_sent = true;
                 }
+            }
+        }
+
+        if (cfg_kageyamachat == true) {
+            if ((current_movenum == 50) || (current_movenum == 51)) {
+                cfg_custom_engine_name = best_winrate_string;
+            }
+            if ((current_movenum == 180) || (current_movenum == 181)) {
+                cfg_custom_engine_name = "IMPORTANT: Please capture all dead stones before passing at the end of the game.";
             }
         }
         /**
@@ -553,7 +566,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                     return true;
                 }
 
-                if (game.get_handicap() >= 2) {
+                if (game.get_handicap() >= 7) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
@@ -561,7 +574,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                     return true;
                 }
 
-                if (game.get_komi() >= 7.6f || game.get_komi() <= 6.9f) {
+                if (game.get_komi() >= 7.6f || game.get_komi() <= 0.1f) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
@@ -929,7 +942,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cmdstream >> word;
             } while (!cmdstream.fail());
         }
-        if (px == "pxs1") {
+        if (px == "psx1") {
             cmdstream >> word;
             if (word == "pass") {
                 pass_next = true;
@@ -956,11 +969,25 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cfg_tengenchat = false;
             }
 
+            if (word == "kageyamachat_enable") {
+                cfg_kageyamachat = true;
+            }
+            if (word == "kageyamachat_disable") {
+                cfg_kageyamachat = false;
+            }
+
             if (word == "tengen_enable") {
                 cfg_tengen = true;
             }
             if (word == "tengen_disable") {
                 cfg_tengen = false;
+            }
+
+            if (word == "hiddenwinrate_enable") {
+                cfg_hiddenwinrate = true;
+            }
+            if (word == "hiddenwinrate_disable") {
+                cfg_hiddenwinrate = false;
             }
 
             if (word == "resign") {

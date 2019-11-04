@@ -830,6 +830,20 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 1.0f;
             faster_out_speedup_factor = 1.0f;
         }
+
+        if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
+            speedup_factor = 1.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum >= 200) {
+            speedup_factor = 2.0f;
+        }
+
+        if (current_movenum >= 250) {
+            speedup_factor = 4.0f;
+        }
+
         if ((current_movenum >= 30) && (best_root_winrate >= 0.90)) {
             speedup_factor = 2.0f;
         }
@@ -846,31 +860,29 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 8.0f;
         }
 
-        if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
-            speedup_factor = 1.0f;
-            faster_out_speedup_factor = 1.0f;
-        }
+        if (cfg_hiddenwinrate == false) {
+            if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.50)) {
+                speedup_factor = 0.50f;
+                faster_out_speedup_factor = 0.5f;
+            }
 
-        if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.50)) {
-            speedup_factor = 0.50f;
-            faster_out_speedup_factor = 0.5f;
-        }
-
-        if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.60)) {
-            speedup_factor = 0.10f;
-            faster_out_speedup_factor = 0.3333f;
-            if (cfg_passbot == true) {
-                speedup_factor = 0.25f;
+            if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.60)) {
+                speedup_factor = 0.10f;
+                faster_out_speedup_factor = 0.3333f;
+                if (cfg_passbot == true) {
+                    speedup_factor = 0.25f;
+                }
             }
         }
 
-        if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
-            speedup_factor = speedup_factor * 4.0f;
-            faster_out_speedup_factor = faster_out_speedup_factor * 4.0f;
-            required_elapsed_before_checking = 10;
+        //if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+        if (cfg_faster == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            speedup_factor = speedup_factor * 8.0f;
+            faster_out_speedup_factor = faster_out_speedup_factor * 8.0f;
+            required_elapsed_before_checking = 1;
         }
 
-        
+
 
         if (!is_pondering_now) {
             if ((cfg_tengenchat == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
@@ -896,6 +908,36 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
                     win_message_sent = true;
                 }
             }
+
+            if ((cfg_kageyamachat == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+                //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
+                int integer_winrate = (static_cast<int>(1.25f * 100.0f * best_root_winrate));
+                int integer_visits = static_cast<int>(m_root->get_visits());
+                //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
+                //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
+                //best_winrate_string = "I am currently " + std::to_string(integer_winrate) + "%% more human than you.";
+                if (integer_visits % 7 == 1) {
+                    best_winrate_string = "Kageyama's First Fundamental Rule of Go: Always cut the enemy stones apart.";
+                }
+                if (integer_visits % 7 == 2) {
+                    best_winrate_string = "Kageyama's Second Fundamental Rule of Go: Always connect your own stones together.";
+                }
+                if (integer_visits % 7 == 3) {
+                    best_winrate_string = "Kageyama's Third Fundamental Rule of Go: Always extend or hane ahead of the opponent.";
+                }
+                if (integer_visits % 7 == 4) {
+                    best_winrate_string = "Kageyama's Fourth Fundamental Rule of Go: Do not count a moyo as territory. They are not the same.";
+                }
+                if (integer_visits % 7 == 5) {
+                    best_winrate_string = "Kageyama's Fifth Fundamental Rule of Go: Play at the enemy's ''good shape point'' to force them to make bad shape.";
+                }
+                if (integer_visits % 7 == 6) {
+                    best_winrate_string = "Kageyama's Sixth Fundamental Rule of Go: Play slower, ''proper'' moves that solidify your groups, even in gote.";
+                }
+                if (integer_visits % 7 == 0) {
+                    best_winrate_string = "TengenBot's Seventh Fundamental Rule of Go: When in doubt and all hope is lost, play K10.";
+                }
+            }
         }
 
     }
@@ -903,7 +945,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
     int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
-    if (!is_pondering_now && (elapsed_centis >= required_elapsed_before_checking)) { // Wait 90ms before making these checks
+    //if (!is_pondering_now && (elapsed_centis >= required_elapsed_before_checking)) { // Wait 90ms before making these checks
+    if (!is_pondering_now && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         //if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         //    //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
         //    int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));
@@ -916,12 +959,12 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         if (check_most_root_visits_seen < static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) {
             check_most_root_visits_seen = static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor);
         }
-        if (most_root_visits_seen >= check_most_root_visits_seen) { // Check if the most visited move has more than our configured single-move-visit-limit
+        if ((most_root_visits_seen >= check_most_root_visits_seen) && (elapsed_centis >= required_elapsed_before_checking)) { // Check if the most visited move has more than our configured single-move-visit-limit
             myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d (%d)) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
                                 most_root_visits_seen, check_most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
             return true; // Stop thinking
         }
-        if ((most_root_visits_seen) >= static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) { // Ensure we have at least enough bare minimum visits to make the next check
+        if ((most_root_visits_seen >= static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) && (elapsed_centis >= required_elapsed_before_checking)) { // Ensure we have at least enough bare minimum visits to make the next check
             if (cfg_second_best_move_ratio >= visit_ratio_best_two_moves) { // Check if we have a good enough visit ratio on the top candidate for an "Even Earlier, Early Out"
                 myprintf("\n     Stopping early: VISIT RATIO = %.2f (limit %.2f) \n     Most root visits = %d (limit %d) <--> Second most root visits = %d\n",
                     visit_ratio_best_two_moves, cfg_second_best_move_ratio, most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen);
@@ -953,11 +996,16 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     if (check_maxvisits_seen < cfg_single_move_visits_required_to_check) {
         check_maxvisits_seen = cfg_single_move_visits_required_to_check;
     }
-    
-    return m_playouts >= check_maxplayouts_seen
-           || m_root->get_visits() >= check_maxvisits_seen
-           || elapsed_centis >= time_for_move;
-    
+
+    if ((elapsed_centis > required_elapsed_before_checking) && (elapsed_centis >= 100)) {
+
+        return m_playouts >= check_maxplayouts_seen
+            || m_root->get_visits() >= check_maxvisits_seen
+            || elapsed_centis >= time_for_move;
+    }
+    else {
+        return false;
+    }
 }
 
 void UCTWorker::operator()() {
