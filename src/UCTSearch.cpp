@@ -836,13 +836,13 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             faster_out_speedup_factor = 1.0f;
         }
 
-        if (current_movenum >= 200) {
-            speedup_factor = 2.0f;
-        }
+        //if (current_movenum >= 200) {
+        //    speedup_factor = 2.0f;
+        //}
 
-        if (current_movenum >= 250) {
-            speedup_factor = 4.0f;
-        }
+        //if (current_movenum >= 250) {
+        //    speedup_factor = 4.0f;
+        //}
 
         if ((current_movenum >= 30) && (best_root_winrate >= 0.90)) {
             speedup_factor = 2.0f;

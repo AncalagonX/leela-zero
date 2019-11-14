@@ -322,7 +322,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     const auto numerator = std::sqrt(double(parentvisits) *
             std::log(cfg_logpuct * double(parentvisits) + cfg_logconst));
-    const auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction) * std::sqrt(total_visited_policy);
+    auto fpu_reduction = (is_root ? cfg_fpu_root_reduction : cfg_fpu_reduction) * std::sqrt(total_visited_policy);
+
+    if (movenum_now > 300) {
+        fpu_reduction = (is_root ? 0.10 : 0.25) * std::sqrt(total_visited_policy);
+    }
 
    
     // The two lines below were for me to test displaying the total_visit_policy values:
@@ -376,10 +380,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     float movenum_float = movenum_now * 1.0f;
 
-    //if (cfg_hiddenwinrate == true && (static_cast<int>(most_root_visits_seen_so_far) % 5 == 1)) {
-    if (cfg_hiddenwinrate == true) {
-        Sleep(4);
-    }
 
 
 
@@ -399,7 +399,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
         const auto psa = child.get_policy();
         const auto denom = 1.0 + child.get_visits();
-        const auto puct = cfg_puct * psa * (numerator / denom);
+        auto puct = cfg_puct * psa * (numerator / denom);
+
+        if (movenum_now > 300) {
+            puct = 0.4 * psa * (numerator / denom);
+        }
 
         /**
         if (movenum_now <= 250) {
@@ -860,6 +864,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 best = &child;
             }
         }
+    }
+
+    //if (cfg_hiddenwinrate == true && (static_cast<int>(most_root_visits_seen_so_far) % 5 == 1)) {
+    if ((cfg_hiddenwinrate == true) && (movenum_now < 250) && (movenum_now > 12)) {
+        Sleep(2);
+    }
+    if ((cfg_hiddenwinrate == true) && (movenum_now < 200) && (movenum_now > 6)) {
+        Sleep(2);
+    }
+    if ((cfg_hiddenwinrate == true) && (movenum_now < 150)) {
+        Sleep(3);
     }
 
     assert(best != nullptr);
