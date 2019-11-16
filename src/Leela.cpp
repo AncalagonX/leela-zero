@@ -95,6 +95,8 @@ static void parse_commandline(int argc, char *argv[]) {
         ("tengenchat", "Forces Tengen chat messages I am percent more tengen than human.")
         ("kageyamachat", "Enables Kageyama tips.")
         ("hiddenwinrate", "Hides winrate from search, governed by --winratetarget.")
+        ("tiebot", "Enables tiebot functionality to match target winrate.")
+        ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
         ("cpu-only", "Use CPU-only implementation and do not use GPU.")
@@ -351,6 +353,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("hiddenwinrate")) {
         cfg_hiddenwinrate = true;
+    }
+
+    if (vm.count("tiebot")) {
+        cfg_tiebot = true;
+    }
+
+    if (vm.count("capturestones")) {
+        cfg_capturestones = true;
     }
 
     if (vm.count("noise")) {

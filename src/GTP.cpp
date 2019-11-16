@@ -59,6 +59,8 @@ bool cfg_tengenchat;
 bool cfg_kageyamachat;
 bool cfg_tengen;
 bool cfg_hiddenwinrate;
+bool cfg_capturestones;
+bool cfg_tiebot;
 bool cfg_faster;
 int cfg_winrate_target;
 int cfg_num_threads;
@@ -179,6 +181,8 @@ void GTP::setup_default_parameters() {
     cfg_tengenchat = false;
     cfg_kageyamachat = false;
     cfg_hiddenwinrate = false;
+    cfg_capturestones = false;
+    cfg_tiebot = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
@@ -942,7 +946,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cmdstream >> word;
             } while (!cmdstream.fail());
         }
-        if (px == "psx1") {
+        if (px == "pxs1") {
             cmdstream >> word;
             if (word == "pass") {
                 pass_next = true;
@@ -988,6 +992,20 @@ bool GTP::execute(GameState & game, std::string xinput) {
             }
             if (word == "hiddenwinrate_disable") {
                 cfg_hiddenwinrate = false;
+            }
+
+            if (word == "tiebot_enable") {
+                cfg_tiebot = true;
+            }
+            if (word == "tiebot_disable") {
+                cfg_tiebot = false;
+            }
+
+            if (word == "capturestones_enable") {
+                cfg_capturestones = true;
+            }
+            if (word == "capturestones_disable") {
+                cfg_capturestones = false;
             }
 
             if (word == "resign") {

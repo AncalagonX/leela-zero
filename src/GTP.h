@@ -37,6 +37,8 @@ extern bool cfg_tengen;
 extern bool cfg_tengenchat;
 extern bool cfg_kageyamachat;
 extern bool cfg_hiddenwinrate;
+extern bool cfg_capturestones;
+extern bool cfg_tiebot;
 extern bool win_message_sent;
 extern bool cfg_faster;
 extern int cfg_winrate_target;

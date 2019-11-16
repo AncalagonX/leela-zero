@@ -249,8 +249,22 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
     auto depth =
         int(currstate.get_movenum() - m_rootstate.get_movenum());
 
+    int captured_count_current_color = currstate.board.get_prisoners(color);
+    int captured_count_to_move = currstate.board.get_prisoners(color_to_move);
+    int captured_count_opposite_color;
+    int captured_count_black = currstate.board.get_prisoners(0);
+    int captured_count_white = currstate.board.get_prisoners(1);
+    int captured_count_root_black = m_rootstate.board.get_prisoners(0);
+    int captured_count_root_white = m_rootstate.board.get_prisoners(1);
+    if (color_to_move == 0) {
+        captured_count_opposite_color = currstate.board.get_prisoners(1);
+    }
+    if (color_to_move == 1) {
+        captured_count_opposite_color = currstate.board.get_prisoners(0);
+    }
+
     if (node->has_children() && !result.valid()) {
-        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, is_pondering_now);
+        auto next = node->uct_select_child(color, color_to_move, node == m_root.get(), movenum_now, depth, is_pondering_now, captured_count_current_color, captured_count_to_move, captured_count_opposite_color, captured_count_root_black, captured_count_root_white, captured_count_black, captured_count_white);
         auto move = next->get_move();
 
         currstate.play_move(move);
@@ -265,6 +279,9 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
         node->update(result.eval());
     }
     node->virtual_loss_undo();
+
+    //myprintf("\n     CC_B = %d CC_B_R = %d CC_W = %d CC_W_R = %d",
+    //    captured_count_black, captured_count_root_black, captured_count_white, captured_count_root_white);
 
     return result;
 }
