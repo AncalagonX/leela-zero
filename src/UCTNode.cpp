@@ -540,6 +540,19 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
 
+        if ((cfg_nofirstlinemovesearly == true) && (!is_opponent_move)) {
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+            if (movenum_now + depth <= 32) {
+                if ((((movenum_now + depth) % 8) == 0) || (((movenum_now + depth) % 8) == 1)) {
+                    if (leftover_vertex <= 1 || leftover_vertex >= 19 || remainder_vertex <= 1 || remainder_vertex >= 19) {
+                        value = 0.20 * value;
+                    }
+                }
+            }
+        }
+
         if (cfg_handicapadjustment == true && cfg_handicapgame == true && !is_opponent_move) {
 
             int check_vertex = static_cast<int>(child.get_move());

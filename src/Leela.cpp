@@ -97,6 +97,7 @@ static void parse_commandline(int argc, char *argv[]) {
         ("hiddenwinrate", "Hides winrate from search, governed by --winratetarget.")
         ("tiebot", "Enables tiebot functionality to match target winrate.")
         ("handicapadjustment", "Forces playing a few stones in each quadrant if handicap enabled.")
+        ("nofirstlinemovesearly", "Prevents moves on the first line during the early parts of the game.")
         ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
@@ -362,6 +363,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("handicapadjustment")) {
         cfg_handicapadjustment = true;
+    }
+
+    if (vm.count("nofirstlinemovesearly")) {
+        cfg_nofirstlinemovesearly = true;
     }
 
     if (vm.count("capturestones")) {

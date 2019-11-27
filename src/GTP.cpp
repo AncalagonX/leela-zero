@@ -63,6 +63,7 @@ bool cfg_capturestones;
 bool cfg_tiebot;
 bool cfg_handicapadjustment;
 bool cfg_handicapgame;
+bool cfg_nofirstlinemovesearly;
 bool cfg_faster;
 int cfg_winrate_target;
 int cfg_num_threads;
@@ -187,6 +188,7 @@ void GTP::setup_default_parameters() {
     cfg_tiebot = false;
     cfg_handicapadjustment = false;
     cfg_handicapgame = false;
+    cfg_nofirstlinemovesearly = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
