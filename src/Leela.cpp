@@ -96,6 +96,7 @@ static void parse_commandline(int argc, char *argv[]) {
         ("kageyamachat", "Enables Kageyama tips.")
         ("hiddenwinrate", "Hides winrate from search, governed by --winratetarget.")
         ("tiebot", "Enables tiebot functionality to match target winrate.")
+        ("handicapadjustment", "Forces playing a few stones in each quadrant if handicap enabled.")
         ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
@@ -357,6 +358,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("tiebot")) {
         cfg_tiebot = true;
+    }
+
+    if (vm.count("handicapadjustment")) {
+        cfg_handicapadjustment = true;
     }
 
     if (vm.count("capturestones")) {

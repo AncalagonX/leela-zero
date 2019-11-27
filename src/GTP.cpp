@@ -61,6 +61,8 @@ bool cfg_tengen;
 bool cfg_hiddenwinrate;
 bool cfg_capturestones;
 bool cfg_tiebot;
+bool cfg_handicapadjustment;
+bool cfg_handicapgame;
 bool cfg_faster;
 int cfg_winrate_target;
 int cfg_num_threads;
@@ -183,6 +185,8 @@ void GTP::setup_default_parameters() {
     cfg_hiddenwinrate = false;
     cfg_capturestones = false;
     cfg_tiebot = false;
+    cfg_handicapadjustment = false;
+    cfg_handicapgame = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
@@ -570,6 +574,14 @@ bool GTP::execute(GameState & game, std::string xinput) {
                     return true;
                 }
 
+                if (game.get_handicap() >= 2) {
+                    cfg_handicapgame = true;
+                }
+
+                if (game.get_handicap() <= 1) {
+                    cfg_handicapgame = false;
+                }
+
                 if (game.get_handicap() >= 7) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
@@ -674,6 +686,25 @@ bool GTP::execute(GameState & game, std::string xinput) {
             game.set_passes(0);
             {
                 game.set_to_move(who);
+
+                if (resign_next == true) {
+                    resign_next = false;
+                    int move = FastBoard::RESIGN;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
+
+                if (pass_next == true) {
+                    pass_next = false;
+                    int move = FastBoard::PASS;
+                    game.play_move(move);
+                    std::string vertex = game.move_to_text(move);
+                    gtp_printf(id, "%s", vertex.c_str());
+                    return true;
+                }
+
                 int move;
                 // Check if we've already played the configured number of non-pass moves.
                 // If not, play another non-pass move if possible.
