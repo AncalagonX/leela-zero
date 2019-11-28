@@ -545,10 +545,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = (check_vertex - remainder_vertex) / 21;
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 8) == 0) || (((movenum_now + depth) % 8) == 1)) {
-                    if (leftover_vertex <= 1 || leftover_vertex >= 19 || remainder_vertex <= 1 || remainder_vertex >= 19) {
-                        value = 0.20 * value;
-                    }
+                if (leftover_vertex <= 1 || leftover_vertex >= 19 || remainder_vertex <= 1 || remainder_vertex >= 19) {
+                    value = 0.20 * value;
                 }
             }
         }
@@ -1001,13 +999,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     //if (cfg_hiddenwinrate == true && (static_cast<int>(most_root_visits_seen_so_far) % 5 == 1)) {
     if ((cfg_hiddenwinrate == true) && (movenum_now < 250) && (movenum_now > 12)) {
-        Sleep(2);
+        Sleep(1);
     }
     if ((cfg_hiddenwinrate == true) && (movenum_now < 200) && (movenum_now > 6)) {
-        Sleep(2);
+        Sleep(0);
     }
     if ((cfg_hiddenwinrate == true) && (movenum_now < 150)) {
-        Sleep(3);
+        Sleep(0);
     }
 
     // 1,0,0 for Nexus30x and Nexus40x
