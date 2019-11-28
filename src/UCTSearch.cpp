@@ -894,9 +894,17 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
         //if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         if (cfg_faster == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
-            //speedup_factor = speedup_factor * 8.0f;
-            //faster_out_speedup_factor = faster_out_speedup_factor * 8.0f;
+            speedup_factor = speedup_factor * 8.0f;
+            faster_out_speedup_factor = faster_out_speedup_factor * 8.0f;
             required_elapsed_before_checking = 1;
+        }
+
+        if (cfg_delay == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            required_elapsed_before_checking = 1;
+        }
+
+        if ((cfg_faster == false) && (cfg_delay == false)) {
+            required_elapsed_before_checking = 50;
         }
 
 

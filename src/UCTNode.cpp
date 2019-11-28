@@ -999,13 +999,13 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
     if (cfg_delay == true) {
 
-        if ((cfg_hiddenwinrate == true) && (movenum_now < 250) && (movenum_now > 12)) {
+        if ((movenum_now < 250) && (movenum_now > 12)) {
             Sleep(cfg_delaythree);
         }
-        if ((cfg_hiddenwinrate == true) && (movenum_now < 200) && (movenum_now > 6)) {
+        if ((movenum_now < 200) && (movenum_now > 6)) {
             Sleep(cfg_delaytwo);
         }
-        if ((cfg_hiddenwinrate == true) && (movenum_now < 150)) {
+        if ((movenum_now < 150)) {
             Sleep(cfg_delayone);
         }
     }

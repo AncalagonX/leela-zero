@@ -139,7 +139,7 @@ void GTP::setup_default_parameters() {
     win_message_sent = false;
     win_message_confirmed_sent = false;
     cfg_faster = false;
-    cfg_delay = false;
+    //cfg_delay = false;
     cfg_max_threads = 64;
     //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
@@ -489,7 +489,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
         cfg_faster = false; // Reset on new game
-        cfg_delay = false; // Reset on new game
+        //cfg_delay = false; // Reset on new game
         if (cfg_custom_engine_name != "nomessage") {
             cfg_custom_engine_name = "versiononly";
         }
@@ -1091,7 +1091,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
         cfg_faster = false; // Reset on new game
-        cfg_delay = false; // Reset on new game
+        //cfg_delay = false; // Reset on new game
         if (cfg_custom_engine_name != "nomessage") {
             cfg_custom_engine_name = "versiononly";
         }
