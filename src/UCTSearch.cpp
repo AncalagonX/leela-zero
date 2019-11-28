@@ -840,7 +840,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
     //most_root_visits_seen
 
-    int required_elapsed_before_checking = 90;
+    int required_elapsed_before_checking = 50;
 
     if (!is_pondering_now) {
         if (current_movenum < 10) {
@@ -894,8 +894,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
         //if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         if (cfg_faster == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
-            speedup_factor = speedup_factor * 8.0f;
-            faster_out_speedup_factor = faster_out_speedup_factor * 8.0f;
+            //speedup_factor = speedup_factor * 8.0f;
+            //faster_out_speedup_factor = faster_out_speedup_factor * 8.0f;
             required_elapsed_before_checking = 1;
         }
 

@@ -98,6 +98,7 @@ static void parse_commandline(int argc, char *argv[]) {
         ("tiebot", "Enables tiebot functionality to match target winrate.")
         ("handicapadjustment", "Forces playing a few stones in each quadrant if handicap enabled.")
         ("nofirstlinemovesearly", "Prevents moves on the first line during the early parts of the game.")
+        ("delay", "Enables use of delayone, delaytwo, delaythree.")
         ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
@@ -135,6 +136,12 @@ static void parse_commandline(int argc, char *argv[]) {
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
             "Number of times to LZ will play non-pass moves before considering passing again if kgs-genmove_cleanup is called.")
+        ("delayone", po::value<int>()->default_value(cfg_delayone),
+            "Milliseconds of delay per visit before move 150. Cumulative.")
+        ("delaytwo", po::value<int>()->default_value(cfg_delaytwo),
+            "Milliseconds of delay per visit before move 200. Cumulative.")
+        ("delaythree", po::value<int>()->default_value(cfg_delaythree),
+            "Milliseconds of delay per visit before move 250. Cumulative.")
         ("winratetarget",
             po::value<int>()->default_value(cfg_winrate_target),
             "Require engine to search for weaker moves that maintain a winrate of x%, regardless of the strength of the engine's opponent. Valid arguments are any integer from 0 to 100.\n"
@@ -267,12 +274,25 @@ static void parse_commandline(int argc, char *argv[]) {
     if (vm.count("kgscleanupmoves")) {
         cfg_kgs_cleanup_moves = vm["kgscleanupmoves"].as<int>();
     }
+
     if (vm.count("winratetarget")) {
         cfg_winrate_target = vm["winratetarget"].as<int>();
         // 0 to 100 are the only meaningful values. Default to 100% (unmodified search) if invalid input.
         if ((cfg_winrate_target > 100) || (cfg_winrate_target < 0)) {
             cfg_winrate_target = 100;
         }
+    }
+
+    if (vm.count("delayone")) {
+        cfg_delayone = vm["delayone"].as<int>();
+    }
+
+    if (vm.count("delaytwo")) {
+        cfg_delaytwo = vm["delaytwo"].as<int>();
+    }
+
+    if (vm.count("delaythree")) {
+        cfg_delaythree = vm["delaythree"].as<int>();
     }
 
 #ifdef USE_OPENCL
@@ -367,6 +387,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("nofirstlinemovesearly")) {
         cfg_nofirstlinemovesearly = true;
+    }
+
+    if (vm.count("delay")) {
+        cfg_delay = true;
     }
 
     if (vm.count("capturestones")) {

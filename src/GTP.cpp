@@ -115,6 +115,13 @@ std::string cfg_custom_engine_name;
 std::string cfg_custom_engine_version;
 int cfg_kgs_cleanup_moves;
 int kgs_cleanup_counter;
+int cfg_delayone;
+int cfg_delaytwo;
+int cfg_delaythree;
+int custom_delayone;
+int custom_delaytwo;
+int custom_delaythree;
+bool cfg_delay;
 
 
 
@@ -132,6 +139,7 @@ void GTP::setup_default_parameters() {
     win_message_sent = false;
     win_message_confirmed_sent = false;
     cfg_faster = false;
+    cfg_delay = false;
     cfg_max_threads = 64;
     //cfg_max_threads = std::max(1, std::min(SMP::get_num_cpus(), MAX_CPUS));
 #ifdef USE_OPENCL
@@ -197,6 +205,13 @@ void GTP::setup_default_parameters() {
     cfg_custom_engine_version = "";
     cfg_kgs_cleanup_moves = 3;
     kgs_cleanup_counter = 0;
+    cfg_delayone = 0;
+    cfg_delaytwo = 0;
+    cfg_delaythree = 0;
+    custom_delayone = 0;
+    custom_delaytwo = 0;
+    custom_delaythree = 0;
+    cfg_delay = false;
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -474,6 +489,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
         cfg_faster = false; // Reset on new game
+        cfg_delay = false; // Reset on new game
         if (cfg_custom_engine_name != "nomessage") {
             cfg_custom_engine_name = "versiononly";
         }
@@ -1051,6 +1067,13 @@ bool GTP::execute(GameState & game, std::string xinput) {
             if (word == "slower") {
                 cfg_faster = false;
             }
+
+            if (word == "nodelay") {
+                cfg_delay = false;
+            }
+            if (word == "delay") {
+                cfg_delay = true;
+            }
         }
 
         do {
@@ -1068,6 +1091,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         win_message_sent = false; // Reset on new game
         win_message_confirmed_sent = false; // Reset on new game
         cfg_faster = false; // Reset on new game
+        cfg_delay = false; // Reset on new game
         if (cfg_custom_engine_name != "nomessage") {
             cfg_custom_engine_name = "versiononly";
         }

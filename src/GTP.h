@@ -97,6 +97,13 @@ extern std::string cfg_custom_engine_name;
 extern std::string cfg_custom_engine_version;
 extern int cfg_kgs_cleanup_moves;
 extern int kgs_cleanup_counter;
+extern int cfg_delayone;
+extern int cfg_delaytwo;
+extern int cfg_delaythree;
+extern int custom_delayone;
+extern int custom_delaytwo;
+extern int custom_delaythree;
+extern bool cfg_delay;
 
 /*
     A list of all valid GTP2 commands is defined here:
