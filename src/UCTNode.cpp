@@ -41,8 +41,8 @@
 #include "Utils.h"
 
 using namespace Utils;
-int most_root_visits_seen = 0;
-int second_most_root_visits_seen = 0;
+int most_root_visits_seen = 1;
+int second_most_root_visits_seen = 1;
 int vertex_most_root_visits_seen = 0;
 int vertex_second_most_root_visits_seen = 0;
 float best_root_winrate = 0.0f;
@@ -557,30 +557,32 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = (check_vertex - remainder_vertex) / 21;
 
+            // Used to be: >= 8 >=8        <=12 >=8        >=8 <=12        <=12 <=12
+
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 8) == 0) || (((movenum_now + depth) % 8) == 1)) {
-                    if (leftover_vertex >= 8 || remainder_vertex >= 8) {
+                if ((((movenum_now + depth) % 16) == 0) || (((movenum_now + depth) % 16) == 1) || (((movenum_now + depth) % 16) == 2) || (((movenum_now + depth) % 16) == 3)) {
+                    if (leftover_vertex >= 10 || remainder_vertex >= 10) {
                         value = 0.20 * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 8) == 2) || (((movenum_now + depth) % 8) == 3)) {
-                    if (leftover_vertex <= 12 || remainder_vertex >= 8) {
+                if ((((movenum_now + depth) % 16) == 4) || (((movenum_now + depth) % 16) == 5) || (((movenum_now + depth) % 16) == 6) || (((movenum_now + depth) % 16) == 7)) {
+                    if (leftover_vertex <= 10 || remainder_vertex >= 10) {
                         value = 0.20 * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 8) == 4) || (((movenum_now + depth) % 8) == 5)) {
-                    if (leftover_vertex >= 8 || remainder_vertex <= 12) {
+                if ((((movenum_now + depth) % 16) == 8) || (((movenum_now + depth) % 16) == 9) || (((movenum_now + depth) % 16) == 10) || (((movenum_now + depth) % 16) == 11)) {
+                    if (leftover_vertex >= 10 || remainder_vertex <= 10) {
                         value = 0.20 * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 8) == 6) || (((movenum_now + depth) % 8) == 7)) {
-                    if (leftover_vertex <= 12 || remainder_vertex <= 12) {
+                if ((((movenum_now + depth) % 16) == 12) || (((movenum_now + depth) % 16) == 13) || (((movenum_now + depth) % 16) == 14) || (((movenum_now + depth) % 16) == 15)) {
+                    if (leftover_vertex <= 10 || remainder_vertex <= 10) {
                         value = 0.20 * value;
                     }
                 }
@@ -1002,10 +1004,10 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if ((movenum_now < 250) && (movenum_now > 12)) {
             Sleep(cfg_delaythree);
         }
-        if ((movenum_now < 200) && (movenum_now > 6)) {
+        if ((movenum_now < 200) && (movenum_now > 6) && !cfg_handicapgame) {
             Sleep(cfg_delaytwo);
         }
-        if ((movenum_now < 150)) {
+        if ((movenum_now < 150) && !cfg_handicapgame) {
             Sleep(cfg_delayone);
         }
     }

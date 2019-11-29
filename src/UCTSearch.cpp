@@ -877,12 +877,18 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             speedup_factor = 8.0f;
         }
 
-        if (cfg_hiddenwinrate == false) {
-            if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.50)) {
+
+
+
+        // THIS IS THE SECTION THAT MAKES IT PLAY MORE SLOWLY IF LOSING
+
+        //if (cfg_hiddenwinrate == false) {
+            if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.40)) {
                 speedup_factor = 0.50f;
                 faster_out_speedup_factor = 0.5f;
             }
 
+            /**
             if ((current_movenum >= 20) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.60)) {
                 speedup_factor = 0.10f;
                 faster_out_speedup_factor = 0.3333f;
@@ -890,7 +896,12 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
                     speedup_factor = 0.25f;
                 }
             }
-        }
+            **/
+
+        //}
+
+
+
 
         //if ((cfg_faster == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         if (cfg_faster == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
