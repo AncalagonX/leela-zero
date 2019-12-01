@@ -882,7 +882,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
         // THIS IS THE SECTION THAT MAKES IT PLAY MORE SLOWLY IF LOSING
 
-        //if (cfg_hiddenwinrate == false) {
+        if (cfg_slowlosing == true) {
             if ((current_movenum >= 10) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.40)) {
                 speedup_factor = 0.50f;
                 faster_out_speedup_factor = 0.5f;
@@ -898,7 +898,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             }
             **/
 
-        //}
+        }
 
 
 

@@ -63,6 +63,7 @@ bool cfg_capturestones;
 bool cfg_tiebot;
 bool cfg_handicapadjustment;
 bool cfg_handicapgame;
+float cfg_handicapadjustmentpercent;
 bool cfg_nofirstlinemovesearly;
 bool cfg_faster;
 int cfg_winrate_target;
@@ -122,6 +123,7 @@ int custom_delayone;
 int custom_delaytwo;
 int custom_delaythree;
 bool cfg_delay;
+bool cfg_slowlosing;
 
 
 
@@ -154,6 +156,7 @@ void GTP::setup_default_parameters() {
     cfg_max_visits = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_single_move_visit_limit = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_second_best_move_ratio = 100.0f;
+    cfg_handicapadjustmentpercent = 1.0f;
     cfg_single_move_visits_required_to_check = UCTSearch::UNLIMITED_PLAYOUTS;
     cfg_timemanage = TimeManagement::AUTO;
     cfg_lagbuffer_cs = 100;
@@ -253,9 +256,9 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    "fixed_handicap",
-    "place_free_handicap",
-    "set_free_handicap",
+    //"fixed_handicap",
+    //"place_free_handicap",
+    //"set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",

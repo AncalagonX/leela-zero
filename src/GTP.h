@@ -51,6 +51,7 @@ extern int cfg_max_playouts;
 extern int cfg_max_visits;
 extern int cfg_single_move_visit_limit;
 extern float cfg_second_best_move_ratio;
+extern float cfg_handicapadjustmentpercent;
 extern int cfg_single_move_visits_required_to_check;
 extern TimeManagement::enabled_t cfg_timemanage;
 extern int cfg_lagbuffer_cs;
@@ -104,6 +105,7 @@ extern int custom_delayone;
 extern int custom_delaytwo;
 extern int custom_delaythree;
 extern bool cfg_delay;
+extern bool cfg_slowlosing;
 
 /*
     A list of all valid GTP2 commands is defined here:

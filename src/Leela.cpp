@@ -94,11 +94,15 @@ static void parse_commandline(int argc, char *argv[]) {
         ("tengen", "Forces Tengen move at game start.")
         ("tengenchat", "Forces Tengen chat messages I am percent more tengen than human.")
         ("kageyamachat", "Enables Kageyama tips.")
+        ("specialchat", "Enables special chat.")
         ("hiddenwinrate", "Hides winrate from search, governed by --winratetarget.")
         ("tiebot", "Enables tiebot functionality to match target winrate.")
         ("handicapadjustment", "Forces playing a few stones in each quadrant if handicap enabled.")
+        ("handicapadjustmentpercent", po::value<float>()->default_value(cfg_handicapadjustmentpercent),
+            "Value multiplier for the tree search to force corner moves against handicap.")
         ("nofirstlinemovesearly", "Prevents moves on the first line during the early parts of the game.")
         ("delay", "Enables use of delayone, delaytwo, delaythree.")
+        ("slowlosing", "Causes bot to use 2x visits when losing.")
         ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
                       "-m0 -t1 -s1.")
@@ -393,6 +397,10 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_delay = true;
     }
 
+    if (vm.count("slowlosing")) {
+        cfg_slowlosing = true;
+    }
+
     if (vm.count("capturestones")) {
         cfg_capturestones = true;
     }
@@ -446,6 +454,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("secondbestmoveratio")) {
         cfg_second_best_move_ratio = vm["secondbestmoveratio"].as<float>();
+    }
+
+    if (vm.count("handicapadjustmentpercent")) {
+        cfg_handicapadjustmentpercent = vm["handicapadjustmentpercent"].as<float>();
     }
 
     if (vm.count("singlemovevisitsrequiredtocheck")) {

@@ -560,30 +560,30 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             // Used to be: >= 8 >=8        <=12 >=8        >=8 <=12        <=12 <=12
 
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 16) == 0) || (((movenum_now + depth) % 16) == 1) || (((movenum_now + depth) % 16) == 2) || (((movenum_now + depth) % 16) == 3)) {
+                if ((((movenum_now + depth) % 32) == 0) || (((movenum_now + depth) % 32) == 1) || (((movenum_now + depth) % 32) == 2) || (((movenum_now + depth) % 32) == 3) || (((movenum_now + depth) % 32) == 4) || (((movenum_now + depth) % 32) == 5) || (((movenum_now + depth) % 32) == 6) || (((movenum_now + depth) % 32) == 7)) {
                     if (leftover_vertex >= 10 || remainder_vertex >= 10) {
-                        value = 0.20 * value;
+                        value = cfg_handicapadjustmentpercent * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 16) == 4) || (((movenum_now + depth) % 16) == 5) || (((movenum_now + depth) % 16) == 6) || (((movenum_now + depth) % 16) == 7)) {
+                if ((((movenum_now + depth) % 32) == 8) || (((movenum_now + depth) % 32) == 9) || (((movenum_now + depth) % 32) == 10) || (((movenum_now + depth) % 32) == 11) || (((movenum_now + depth) % 32) == 12) || (((movenum_now + depth) % 32) == 13) || (((movenum_now + depth) % 32) == 14) || (((movenum_now + depth) % 32) == 15)) {
                     if (leftover_vertex <= 10 || remainder_vertex >= 10) {
-                        value = 0.20 * value;
+                        value = cfg_handicapadjustmentpercent * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 16) == 8) || (((movenum_now + depth) % 16) == 9) || (((movenum_now + depth) % 16) == 10) || (((movenum_now + depth) % 16) == 11)) {
+                if ((((movenum_now + depth) % 32) == 16) || (((movenum_now + depth) % 32) == 17) || (((movenum_now + depth) % 32) == 18) || (((movenum_now + depth) % 32) == 19) || (((movenum_now + depth) % 32) == 20) || (((movenum_now + depth) % 32) == 21) || (((movenum_now + depth) % 32) == 22) || (((movenum_now + depth) % 32) == 23)) {
                     if (leftover_vertex >= 10 || remainder_vertex <= 10) {
-                        value = 0.20 * value;
+                        value = cfg_handicapadjustmentpercent * value;
                     }
                 }
             }
             if (movenum_now + depth <= 32) {
-                if ((((movenum_now + depth) % 16) == 12) || (((movenum_now + depth) % 16) == 13) || (((movenum_now + depth) % 16) == 14) || (((movenum_now + depth) % 16) == 15)) {
+                if ((((movenum_now + depth) % 32) == 24) || (((movenum_now + depth) % 32) == 25) || (((movenum_now + depth) % 32) == 26) || (((movenum_now + depth) % 32) == 27) || (((movenum_now + depth) % 32) == 28) || (((movenum_now + depth) % 32) == 29) || (((movenum_now + depth) % 32) == 30) || (((movenum_now + depth) % 32) == 31)) {
                     if (leftover_vertex <= 10 || remainder_vertex <= 10) {
-                        value = 0.20 * value;
+                        value = cfg_handicapadjustmentpercent * value;
                     }
                 }
             }
@@ -999,7 +999,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
     }
 
-    if (cfg_delay == true) {
+    if ((cfg_delay == true) && (cfg_slowlosing == true)) {
 
         if ((movenum_now < 250) && (movenum_now > 12)) {
             Sleep(cfg_delaythree);
@@ -1007,7 +1007,20 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if ((movenum_now < 200) && (movenum_now > 6) && !cfg_handicapgame) {
             Sleep(cfg_delaytwo);
         }
-        if ((movenum_now < 150) && !cfg_handicapgame) {
+        if ((movenum_now < 150) && (movenum_now > 0) && !cfg_handicapgame) {
+            Sleep(cfg_delayone);
+        }
+    }
+
+    if ((cfg_delay == true) && (cfg_slowlosing == false)) {
+
+        if ((movenum_now < 250) && (movenum_now > 12)) {
+            Sleep(cfg_delaythree);
+        }
+        if ((movenum_now < 200) && (movenum_now > 6)) {
+            Sleep(cfg_delaytwo);
+        }
+        if ((movenum_now < 150) && (movenum_now > 0)) {
             Sleep(cfg_delayone);
         }
     }
