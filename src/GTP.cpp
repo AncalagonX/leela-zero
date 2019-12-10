@@ -389,7 +389,10 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cfg_custom_engine_name = best_winrate_string;
             }
             if ((current_movenum == 180) || (current_movenum == 181)) {
-                cfg_custom_engine_name = "IMPORTANT: Please capture all dead stones before passing at the end of the game.";
+                cfg_custom_engine_name = "IMPORTANT: Please capture all dead stones before passing at the end of the game. ----- Veuillez capturer toutes les pierres mortes avant de passer à la fin du jeu. ----- Важно: Пожалуйста, захватите все мертвые камни перед прохождением в конце игры. ----- Wichtig: Bitte fange alle toten Steine ein, bevor du am Ende des Spiels passierst.";
+            }
+            if ((current_movenum == 182) || (current_movenum == 183)) {
+                cfg_custom_engine_name = "重要：このゲームは「中国のルール」を使用しています。 ゲーム終了時に渡す前に、すべての死んだ石を削除してください。 あなたのスコアは影響を受けません。 ----- 重要提示：该游戏使用“中国规则”。 在游戏结束前，请清除所有死角。 您的分数不会受到影响。";
             }
         }
         /**

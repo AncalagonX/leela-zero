@@ -949,28 +949,29 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
                 //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
                 int integer_winrate = (static_cast<int>(1.25f * 100.0f * best_root_winrate));
                 int integer_visits = static_cast<int>(m_root->get_visits());
+                int integer_visits_plus_winrate = integer_winrate + integer_visits;
                 //best_winrate_string = "My current winrate is %.2f%%.", (100.0f * best_root_winrate);
                 //best_winrate_string = "My current winrate is " + std::to_string(100.0f * best_root_winrate) + "%%";
                 //best_winrate_string = "I am currently " + std::to_string(integer_winrate) + "%% more human than you.";
-                if (integer_visits % 7 == 1) {
+                if (integer_visits_plus_winrate % 7 == 1) {
                     best_winrate_string = "Kageyama's First Fundamental Rule of Go: Always cut the enemy stones apart.";
                 }
-                if (integer_visits % 7 == 2) {
+                if (integer_visits_plus_winrate % 7 == 2) {
                     best_winrate_string = "Kageyama's Second Fundamental Rule of Go: Always connect your own stones together.";
                 }
-                if (integer_visits % 7 == 3) {
+                if (integer_visits_plus_winrate % 7 == 3) {
                     best_winrate_string = "Kageyama's Third Fundamental Rule of Go: Always extend or hane ahead of the opponent.";
                 }
-                if (integer_visits % 7 == 4) {
+                if (integer_visits_plus_winrate % 7 == 4) {
                     best_winrate_string = "Kageyama's Fourth Fundamental Rule of Go: Do not count a moyo as territory. They are not the same.";
                 }
-                if (integer_visits % 7 == 5) {
+                if (integer_visits_plus_winrate % 7 == 5) {
                     best_winrate_string = "Kageyama's Fifth Fundamental Rule of Go: Play at the enemy's ''good shape point'' to force them to make bad shape.";
                 }
-                if (integer_visits % 7 == 6) {
+                if (integer_visits_plus_winrate % 7 == 6) {
                     best_winrate_string = "Kageyama's Sixth Fundamental Rule of Go: Play slower, ''proper'' moves that solidify your groups, even in gote.";
                 }
-                if (integer_visits % 7 == 0) {
+                if (integer_visits_plus_winrate % 7 == 0) {
                     best_winrate_string = "TengenBot's Seventh Fundamental Rule of Go: When in doubt and all hope is lost, play K10.";
                 }
             }
@@ -982,7 +983,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
     //if (!is_pondering_now && (elapsed_centis >= required_elapsed_before_checking)) { // Wait 90ms before making these checks
-    if (!is_pondering_now && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+    //if (!is_pondering_now && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+    if (!is_pondering_now) {
         //if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
         //    //std::string integer_winrate = std::to_string(static_cast<int>(100.0f * best_root_winrate));
         //    int integer_winrate = (static_cast<int>(100.0f * best_root_winrate));

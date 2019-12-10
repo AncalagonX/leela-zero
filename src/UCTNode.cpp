@@ -498,7 +498,9 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (is_root && (static_cast<int>(child.get_visits()) > most_root_visits_seen)) {
             if (vertex_most_root_visits_seen != child.get_move()) {
                 vertex_most_root_visits_seen = child.get_move();
-                second_most_root_visits_seen = most_root_visits_seen;
+                if (most_root_visits_seen > second_most_root_visits_seen) {
+                    second_most_root_visits_seen = most_root_visits_seen;
+                }
             }
             most_root_visits_seen = static_cast<int>(child.get_visits());
             if (most_root_visits_seen >= 1) {
@@ -596,7 +598,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         /////////////////////////////////////////////////////////////////////////////////
 
             //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
-            if (!is_opponent_move && (movenum_now + depth <= 20) && (winrate >= 0.30)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.40)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -616,7 +618,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
             
             //if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
-            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.50)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -670,7 +672,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             //if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.50)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.60)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
