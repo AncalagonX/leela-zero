@@ -66,6 +66,7 @@ bool cfg_handicapgame;
 float cfg_handicapadjustmentpercent;
 bool cfg_nofirstlinemovesearly;
 bool cfg_faster;
+bool cfg_superslow;
 int cfg_winrate_target;
 int cfg_num_threads;
 int cfg_max_threads;
@@ -200,6 +201,7 @@ void GTP::setup_default_parameters() {
     cfg_handicapadjustment = false;
     cfg_handicapgame = false;
     cfg_nofirstlinemovesearly = false;
+    cfg_superslow = false;
     cfg_winrate_target = 100;
 
     cfg_sentinel_file = "sentinel.quit";
@@ -256,9 +258,9 @@ const std::string GTP::s_commands[] = {
     "final_status_list",
     "time_settings",
     "time_left",
-    //"fixed_handicap",
-    //"place_free_handicap",
-    //"set_free_handicap",
+    "fixed_handicap",
+    "place_free_handicap",
+    "set_free_handicap",
     "loadsgf",
     "printsgf",
     "kgs-genmove_cleanup",
@@ -614,7 +616,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                     return true;
                 }
 
-                if (game.get_komi() >= 7.6f || game.get_komi() <= 0.1f) {
+                if (game.get_komi() >= 9997.6f || game.get_komi() <= -9990.1f) {
                     int move = FastBoard::RESIGN;
                     game.play_move(move);
                     std::string vertex = game.move_to_text(move);
@@ -1072,6 +1074,18 @@ bool GTP::execute(GameState & game, std::string xinput) {
             }
             if (word == "slower") {
                 cfg_faster = false;
+            }
+            if (word == "superslow_enable") {
+                cfg_superslow = true;
+            }
+            if (word == "superslow_disable") {
+                cfg_superslow = false;
+            }
+            if (word == "ponder") {
+                cfg_allow_pondering = true;
+            }
+            if (word == "noponder") {
+                cfg_allow_pondering = false;
             }
 
             if (word == "nodelay") {

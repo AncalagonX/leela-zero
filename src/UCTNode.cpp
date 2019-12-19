@@ -401,7 +401,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         const auto denom = 1.0 + child.get_visits();
         auto puct = cfg_puct * psa * (numerator / denom);
 
-        if (movenum_now > 300) {
+        if (movenum_now + depth > 300) {
             puct = 0.4 * psa * (numerator / denom);
         }
 
@@ -453,34 +453,34 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
             }
             if (movenum_now + depth >= 60) {
-                winrate_target_value = 0.01f * (cfg_winrate_target - 10); // Converts user input into float between 1.0f and 0.0f
+                winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
             }
             if (movenum_now + depth >= 80) {
-                winrate_target_value = 0.01f * (cfg_winrate_target - 20); // Converts user input into float between 1.0f and 0.0f
+                winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
             }
             if (movenum_now + depth >= 100) {
-                winrate_target_value = 0.01f * (cfg_winrate_target - 10); // Converts user input into float between 1.0f and 0.0f
+                winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
             }
             if (movenum_now + depth >= 120) {
-                winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
+                winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
             }
-            if (movenum_now + depth >= 1800) {
+            if (movenum_now + depth >= 150) {
                 winrate_target_value = 0.01f * (cfg_winrate_target + 30); // Converts user input into float between 1.0f and 0.0f
             }
             if (movenum_now + depth >= 2100) {
                 winrate_target_value = 0.01f * (cfg_winrate_target + 40); // Converts user input into float between 1.0f and 0.0f
             }
 
-            if (!is_opponent_move && (depth > 1) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+            if (!is_opponent_move && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
                 value = (1 - abs(winrate_target_value - winrate)) + puct;
             }
 
-            if (!is_opponent_move && (depth <= 1) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
-                value = 0.95 * ((1 - abs(winrate_target_value - winrate)) + puct);
+            if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+                value = 0.90 * value;
             }
 
-            if (!is_opponent_move && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
-                value = 0.90 * value;
+            if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+                value = 0.80 * value;
             }
 
             if (!is_opponent_move
@@ -603,17 +603,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
                 if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                    value = 0.80 * value;
+                    value = 0.60 * value;
                 }
                 if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                    value = 0.80 * value;
+                    value = 0.60 * value;
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.80 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.80 * value;
                 }
             }
             
@@ -623,17 +623,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
                 if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                    value = 0.80 * value;
+                    value = 0.60 * value;
                 }
                 if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                    value = 0.80 * value;
+                    value = 0.60 * value;
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.80 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.90 * value;
+                    value = 0.80 * value;
                 }
 
                 //if (leftover_vertex <= 2 || leftover_vertex >= 18) {

@@ -918,7 +918,11 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             required_elapsed_before_checking = 50;
         }
 
-
+        if (cfg_superslow == true) {
+            speedup_factor = 0.10f;
+            faster_out_speedup_factor = 0.1f;
+            required_elapsed_before_checking = 50;
+        }
 
         if (!is_pondering_now) {
             if ((cfg_tengenchat == true) && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {

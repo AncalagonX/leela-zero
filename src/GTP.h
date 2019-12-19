@@ -44,6 +44,7 @@ extern bool cfg_handicapgame;
 extern bool cfg_nofirstlinemovesearly;
 extern bool win_message_sent;
 extern bool cfg_faster;
+extern bool cfg_superslow;
 extern int cfg_winrate_target;
 extern int cfg_num_threads;
 extern int cfg_max_threads;
