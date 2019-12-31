@@ -97,6 +97,7 @@ extern std::string cfg_sentinel_file;
 extern std::string best_winrate_string;
 extern std::string cfg_custom_engine_name;
 extern std::string cfg_custom_engine_version;
+extern std::string cfg_kgsusername;
 extern int cfg_kgs_cleanup_moves;
 extern int kgs_cleanup_counter;
 extern int cfg_delayone;
@@ -106,7 +107,21 @@ extern int custom_delayone;
 extern int custom_delaytwo;
 extern int custom_delaythree;
 extern bool cfg_delay;
+extern bool cfg_factbot;
+extern bool cfg_weirdbot;
+extern bool cfg_handicapblindness;
+extern bool cfg_tenukibot;
+extern bool cfg_followbot;
+extern bool cfg_hyperspeed;
+extern bool cfg_rengobot;
+extern bool cfg_wearelosing;
+extern bool cfg_nohandicap;
+extern int cumulative_visits;
 extern bool cfg_slowlosing;
+extern int cfg_rankwanted;
+extern int cfg_opponentrank;
+extern bool cfg_rankmatchingtiebot;
+extern int cfg_handicapamount;
 
 /*
     A list of all valid GTP2 commands is defined here:

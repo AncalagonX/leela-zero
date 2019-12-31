@@ -43,6 +43,7 @@ constexpr int UCTSearch::UNLIMITED_PLAYOUTS;
 bool is_pondering_now = false;
 bool ponder_just_started = false;
 int current_movenum = 0;
+int movenum_now = 0;
 float speedup_factor = 1.0f;
 float faster_out_speedup_factor = 1.0f;
 
@@ -225,7 +226,7 @@ SearchResult UCTSearch::play_simulation(GameState & currstate,
                                         UCTNode* const node) {
     const auto color = currstate.get_to_move();
     const auto color_to_move = m_rootstate.get_to_move();
-    int movenum_now = m_rootstate.get_movenum();
+    movenum_now = m_rootstate.get_movenum();
     auto result = SearchResult{};
 
     node->virtual_loss();
@@ -434,11 +435,13 @@ void UCTSearch::tree_stats(const UCTNode& node) {
 bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     if (passflag & UCTSearch::NORESIGN) {
         // resign not allowed
+        cfg_wearelosing = false;
         return false;
     }
 
     if (cfg_resignpct == 0) {
         // resign not allowed
+        cfg_wearelosing = false;
         return false;
     }
 
@@ -449,6 +452,7 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     const auto movenum = m_rootstate.get_movenum();
     if (movenum <= move_threshold) {
         // too early in game to resign
+        cfg_wearelosing = false;
         return false;
     }
 
@@ -463,6 +467,7 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
             myprintf("Resetting resign_moves_counter to zero (was %d / %d consecutive moves below resign threshold (%d%%)).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
             resign_moves_counter = 0; // Reset if besteval is above resign_threshold
         }
+        cfg_wearelosing = false;
         return false;
     }
 
@@ -481,6 +486,7 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
             // Allow lower eval for white in handicap games
             // where opp may fumble.
             resign_moves_counter = 0; // Reset if besteval is above blended_resign_threshold
+            cfg_wearelosing = false;
             return false;
         }
     }
@@ -488,13 +494,20 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     if (++resign_moves_counter < cfg_resign_moves) {
         // resign not allowed
         myprintf("Resign not allowed: %d / %d consecutive moves below resign threshold (%d%%).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
+        cfg_wearelosing = false;
         return false;
     }
 
     // Reset resign_moves_counter if we are resigning
     myprintf("Resign allowed: %d / %d consecutive moves below resign threshold (%d%%).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
     resign_moves_counter = 0;
-    return true;
+    if (cfg_rengobot) {
+        cfg_wearelosing = true;
+        return false;
+    }
+    else {
+        return true;
+    }
 }
 
 int UCTSearch::get_best_move(passflag_t passflag) {
@@ -840,16 +853,31 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
 
     //most_root_visits_seen
 
-    int required_elapsed_before_checking = 50;
+    int required_elapsed_before_checking = 60;
 
     if (!is_pondering_now) {
-        if (current_movenum < 10) {
+        if (current_movenum < 16) {
             speedup_factor = 1.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
         if ((best_root_winrate >= 0.01) && (best_root_winrate <= 0.89)) {
             speedup_factor = 1.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum <= 14) {
+            speedup_factor = 2.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum <= 10) {
+            speedup_factor = 4.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum <= 6) {
+            speedup_factor = 6.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
@@ -860,6 +888,38 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         //if (current_movenum >= 250) {
         //    speedup_factor = 4.0f;
         //}
+
+        if ((current_movenum >= 30) && (best_root_winrate >= 0.70)) {
+            speedup_factor = 1.0f;
+        }
+
+        if ((current_movenum >= 60) && (best_root_winrate >= 0.70)) {
+            speedup_factor = 1.0f;
+        }
+
+        if ((current_movenum >= 90) && (best_root_winrate >= 0.70)) {
+            speedup_factor = 2.0f;
+        }
+
+        if ((current_movenum >= 120) && (best_root_winrate >= 0.70)) {
+            speedup_factor = 2.0f;
+        }
+
+        if ((current_movenum >= 30) && (best_root_winrate >= 0.80)) {
+            speedup_factor = 1.0f;
+        }
+
+        if ((current_movenum >= 60) && (best_root_winrate >= 0.80)) {
+            speedup_factor = 2.0f;
+        }
+
+        if ((current_movenum >= 90) && (best_root_winrate >= 0.80)) {
+            speedup_factor = 3.0f;
+        }
+
+        if ((current_movenum >= 120) && (best_root_winrate >= 0.80)) {
+            speedup_factor = 4.0f;
+        }
 
         if ((current_movenum >= 30) && (best_root_winrate >= 0.90)) {
             speedup_factor = 2.0f;
@@ -910,18 +970,24 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             required_elapsed_before_checking = 1;
         }
 
+        if (cfg_hyperspeed && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
+            speedup_factor = speedup_factor * 32.0f;
+            faster_out_speedup_factor = faster_out_speedup_factor * 16.0f;
+            required_elapsed_before_checking = 1;
+        }
+
         if (cfg_delay == true && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
             required_elapsed_before_checking = 1;
         }
 
         if ((cfg_faster == false) && (cfg_delay == false)) {
-            required_elapsed_before_checking = 50;
+            required_elapsed_before_checking = 60;
         }
 
         if (cfg_superslow == true) {
             speedup_factor = 0.10f;
             faster_out_speedup_factor = 0.1f;
-            required_elapsed_before_checking = 50;
+            required_elapsed_before_checking = 60;
         }
 
         if (!is_pondering_now) {
@@ -986,6 +1052,13 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     float visit_ratio_best_two_moves = ((second_most_root_visits_seen * 1.0f) / (most_root_visits_seen * 1.0f));
     int check_visit_ratio_best_two_moves = static_cast<int>(visit_ratio_best_two_moves / faster_out_speedup_factor);
 
+    cumulative_visits += most_root_visits_seen;
+    //cumulative_visits += second_most_root_visits_seen;
+
+    if (cumulative_visits > 1000000) {
+        cumulative_visits = 1 + most_root_visits_seen;
+    }
+
     //if (!is_pondering_now && (elapsed_centis >= required_elapsed_before_checking)) { // Wait 90ms before making these checks
     //if (!is_pondering_now && (best_root_winrate >= 0.01) && (best_root_winrate <= 0.99)) {
     if (!is_pondering_now) {
@@ -1004,12 +1077,16 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         if ((most_root_visits_seen >= check_most_root_visits_seen) && (elapsed_centis >= required_elapsed_before_checking)) { // Check if the most visited move has more than our configured single-move-visit-limit
             myprintf("\n     Stopping early: MOST ROOT VISITS = %d (limit %d (%d)) \n     Second most root visits = %d <--> Visit ratio = %.2f\n",
                                 most_root_visits_seen, check_most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen, visit_ratio_best_two_moves);
+            //myprintf("\n     CUMULATIVE VISITS = %d\n",
+            //    cumulative_visits);
             return true; // Stop thinking
         }
         if ((most_root_visits_seen >= static_cast<int>((cfg_single_move_visits_required_to_check * 1.0f) / faster_out_speedup_factor)) && (elapsed_centis >= required_elapsed_before_checking)) { // Ensure we have at least enough bare minimum visits to make the next check
             if (cfg_second_best_move_ratio >= visit_ratio_best_two_moves) { // Check if we have a good enough visit ratio on the top candidate for an "Even Earlier, Early Out"
                 myprintf("\n     Stopping early: VISIT RATIO = %.2f (limit %.2f) \n     Most root visits = %d (limit %d) <--> Second most root visits = %d\n",
                     visit_ratio_best_two_moves, cfg_second_best_move_ratio, most_root_visits_seen, m_singlemovevisits, second_most_root_visits_seen);
+                myprintf("\n     CUMULATIVE VISITS = %d\n",
+                    cumulative_visits);
                 return true; // Stop thinking
             }
         }
@@ -1039,7 +1116,8 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         check_maxvisits_seen = cfg_single_move_visits_required_to_check;
     }
 
-    if ((elapsed_centis > required_elapsed_before_checking) && (elapsed_centis >= 100)) {
+    //if ((elapsed_centis > required_elapsed_before_checking) && (elapsed_centis >= 60)) { // COMMENTED THIS OUT. NOT SURE WHY THE SECOND CHECK IS THERE.
+    if (elapsed_centis > required_elapsed_before_checking) {
 
         return m_playouts >= check_maxplayouts_seen
             || m_root->get_visits() >= check_maxvisits_seen

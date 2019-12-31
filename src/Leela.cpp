@@ -73,6 +73,8 @@ static void parse_commandline(int argc, char *argv[]) {
                     "Ratio of maximum viists allowed on second best move, relative to singlemovevisits.")
         ("singlemovevisitsrequiredtocheck", po::value<int>(),
                      "Required visits on most visited move before secondbestmovereatio is checked.")
+        ("rankwanted", po::value<int>(),
+                     "Desired rank for rankmatching.")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
         ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
@@ -102,6 +104,14 @@ static void parse_commandline(int argc, char *argv[]) {
             "Value multiplier for the tree search to force corner moves against handicap.")
         ("nofirstlinemovesearly", "Prevents moves on the first line during the early parts of the game.")
         ("delay", "Enables use of delayone, delaytwo, delaythree.")
+        ("factbot", "Enables factbot.")
+        ("rankmatchingtiebot", "Enables rank-matching tie bot.")
+        ("weirdbot", "Enables weirdbot.")
+        ("tenukibot", "Enables tenukibot.")
+        ("followbot", "Enables followbot.")
+        ("rengobot", "Enables rengobot.")
+        ("nohandicap", "Disables handicap GTP commands.")
+        ("handicapblindness", "Enables handicap blindness.")
         ("slowlosing", "Causes bot to use 2x visits when losing.")
         ("capturestones", "Emphasizes capturing stones during search.")
         ("benchmark", "Test network and exit. Default args:\n-v3200 --noponder "
@@ -136,6 +146,7 @@ static void parse_commandline(int argc, char *argv[]) {
             po::value<float>()->default_value(cfg_random_temp),
             "Temperature to use for random move selection.")
         ("sentinel", po::value<std::string>()->default_value(cfg_sentinel_file), "LZ will exit if this file exists.")
+        ("kgsusername", po::value<std::string>()->default_value(cfg_custom_engine_name), "Set this to the bot's KGS username.")
         ("enginename", po::value<std::string>()->default_value(cfg_custom_engine_name), "Custom engine name.")
         ("engineversion", po::value<std::string>()->default_value(cfg_custom_engine_version), "Custom engine version.")
         ("kgscleanupmoves", po::value<int>()->default_value(cfg_kgs_cleanup_moves),
@@ -265,6 +276,10 @@ static void parse_commandline(int argc, char *argv[]) {
     if (vm.count("sentinel")) {
         cfg_sentinel_file = vm["sentinel"].as<std::string>();
         myprintf("Leela Zero will exit if sentinel file detected: %s.\n", cfg_sentinel_file.c_str());
+    }
+
+    if (vm.count("kgsusername")) {
+        cfg_kgsusername = vm["kgsusername"].as<std::string>();
     }
 
     if (vm.count("enginename")) {
@@ -397,6 +412,38 @@ static void parse_commandline(int argc, char *argv[]) {
         cfg_delay = true;
     }
 
+    if (vm.count("factbot")) {
+        cfg_factbot = true;
+    }
+
+    if (vm.count("weirdbot")) {
+        cfg_weirdbot = true;
+    }
+
+    if (vm.count("handicapblindness")) {
+        cfg_handicapblindness = true;
+    }
+
+    if (vm.count("tenukibot")) {
+        cfg_tenukibot = true;
+    }
+
+    if (vm.count("followbot")) {
+        cfg_followbot = true;
+    }
+
+    if (vm.count("rengobot")) {
+        cfg_rengobot = true;
+    }
+
+    if (vm.count("nohandicap")) {
+        cfg_nohandicap = true;
+    }
+
+    if (vm.count("rankmatchingtiebot")) {
+        cfg_rankmatchingtiebot = true;
+    }
+
     if (vm.count("slowlosing")) {
         cfg_slowlosing = true;
     }
@@ -450,6 +497,10 @@ static void parse_commandline(int argc, char *argv[]) {
         if (cfg_single_move_visit_limit == 0) {
             cfg_single_move_visit_limit = UCTSearch::UNLIMITED_PLAYOUTS;
         }
+    }
+
+    if (vm.count("rankwanted")) {
+        cfg_rankwanted = vm["rankwanted"].as<int>();
     }
 
     if (vm.count("secondbestmoveratio")) {

@@ -365,20 +365,91 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     //}
 
     //if (cfg_hiddenwinrate == false) {
-        if (movenum_now >= 100) {
-            winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+        if (movenum_now >= 80) {
+            winrate_target_value = 0.01f * (cfg_winrate_target + 5); // Converts user input into float between 1.0f and 0.0f
         }
 
-        if (movenum_now >= 150) {
-            winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
+        if (movenum_now >= 120) {
+            winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
         }
-        if (movenum_now >= 200) {
-            winrate_target_value = 0.01f * (cfg_winrate_target + 30); // Converts user input into float between 1.0f and 0.0f
+        if (movenum_now >= 160) {
+            winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
         }
     //}
 
 
     float movenum_float = movenum_now * 1.0f;
+    float best_policy_seen = 0.0f;
+    float opponent_best_policy_seen = 0.0f;
+    float opponent_second_best_policy_seen = 0.0f;
+    int best_policy_vertex = 999999;
+    int opponent_best_policy_vertex = 999999;
+    int opponent_second_best_policy_vertex = 999999;
+    double best_opponent_value_seen = 0.0;
+    int best_opponent_value_vertex = 999999;
+    float second_best_policy_seen = 0.0f;
+    int second_best_policy_vertex = 999999;
+
+    bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
+
+    if (is_pondering_now) {
+        is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
+    }
+
+    if (!is_opponent_move && cfg_weirdbot) {
+        for (auto& child : m_children) {
+            if (!child.active()) {
+                continue;
+            }
+
+            const auto psa = child.get_policy();
+            if (psa > best_policy_seen) {
+                best_policy_seen = psa;
+                best_policy_vertex = child.get_move();
+            }
+            if ((psa < best_policy_seen) && (psa > second_best_policy_seen)) {
+                second_best_policy_seen = psa;
+                second_best_policy_vertex = child.get_move();
+            }
+        }
+    }
+
+    if (cfg_handicapblindness) {
+        for (auto& child : m_children) {
+            if (!child.active()) {
+                continue;
+            }
+
+            auto winrate = fpu_eval;
+            if (child.is_inflated() && child->m_expand_state.load() == ExpandState::EXPANDING) {
+                // Someone else is expanding this node, never select it
+                // if we can avoid so, because we'd block on it.
+                winrate = -1.0f - fpu_reduction;
+            }
+            else if (child.get_visits() > 0) {
+                winrate = child.get_eval(color);
+            }
+            const auto psa = child.get_policy();
+            const auto denom = 1.0 + child.get_visits();
+            auto puct = cfg_puct * psa * (numerator / denom);
+            auto value = winrate + puct;
+
+            if (is_opponent_move && psa > opponent_best_policy_seen) {
+                opponent_second_best_policy_seen = opponent_best_policy_seen;
+                opponent_second_best_policy_vertex = opponent_best_policy_vertex;
+                opponent_best_policy_seen = psa;
+                opponent_best_policy_vertex = child.get_move();
+            }
+            if (is_opponent_move && (psa < opponent_best_policy_seen) && (psa > opponent_second_best_policy_seen)) {
+                opponent_second_best_policy_seen = psa;
+                opponent_second_best_policy_vertex = child.get_move();
+            }
+            if (is_opponent_move && (value > best_opponent_value_seen)) {
+                best_opponent_value_seen = value;
+                best_opponent_value_vertex = child.get_move();
+            }
+        }
+    }
 
 
 
@@ -426,12 +497,6 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         auto value = winrate + puct;
         
-        bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
-
-        if (is_pondering_now) {
-            is_opponent_move = !is_opponent_move; // When white's turn, opponent's moves are made at even-numbered depths. Flipping this bool accounts for this.
-        }
-
         if (cfg_hiddenwinrate == true) {
 
             if (!is_opponent_move && (movenum_now + depth <= 200) && (child.get_visits() > 0) && (winrate > winrate_target_value)) {
@@ -443,8 +508,83 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
 
-        if (cfg_tiebot == true) {
+        if (cfg_weirdbot == true && ((movenum_now + depth) <= 150)) {
+            if (!is_opponent_move && (child.get_move() == best_policy_vertex) && (winrate >= winrate_target_value)) {
+                //value = 0.50f * value;
+                continue;
+            }
+            if (!is_opponent_move && (child.get_move() == second_best_policy_vertex) && (winrate >= winrate_target_value)) {
+                //value = 0.50f * value;
+                continue;
+            }
+        }
 
+        if (cfg_handicapblindness && ((movenum_now + depth) <= 150) && (depth >= 4)) {
+            if (is_opponent_move && (child.get_move() == opponent_best_policy_vertex)) {
+                continue;
+            }
+            if (is_opponent_move && (child.get_move() == opponent_second_best_policy_vertex)) {
+                continue;
+            }
+
+            //winrate_target_value = 0.90f;
+
+            /**
+            if (is_opponent_move && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
+
+            if (is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = 0.50 * value;
+            }
+
+            if (is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = 0.50 * value;
+            }
+
+            if (is_opponent_move
+                && (child.get_move() == -1)
+                && (movenum_now <= 300)) {
+                value = 0.0000005 * value;
+            }
+            **/
+            //if (is_opponent_move && psa > 0.01) {
+            //    continue;
+            //}
+        }
+
+        if (cfg_rankmatchingtiebot == true) {
+
+            int rank_difference = cfg_rankwanted - cfg_opponentrank;
+            if ((rank_difference < 0) && (abs(rank_difference) >= cfg_handicapamount)) {
+                rank_difference += cfg_handicapamount;
+            }
+            if ((rank_difference > 0) && (abs(rank_difference) >= cfg_handicapamount)) {
+                rank_difference -= cfg_handicapamount;
+            }
+
+            if (abs(rank_difference) == cfg_handicapamount) {
+                rank_difference = 0;
+            }
+            int winrate_rank_adjusted = 40 + (10 * rank_difference);
+            if (winrate_rank_adjusted > 100) {
+                winrate_rank_adjusted = 100;
+            }
+            if (winrate_rank_adjusted < 15) {
+                winrate_rank_adjusted = 15;
+            }
+
+            cfg_winrate_target = (100 - (movenum_now + depth));
+            if (cfg_handicapgame) {
+                cfg_winrate_target = (100 - static_cast<int>(0.50f * (movenum_now + depth)));
+            }
+            if (cfg_winrate_target < winrate_rank_adjusted) {
+                cfg_winrate_target = winrate_rank_adjusted;
+            }
+
+            winrate_target_value = 0.01f * cfg_winrate_target; // Converts user input into float between 1.0f and 0.0f
+
+            /**
             if ((movenum_now + depth > 10) && (movenum_now + depth < 30)) {
                 winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
             }
@@ -470,22 +610,73 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             if (movenum_now + depth >= 2100) {
                 winrate_target_value = 0.01f * (cfg_winrate_target + 40); // Converts user input into float between 1.0f and 0.0f
             }
+            **/
 
-            if (!is_opponent_move && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+            if (!is_opponent_move && (movenum_now + depth <= 250)) {
                 value = (1 - abs(winrate_target_value - winrate)) + puct;
             }
 
             if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
-                value = 0.90 * value;
+                value = 0.70 * value;
             }
 
             if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
-                value = 0.80 * value;
+                value = 0.50 * value;
             }
 
             if (!is_opponent_move
                 && (child.get_move() == -1)
                 && (movenum_now <= 250)) {
+                value = 0.0000005 * value;
+            }
+
+        }
+
+        if (cfg_tiebot == true) {
+
+            /**
+            if ((movenum_now + depth > 10) && (movenum_now + depth < 30)) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+            }
+
+            if (movenum_now + depth >= 30) {
+                winrate_target_value = 0.01f * (cfg_winrate_target); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 60) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 80) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 10); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 100) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 120) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 20); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 150) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 30); // Converts user input into float between 1.0f and 0.0f
+            }
+            if (movenum_now + depth >= 2100) {
+                winrate_target_value = 0.01f * (cfg_winrate_target + 40); // Converts user input into float between 1.0f and 0.0f
+            }
+            **/
+
+            if (!is_opponent_move && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = (1 - abs(winrate_target_value - winrate)) + puct;
+            }
+
+            if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = 0.90 * value;
+            }
+
+            if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
+                value = 0.80 * value;
+            }
+
+            if (!is_opponent_move
+                && (child.get_move() == -1)
+                && (movenum_now <= 300)) {
                 value = 0.0000005 * value;
             }
 
@@ -591,6 +782,102 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
         }
+
+        if (cfg_tenukibot == true && !is_opponent_move) {
+
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+
+            int parent_check_vertex = static_cast<int>(get_move());
+            int parent_remainder_vertex = parent_check_vertex % 21;
+            int parent_leftover_vertex = (parent_check_vertex - parent_remainder_vertex) / 21;
+
+            // Used to be: >= 8 >=8        <=12 >=8        >=8 <=12        <=12 <=12
+
+            bool upper_left = (leftover_vertex <= 10 && remainder_vertex >= 10);
+            bool upper_right = (leftover_vertex >= 10 && remainder_vertex >= 10);
+            bool lower_right = (leftover_vertex >= 10 && remainder_vertex <= 10);
+            bool lower_left = (leftover_vertex <= 10 && remainder_vertex <= 10);
+
+            bool parent_upper_left = (parent_leftover_vertex <= 10 && parent_remainder_vertex >= 10);
+            bool parent_upper_right = (parent_leftover_vertex >= 10 && parent_remainder_vertex >= 10);
+            bool parent_lower_right = (parent_leftover_vertex >= 10 && parent_remainder_vertex <= 10);
+            bool parent_lower_left = (parent_leftover_vertex <= 10 && parent_remainder_vertex <= 10);
+
+
+            if ((movenum_now + depth <= 200) && (winrate > winrate_target_value)) {
+                //if ((((movenum_now + depth) % 16) == 0) || (((movenum_now + depth) % 16) == 1) || (((movenum_now + depth) % 16) == 8) || (((movenum_now + depth) % 16) == 9)) {
+                if (parent_upper_left && upper_left) {
+                    value = cfg_handicapadjustmentpercent * value;
+                    //continue;
+                }
+                //}
+            }
+            if ((movenum_now + depth <= 200) && (winrate > winrate_target_value)) {
+                //if ((((movenum_now + depth) % 16) == 2) || (((movenum_now + depth) % 16) == 3) || (((movenum_now + depth) % 16) == 10) || (((movenum_now + depth) % 16) == 11)) {
+                if (parent_upper_right && upper_right) {
+                    value = cfg_handicapadjustmentpercent * value;
+                    //continue;
+                }
+                //}
+            }
+            if ((movenum_now + depth <= 200) && (winrate > winrate_target_value)) {
+                //if ((((movenum_now + depth) % 16) == 4) || (((movenum_now + depth) % 16) == 5) || (((movenum_now + depth) % 16) == 12) || (((movenum_now + depth) % 16) == 13)) {
+                if (parent_lower_right && lower_right) {
+                    value = cfg_handicapadjustmentpercent * value;
+                    //continue;
+                }
+                //}
+            }
+            if ((movenum_now + depth <= 200) && (winrate > winrate_target_value)) {
+                //if ((((movenum_now + depth) % 16) == 6) || (((movenum_now + depth) % 16) == 7) || (((movenum_now + depth) % 16) == 14) || (((movenum_now + depth) % 16) == 15)) {
+                if (parent_lower_left && lower_left) {
+                    value = cfg_handicapadjustmentpercent * value;
+                    //continue;
+                }
+                //}
+            }
+
+        }
+
+        if (cfg_followbot == true && !is_opponent_move) {
+
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+
+            int parent_check_vertex = static_cast<int>(get_move());
+            int parent_remainder_vertex = parent_check_vertex % 21;
+            int parent_leftover_vertex = (parent_check_vertex - parent_remainder_vertex) / 21;
+
+            // Used to be: >= 8 >=8        <=12 >=8        >=8 <=12        <=12 <=12
+
+            bool upper_left = (leftover_vertex <= 10 && remainder_vertex >= 10);
+            bool upper_right = (leftover_vertex >= 10 && remainder_vertex >= 10);
+            bool lower_right = (leftover_vertex >= 10 && remainder_vertex <= 10);
+            bool lower_left = (leftover_vertex <= 10 && remainder_vertex <= 10);
+
+            bool parent_upper_left = (parent_leftover_vertex <= 10 && parent_remainder_vertex >= 10);
+            bool parent_upper_right = (parent_leftover_vertex >= 10 && parent_remainder_vertex >= 10);
+            bool parent_lower_right = (parent_leftover_vertex >= 10 && parent_remainder_vertex <= 10);
+            bool parent_lower_left = (parent_leftover_vertex <= 10 && parent_remainder_vertex <= 10);
+
+            bool within_three_tiles_of_parent_vertex = (leftover_vertex <= (parent_leftover_vertex + 3)) && (leftover_vertex >= (parent_leftover_vertex - 3)) && (remainder_vertex <= (parent_remainder_vertex + 3)) && (remainder_vertex >= (parent_remainder_vertex - 3));
+
+
+            if ((movenum_now + depth >= 10) && (movenum_now + depth <= 150) && (winrate > winrate_target_value)) {
+                //if ((((movenum_now + depth) % 16) == 0) || (((movenum_now + depth) % 16) == 1) || (((movenum_now + depth) % 16) == 8) || (((movenum_now + depth) % 16) == 9)) {
+                if (!within_three_tiles_of_parent_vertex) {
+                    value = cfg_handicapadjustmentpercent * value;
+                    //continue;
+                }
+                //}
+            }
+
+        }
+
+
 
         if (cfg_tengenbot == true) {
         /////////////////////////////////////////////////////////////////////////////////

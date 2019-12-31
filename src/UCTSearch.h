@@ -34,6 +34,7 @@
 #include "Network.h"
 
 extern int current_movenum;
+extern int movenum_now;
 
 
 class SearchResult {
