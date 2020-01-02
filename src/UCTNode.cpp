@@ -389,6 +389,8 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
     int best_opponent_value_vertex = 999999;
     float second_best_policy_seen = 0.0f;
     int second_best_policy_vertex = 999999;
+    
+    //BLACK = 0, WHITE = 1, EMPTY = 2, INVAL = 3
 
     bool is_opponent_move = ((depth % 2) != 0); // Returns "true" on moves at odd-numbered depth, indicating at any depth in a search variation which moves are played by LZ's opponent.
 
@@ -556,16 +558,17 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         if (cfg_rankmatchingtiebot == true) {
 
             int rank_difference = cfg_rankwanted - cfg_opponentrank;
-            if ((rank_difference < 0) && (abs(rank_difference) >= cfg_handicapamount)) {
-                rank_difference += cfg_handicapamount;
-            }
-            if ((rank_difference > 0) && (abs(rank_difference) >= cfg_handicapamount)) {
-                rank_difference -= cfg_handicapamount;
+
+            if (cfg_handicapamount >= 2) {
+                if (!is_opponent_move && (color_to_move == 0)) { // If LZ is black and has handicap
+                    rank_difference += cfg_handicapamount;
+                }
+
+                if (!is_opponent_move && (color_to_move == 1)) { // If LZ is white against handicap
+                    rank_difference -= cfg_handicapamount;
+                }
             }
 
-            if (abs(rank_difference) == cfg_handicapamount) {
-                rank_difference = 0;
-            }
             int winrate_rank_adjusted = 40 + (10 * rank_difference);
             if (winrate_rank_adjusted > 100) {
                 winrate_rank_adjusted = 100;
@@ -612,21 +615,21 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
             **/
 
-            if (!is_opponent_move && (movenum_now + depth <= 250)) {
+            if (!is_opponent_move && (movenum_now + depth <= 200)) {
                 value = (1 - abs(winrate_target_value - winrate)) + puct;
             }
 
-            if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+            if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 200)) {
                 value = 0.70 * value;
             }
 
-            if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 250)) {
+            if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 200)) {
                 value = 0.50 * value;
             }
 
             if (!is_opponent_move
                 && (child.get_move() == -1)
-                && (movenum_now <= 250)) {
+                && (movenum_now <= 200)) {
                 value = 0.0000005 * value;
             }
 
@@ -744,7 +747,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
         }
 
-        if (cfg_handicapadjustment == true && cfg_handicapgame == true && !is_opponent_move) {
+        if (cfg_handicapadjustment == true && cfg_handicapgame == true && !is_opponent_move && (color_to_move == 1)) {
 
             int check_vertex = static_cast<int>(child.get_move());
             int remainder_vertex = check_vertex % 21;
@@ -866,7 +869,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             bool within_three_tiles_of_parent_vertex = (leftover_vertex <= (parent_leftover_vertex + 3)) && (leftover_vertex >= (parent_leftover_vertex - 3)) && (remainder_vertex <= (parent_remainder_vertex + 3)) && (remainder_vertex >= (parent_remainder_vertex - 3));
 
 
-            if ((movenum_now + depth >= 10) && (movenum_now + depth <= 150) && (winrate > winrate_target_value)) {
+            if ((movenum_now + depth >= 10) && (movenum_now + depth <= 150) && (winrate > (winrate_target_value - 0.10f))) {
                 //if ((((movenum_now + depth) % 16) == 0) || (((movenum_now + depth) % 16) == 1) || (((movenum_now + depth) % 16) == 8) || (((movenum_now + depth) % 16) == 9)) {
                 if (!within_three_tiles_of_parent_vertex) {
                     value = cfg_handicapadjustmentpercent * value;

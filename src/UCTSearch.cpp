@@ -448,7 +448,7 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
     const size_t board_squares = m_rootstate.board.get_boardsize()
                                * m_rootstate.board.get_boardsize();
     //const auto move_threshold = board_squares / 4;
-    const auto move_threshold = 130;
+    int move_threshold = cfg_resignafter;
     const auto movenum = m_rootstate.get_movenum();
     if (movenum <= move_threshold) {
         // too early in game to resign
@@ -500,12 +500,12 @@ bool UCTSearch::should_resign(passflag_t passflag, float besteval) {
 
     // Reset resign_moves_counter if we are resigning
     myprintf("Resign allowed: %d / %d consecutive moves below resign threshold (%d%%).\n", resign_moves_counter, cfg_resign_moves, cfg_resignpct);
-    resign_moves_counter = 0;
     if (cfg_rengobot) {
         cfg_wearelosing = true;
         return false;
     }
     else {
+        resign_moves_counter = 0;
         return true;
     }
 }
@@ -856,7 +856,7 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
     int required_elapsed_before_checking = 60;
 
     if (!is_pondering_now) {
-        if (current_movenum < 16) {
+        if (current_movenum < 30) {
             speedup_factor = 1.0f;
             faster_out_speedup_factor = 1.0f;
         }
@@ -866,17 +866,27 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
             faster_out_speedup_factor = 1.0f;
         }
 
-        if (current_movenum <= 14) {
+        if (current_movenum <= 28) {
             speedup_factor = 2.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
-        if (current_movenum <= 10) {
+        if (current_movenum <= 20) {
+            speedup_factor = 3.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum <= 12) {
             speedup_factor = 4.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
-        if (current_movenum <= 6) {
+        if (current_movenum <= 8) {
+            speedup_factor = 5.0f;
+            faster_out_speedup_factor = 1.0f;
+        }
+
+        if (current_movenum <= 4) {
             speedup_factor = 6.0f;
             faster_out_speedup_factor = 1.0f;
         }

@@ -75,6 +75,8 @@ static void parse_commandline(int argc, char *argv[]) {
                      "Required visits on most visited move before secondbestmovereatio is checked.")
         ("rankwanted", po::value<int>(),
                      "Desired rank for rankmatching.")
+        ("resignafter", po::value<int>(),
+                     "Only consider resigning after this move number.")
         ("lagbuffer,b", po::value<int>()->default_value(cfg_lagbuffer_cs),
                         "Safety margin for time usage in centiseconds.")
         ("resignpct,r", po::value<int>()->default_value(cfg_resignpct),
@@ -501,6 +503,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("rankwanted")) {
         cfg_rankwanted = vm["rankwanted"].as<int>();
+    }
+
+    if (vm.count("resignafter")) {
+        cfg_resignafter = vm["resignafter"].as<int>();
     }
 
     if (vm.count("secondbestmoveratio")) {

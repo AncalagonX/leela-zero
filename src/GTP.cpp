@@ -140,6 +140,7 @@ bool cfg_wearelosing;
 bool cfg_rankmatchingtiebot;
 int cumulative_visits;
 int cfg_handicapamount;
+int cfg_resignafter;
 
 
 
@@ -244,6 +245,7 @@ void GTP::setup_default_parameters() {
     cfg_wearelosing = false;
     cumulative_visits = 0;
     cfg_rankwanted = 999;
+    cfg_resignafter = 130;
     cfg_opponentrank = 0;
     cfg_rankmatchingtiebot = false;
     cfg_handicapamount = 0;

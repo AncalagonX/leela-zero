@@ -122,6 +122,7 @@ extern int cfg_rankwanted;
 extern int cfg_opponentrank;
 extern bool cfg_rankmatchingtiebot;
 extern int cfg_handicapamount;
+extern int cfg_resignafter;
 
 /*
     A list of all valid GTP2 commands is defined here:
