@@ -141,6 +141,10 @@ bool cfg_rankmatchingtiebot;
 int cumulative_visits;
 int cfg_handicapamount;
 int cfg_resignafter;
+bool cfg_fourthlinebot;
+int cfg_maxrankallowed;
+int cfg_minrankallowed;
+bool cfg_capturefirstmessage;
 
 
 
@@ -249,6 +253,10 @@ void GTP::setup_default_parameters() {
     cfg_opponentrank = 0;
     cfg_rankmatchingtiebot = false;
     cfg_handicapamount = 0;
+    cfg_fourthlinebot = false;
+    cfg_maxrankallowed = 9999;
+    cfg_minrankallowed = -1;
+    cfg_capturefirstmessage = false;
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -433,6 +441,12 @@ bool GTP::execute(GameState & game, std::string xinput) {
             }
             if ((current_movenum == 182) || (current_movenum == 183)) {
                 cfg_custom_engine_name = "重要：このゲームは「中国のルール」を使用しています。 ゲーム終了時に渡す前に、すべての死んだ石を削除してください。 あなたのスコアは影響を受けません。 ----- 重要提示：该游戏使用“中国规则”。 在游戏结束前，请清除所有死角。 您的分数不会受到影响。";
+            }
+        }
+
+        if ((cfg_capturefirstmessage == true) && (current_movenum >= 280)) {
+            if ((current_movenum % 50 == 49) || (current_movenum % 50 == 48)) {
+                cfg_custom_engine_name = "Please capture all dead stones before passing. Thanks.";
             }
         }
 
@@ -1476,7 +1490,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 }
                 if (boost::filesystem::exists(rank3k)) {
                     //gtp_printf(id, "3k detected.");
-                    cfg_opponentrank = 2;
+                    cfg_opponentrank = 28;
                     boost::filesystem::remove(rank3k);
                 }
                 if (boost::filesystem::exists(rank2k)) {
@@ -1533,6 +1547,14 @@ bool GTP::execute(GameState & game, std::string xinput) {
                     //gtp_printf(id, "9d detected.");
                     cfg_opponentrank = 39;
                     boost::filesystem::remove(rank9d);
+                }
+
+                if (cfg_opponentrank > cfg_maxrankallowed) {
+                    resign_next = true;
+                }
+
+                if (cfg_opponentrank < cfg_minrankallowed) {
+                    resign_next = true;
                 }
 
                 // Outputs winrate and pvs for lz-genmove_analyze

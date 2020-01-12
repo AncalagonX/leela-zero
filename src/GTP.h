@@ -123,6 +123,10 @@ extern int cfg_opponentrank;
 extern bool cfg_rankmatchingtiebot;
 extern int cfg_handicapamount;
 extern int cfg_resignafter;
+extern bool cfg_fourthlinebot;
+extern int cfg_maxrankallowed;
+extern int cfg_minrankallowed;
+extern bool cfg_capturefirstmessage;
 
 /*
     A list of all valid GTP2 commands is defined here:

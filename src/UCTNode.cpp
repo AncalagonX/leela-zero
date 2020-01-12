@@ -721,11 +721,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             int remainder_vertex = check_vertex % 21;
             int leftover_vertex = (check_vertex - remainder_vertex) / 21;
 
-            if ((movenum_now + depth <= 1) && (check_vertex == 220)) { //220 is tengen. 221 is one intersection away.
+            if ((movenum_now + depth <= 10) && (check_vertex == 220)) { //220 is tengen. 221 is one intersection away.
                 value = 1000.0 * value;
             }
 
-            if ((movenum_now + depth <= 1) && (check_vertex != 220)) { //220 is tengen. 221 is one intersection away.
+            if ((movenum_now + depth <= 10) && (check_vertex != 220)) { //220 is tengen. 221 is one intersection away.
                 value = value / 1000.0;
             }
         }
@@ -880,6 +880,36 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
         }
 
+        if (cfg_fourthlinebot == true) {
+
+            int check_vertex = static_cast<int>(child.get_move());
+            int remainder_vertex = check_vertex % 21;
+            int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+
+            int parent_check_vertex = static_cast<int>(get_move());
+            int parent_remainder_vertex = parent_check_vertex % 21;
+            int parent_leftover_vertex = (parent_check_vertex - parent_remainder_vertex) / 21;
+
+            // Used to be: >= 8 >=8        <=12 >=8        >=8 <=12        <=12 <=12
+
+            bool left_line = (leftover_vertex == 4 && remainder_vertex >= 4 && remainder_vertex <= 16);
+            bool right_line = (leftover_vertex == 16 && remainder_vertex >= 4 && remainder_vertex <= 16);
+            bool top_line = (remainder_vertex == 4 && leftover_vertex >= 4 && leftover_vertex <= 16);
+            bool bottom_line = (remainder_vertex == 16 && leftover_vertex >= 4 && leftover_vertex <= 16);
+
+            bool is_on_fourth_line = left_line || right_line || top_line || bottom_line;
+
+
+            if (!is_on_fourth_line) {
+                value = value / 1000.0;
+            }
+
+            if (is_on_fourth_line) {
+                value = value * 1000.0;
+            }
+
+        }
+
 
 
         if (cfg_tengenbot == true) {
@@ -888,7 +918,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         /////////////////////////////////////////////////////////////////////////////////
 
             //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
-            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.30)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -908,7 +938,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
             
             //if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
-            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.50)) {
+            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.40)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -962,7 +992,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             //if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.60)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.40)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -1291,7 +1321,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
     }
 
-    if ((cfg_delay == true) && (cfg_slowlosing == true)) {
+    if ((cfg_delay == true) && (cfg_slowlosing == true) && !cfg_fourthlinebot) {
 
         if ((movenum_now < 250) && (movenum_now > 12)) {
             Sleep(cfg_delaythree);
@@ -1304,7 +1334,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         }
     }
 
-    if ((cfg_delay == true) && (cfg_slowlosing == false)) {
+    if ((cfg_delay == true) && (cfg_slowlosing == false) && !cfg_fourthlinebot) {
 
         if ((movenum_now < 250) && (movenum_now > 12)) {
             Sleep(cfg_delaythree);

@@ -108,10 +108,16 @@ static void parse_commandline(int argc, char *argv[]) {
         ("delay", "Enables use of delayone, delaytwo, delaythree.")
         ("factbot", "Enables factbot.")
         ("rankmatchingtiebot", "Enables rank-matching tie bot.")
+        ("maxrankallowed", po::value<int>()->default_value(cfg_maxrankallowed),
+                        "Resign on first move if opponent rank is higher than this.")
+        ("minrankallowed", po::value<int>()->default_value(cfg_minrankallowed),
+                        "Resign on first move if opponent rank is lower than this.")
+        ("fourthlinebot", "Enables fourth-line special bot.")
         ("weirdbot", "Enables weirdbot.")
         ("tenukibot", "Enables tenukibot.")
         ("followbot", "Enables followbot.")
         ("rengobot", "Enables rengobot.")
+        ("capturefirstmessage", "Sends a message about Chinese rules every 50 moves or so in endgame.")
         ("nohandicap", "Disables handicap GTP commands.")
         ("handicapblindness", "Enables handicap blindness.")
         ("slowlosing", "Causes bot to use 2x visits when losing.")
@@ -304,6 +310,14 @@ static void parse_commandline(int argc, char *argv[]) {
         }
     }
 
+    if (vm.count("maxrankallowed")) {
+        cfg_maxrankallowed = vm["maxrankallowed"].as<int>();
+    }
+
+    if (vm.count("minrankallowed")) {
+        cfg_minrankallowed = vm["minrankallowed"].as<int>();
+    }
+
     if (vm.count("delayone")) {
         cfg_delayone = vm["delayone"].as<int>();
     }
@@ -444,6 +458,14 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("rankmatchingtiebot")) {
         cfg_rankmatchingtiebot = true;
+    }
+
+    if (vm.count("fourthlinebot")) {
+        cfg_fourthlinebot = true;
+    }
+
+    if (vm.count("capturefirstmessage")) {
+        cfg_capturefirstmessage = true;
     }
 
     if (vm.count("slowlosing")) {
