@@ -670,16 +670,16 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
-                value = 0.90 * value;
+                value = 0.70 * value;
             }
 
             if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
-                value = 0.80 * value;
+                value = 0.70 * value;
             }
 
             if (!is_opponent_move
                 && (child.get_move() == -1)
-                && (movenum_now <= 300)) {
+                && (movenum_now <= 200)) {
                 value = 0.0000005 * value;
             }
 
@@ -912,13 +912,65 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
 
 
 
+        if (cfg_crossbot == true) {
+            /////////////////////////////////////////////////////////////////////////////////
+            // TENGEN-FOCUSED: //
+            /////////////////////////////////////////////////////////////////////////////////
+
+                //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth <= 20) && (winrate >= 0.40)) {
+                int check_vertex = static_cast<int>(child.get_move());
+                int remainder_vertex = check_vertex % 21;
+                int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+                bool leftover_odd = ((leftover_vertex % 2) == 1);
+                bool remainder_odd = ((remainder_vertex % 2) == 1);
+
+                if (leftover_odd && remainder_odd) {
+                    value = 100.0 * value;
+                }
+                if (!leftover_odd && !remainder_odd) {
+                    value = 100.0 * value;
+                }
+            }
+            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 100) && (winrate >= 0.50)) {
+                int check_vertex = static_cast<int>(child.get_move());
+                int remainder_vertex = check_vertex % 21;
+                int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+                bool leftover_odd = ((leftover_vertex % 2) == 1);
+                bool remainder_odd = ((remainder_vertex % 2) == 1);
+
+                if (leftover_odd && remainder_odd) {
+                    value = 100.0 * value;
+                }
+                if (!leftover_odd && !remainder_odd) {
+                    value = 100.0 * value;
+                }
+            }
+            if (!is_opponent_move && (movenum_now + depth > 100) && (movenum_now + depth <= 150) && (winrate >= 0.60)) {
+                int check_vertex = static_cast<int>(child.get_move());
+                int remainder_vertex = check_vertex % 21;
+                int leftover_vertex = (check_vertex - remainder_vertex) / 21;
+                bool leftover_odd = ((leftover_vertex % 2) == 1);
+                bool remainder_odd = ((remainder_vertex % 2) == 1);
+
+                if (leftover_odd && remainder_odd) {
+                    value = 100.0 * value;
+                }
+                if (!leftover_odd && !remainder_odd) {
+                    value = 100.0 * value;
+                }
+            }
+        }
+
+
+
         if (cfg_tengenbot == true) {
         /////////////////////////////////////////////////////////////////////////////////
         // TENGEN-FOCUSED: //
         /////////////////////////////////////////////////////////////////////////////////
 
             //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
-            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.30)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.40)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -938,7 +990,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
             
             //if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
-            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.50)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
@@ -992,7 +1044,7 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             //if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.60)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;

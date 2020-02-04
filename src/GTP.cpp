@@ -145,6 +145,7 @@ bool cfg_fourthlinebot;
 int cfg_maxrankallowed;
 int cfg_minrankallowed;
 bool cfg_capturefirstmessage;
+bool cfg_crossbot;
 
 
 
@@ -257,6 +258,7 @@ void GTP::setup_default_parameters() {
     cfg_maxrankallowed = 9999;
     cfg_minrankallowed = -1;
     cfg_capturefirstmessage = false;
+    cfg_crossbot = false;
 
 #ifdef USE_CPU_ONLY
     cfg_cpu_only = true;
@@ -444,7 +446,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
             }
         }
 
-        if ((cfg_capturefirstmessage == true) && (current_movenum >= 280)) {
+        if ((cfg_capturefirstmessage == true) && (current_movenum >= 240)) {
             if ((current_movenum % 50 == 49) || (current_movenum % 50 == 48)) {
                 cfg_custom_engine_name = "Please capture all dead stones before passing. Thanks.";
             }
@@ -1942,6 +1944,13 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 pass_next = true;
             }
 
+            if (word == "crossbot_enable") {
+                cfg_crossbot = true;
+            }
+            if (word == "crossbot_disable") {
+                cfg_crossbot = false;
+            }
+
             if (word == "passbot_enable") {
                 cfg_passbot = true;
             }
@@ -2021,11 +2030,29 @@ bool GTP::execute(GameState & game, std::string xinput) {
             if (word == "hyperspeed_disable") {
                 cfg_hyperspeed = false;
             }
+            if (word == "tenukibot_enable") {
+                cfg_tenukibot = true;
+            }
+            if (word == "tenukibot_disable") {
+                cfg_tenukibot = false;
+            }
+            if (word == "followbot_enable") {
+                cfg_followbot = true;
+            }
+            if (word == "followbot_disable") {
+                cfg_followbot = false;
+            }
             if (word == "superslow_enable") {
                 cfg_superslow = true;
             }
             if (word == "superslow_disable") {
                 cfg_superslow = false;
+            }
+            if (word == "rmtb_enable") {
+                cfg_rankmatchingtiebot = true;
+            }
+            if (word == "rmtb_disable") {
+                cfg_rankmatchingtiebot = false;
             }
             if (word == "ponder") {
                 cfg_allow_pondering = true;

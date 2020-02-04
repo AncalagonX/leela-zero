@@ -127,6 +127,7 @@ extern bool cfg_fourthlinebot;
 extern int cfg_maxrankallowed;
 extern int cfg_minrankallowed;
 extern bool cfg_capturefirstmessage;
+extern bool cfg_crossbot;
 
 /*
     A list of all valid GTP2 commands is defined here:

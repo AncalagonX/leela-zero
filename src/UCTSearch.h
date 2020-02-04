@@ -84,8 +84,10 @@ public:
         48 bytes, so limit to ~1.2G on 32-bits and about 5.5G
         on 64-bits.
     */
+    //static constexpr auto MAX_TREE_SIZE =
+    //    (sizeof(void*) == 4 ? 25'000'000 : 100'000'000);
     static constexpr auto MAX_TREE_SIZE =
-        (sizeof(void*) == 4 ? 25'000'000 : 100'000'000);
+        (sizeof(void*) == 4 ? 5'000'000 : 10'000'000);
 
     /*
         Value representing unlimited visits or playouts. Due to

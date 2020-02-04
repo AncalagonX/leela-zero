@@ -867,27 +867,27 @@ bool UCTSearch::stop_thinking(int elapsed_centis, int time_for_move) const {
         }
 
         if (current_movenum <= 28) {
-            speedup_factor = 2.0f;
+            speedup_factor = 1.5f;
             faster_out_speedup_factor = 1.0f;
         }
 
         if (current_movenum <= 20) {
-            speedup_factor = 3.0f;
+            speedup_factor = 2.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
         if (current_movenum <= 12) {
-            speedup_factor = 4.0f;
+            speedup_factor = 2.5f;
             faster_out_speedup_factor = 1.0f;
         }
 
         if (current_movenum <= 8) {
-            speedup_factor = 5.0f;
+            speedup_factor = 3.0f;
             faster_out_speedup_factor = 1.0f;
         }
 
         if (current_movenum <= 4) {
-            speedup_factor = 6.0f;
+            speedup_factor = 4.0f;
             faster_out_speedup_factor = 1.0f;
         }
 

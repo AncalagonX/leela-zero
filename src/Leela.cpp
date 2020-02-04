@@ -93,6 +93,7 @@ static void parse_commandline(int argc, char *argv[]) {
                        "fast = Same as on but always plays faster.\n"
                        "no_pruning = For self play training use.\n")
         ("noponder", "Disable thinking on opponent's time.")
+        ("crossbot", "Enables CrossBot mode.")
         ("passbot", "Enables PassBot mode.")
         ("tengenbot", "Enables TengenBot mode.")
         ("tengen", "Forces Tengen move at game start.")
@@ -386,6 +387,10 @@ static void parse_commandline(int argc, char *argv[]) {
 
     if (vm.count("noponder")) {
         cfg_allow_pondering = false;
+    }
+
+    if (vm.count("crossbot")) {
+        cfg_crossbot = true;
     }
 
     if (vm.count("passbot")) {
