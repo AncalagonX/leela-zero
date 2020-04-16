@@ -214,6 +214,7 @@ const std::string GTP::s_options[] = {
     "option name Lagbuffer type spin default 0 min 0 max 3000",
     "option name Resign Percentage type spin default -1 min -1 max 30",
     "option name Pondering type check default true",
+    "option name Winrate target the engine tries to aim at default 100 min 0 max 100",
     ""
 };
 
@@ -1170,6 +1171,16 @@ void GTP::execute_setoption(UCTSearch & search,
         int resignpct;
         valuestream >> resignpct;
         cfg_resignpct = resignpct;
+        gtp_printf(id, "");
+    } else if (name == "winrate target") {
+        std::istringstream valuestream(value);
+        int winrate_target;
+        valuestream >> winrate_target;
+        if (winrate_target < 0 || winrate_target > 100) {
+            gtp_fail_printf(id, "incorrect value");
+            return;
+        }
+        cfg_winrate_target = winrate_target;
         gtp_printf(id, "");
     } else {
         gtp_fail_printf(id, "Unknown option");
