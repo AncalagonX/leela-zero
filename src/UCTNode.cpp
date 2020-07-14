@@ -670,11 +670,11 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             if (!is_opponent_move && (depth <= 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
-                value = 0.70 * value;
+                value = 0.10 * value;
             }
 
             if (!is_opponent_move && (depth > 1) && (winrate > winrate_target_value) && (movenum_now + depth >= 10) && (movenum_now + depth <= 300)) {
-                value = 0.70 * value;
+                value = 0.10 * value;
             }
 
             if (!is_opponent_move
@@ -970,42 +970,42 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
         /////////////////////////////////////////////////////////////////////////////////
 
             //if (!is_opponent_move && (movenum_now + depth <= 10) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.40)) {
-            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.40)) {
+            if (!is_opponent_move && (movenum_now + depth <= 10) && (winrate >= 0.20)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
                 if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                    value = 0.60 * value;
+                    value = 0.10 * value;
                 }
                 if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                    value = 0.60 * value;
+                    value = 0.10 * value;
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.80 * value;
+                    value = 0.20 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.80 * value;
+                    value = 0.20 * value;
                 }
             }
             
             //if (!is_opponent_move && (movenum_now + depth > 10) && (movenum_now + depth <= 80) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.60)) {
-            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.50)) {
+            if (!is_opponent_move && (movenum_now + depth > 20) && (movenum_now + depth <= 80) && (winrate >= 0.30)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
                 if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                    value = 0.60 * value;
+                    value = 0.10 * value;
                 }
                 if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                    value = 0.60 * value;
+                    value = 0.10 * value;
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.80 * value;
+                    value = 0.20 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.80 * value;
+                    value = 0.20 * value;
                 }
 
                 //if (leftover_vertex <= 2 || leftover_vertex >= 18) {
@@ -1044,22 +1044,22 @@ UCTNode* UCTNode::uct_select_child(int color, int color_to_move, bool is_root, i
             }
 
             //if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (((movenum_now + depth) % 10) != 8) && (((movenum_now + depth) % 10) != 9) && (winrate >= 0.65)) {
-            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.60)) {
+            if (!is_opponent_move && (movenum_now + depth > 80) && (movenum_now + depth <= 100) && (winrate >= 0.50)) {
                 int check_vertex = static_cast<int>(child.get_move());
                 int remainder_vertex = check_vertex % 21;
                 int leftover_vertex = (check_vertex - remainder_vertex) / 21;
                 if (leftover_vertex <= 4 || leftover_vertex >= 16) {
-                    value = 0.90 * value;
+                    value = 0.30 * value;
                 }
                 if (remainder_vertex <= 4 || remainder_vertex >= 16) {
-                    value = 0.90 * value;
+                    value = 0.30 * value;
                 }
 
                 if (leftover_vertex <= 3 || leftover_vertex >= 17) {
-                    value = 0.95 * value;
+                    value = 0.15 * value;
                 }
                 if (remainder_vertex <= 3 || remainder_vertex >= 17) {
-                    value = 0.95 * value;
+                    value = 0.15 * value;
                 }
 
                 //if (leftover_vertex <= 2 || leftover_vertex >= 18) {

@@ -1929,7 +1929,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
         cmdstream >> tmp; // eat game|private
         cmdstream >> tmp; // eat player name
         cmdstream >> px;
-        if (px == "pxs0") {
+        if (px == "x0") {
             cfg_custom_engine_name = "";
             cmdstream >> word;
             do {
@@ -1938,7 +1938,7 @@ bool GTP::execute(GameState & game, std::string xinput) {
                 cmdstream >> word;
             } while (!cmdstream.fail());
         }
-        if (px == "pxs1") {
+        if (px == "x1") {
             cmdstream >> word;
             if (word == "pass") {
                 pass_next = true;
